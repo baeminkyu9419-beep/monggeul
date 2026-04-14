@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="몽글몽글 릴리즈노트 - 새로운 기능과 개선사항을 확인하세요.">
+<meta name="keywords" content="몽글몽글,릴리즈노트,업데이트,꿈해몽,AI해몽">
+<link rel="canonical" href="https://baeminkyu9419-beep.github.io/monggeul/releases.html">
+<meta property="og:title" content="몽글몽글 릴리즈노트">
+<meta property="og:description" content="몽글몽글의 새로운 기능과 개선사항을 확인하세요.">
+<meta property="og:url" content="https://baeminkyu9419-beep.github.io/monggeul/releases.html">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ko_KR">
+<meta name="theme-color" content="#0e0c1a">
+<title>몽글몽글 릴리즈노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --night:#0e0c1a; --deep:#13102a; --mid:#1e1840; --surface:#252048; --card:#2d2858;
+  --purple:#7c5cbf; --purple-bright:#a67cef; --moon:#f5e6b2; --moon-soft:#ede0c8;
+  --star:#c8bff8; --pink:#f0a8c8; --teal:#7de8d8; --amber:#f8c94c;
+  --text-primary:#f0ecff; --text-secondary:#a89dd0; --text-muted:#6b5e8a;
+  --fs-label:13px; --fs-body:15px; --fs-card-title:20px; --fs-card-desc:15px;
+  --fs-tag:12px; --fs-small:13px; --fs-btn:18px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;scrollbar-color:rgba(124,92,191,.3) rgba(14,12,26,.5);scrollbar-width:thin;}
+body{background:var(--night);color:var(--text-primary);font-family:'Noto Sans KR',sans-serif;overflow-x:hidden;line-height:1.6;}
+::-webkit-scrollbar{width:8px;}
+::-webkit-scrollbar-track{background:rgba(14,12,26,.5);}
+::-webkit-scrollbar-thumb{background:rgba(124,92,191,.3);border-radius:4px;}
+::-webkit-scrollbar-thumb:hover{background:rgba(124,92,191,.5);}
+
+/* 밤하늘 배경 */
+#sky{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;
+  background:radial-gradient(ellipse at 30% 20%,rgba(25,18,60,.8) 0%,transparent 50%),
+  radial-gradient(ellipse at 70% 80%,rgba(40,15,50,.6) 0%,transparent 50%);}
+.bg-star{position:absolute;border-radius:50%;animation:twinkle var(--d,4s) ease-in-out infinite var(--dl,0s);}
+.star-s{width:1px;height:1px;background:rgba(255,255,255,.6);}
+.star-m{width:2px;height:2px;background:rgba(255,250,220,.8);box-shadow:0 0 3px rgba(255,250,220,.4);}
+.star-l{width:3px;height:3px;background:rgba(255,240,180,1);box-shadow:0 0 6px rgba(255,240,180,.6);}
+@keyframes twinkle{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}
+
+.shooting-star{position:absolute;height:1px;animation:shoot var(--sd,6s) linear infinite var(--sdl,0s);opacity:0;transform:rotate(var(--angle,-35deg));}
+.meteor-trail{width:var(--len,100px);background:linear-gradient(90deg,rgba(255,240,200,.9) 0%,rgba(200,180,255,.6) 30%,transparent 100%);border-radius:1px;}
+@keyframes shoot{0%{opacity:0;transform:translate(0,0) rotate(var(--angle,-35deg))}1%{opacity:1}6%{opacity:.8}10%{opacity:0;transform:translate(var(--dx,-350px),var(--dy,200px)) rotate(var(--angle,-35deg))}100%{opacity:0}}
+
+/* 네비게이션 */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;max-width:960px;margin:0 auto;transition:background .3s;}
+.nav.scrolled{background:rgba(14,12,26,.92);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.05);}
+.nav-logo{display:flex;align-items:center;gap:8px;font-family:'Gowun Dodum',serif;font-size:20px;color:var(--moon);text-decoration:none;}
+.nav-logo-icon{width:34px;height:34px;background:linear-gradient(135deg,#7c5cbf,#a67cef);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 2px 12px rgba(124,92,191,.4);}
+.nav-cta{background:rgba(124,92,191,.25);border:1px solid rgba(166,124,239,.35);border-radius:24px;color:var(--purple-bright);font-family:'Noto Sans KR',sans-serif;font-size:var(--fs-body);font-weight:600;padding:8px 22px;cursor:pointer;transition:all .3s;text-decoration:none;}
+.nav-cta:hover{background:rgba(124,92,191,.4);transform:translateY(-1px);}
+
+/* 컨테이너 */
+.releases-container{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:120px 24px 80px;}
+
+/* 페이지 헤더 */
+.page-header{text-align:center;margin-bottom:64px;}
+.page-header h1{font-family:'Gowun Dodum',serif;font-size:clamp(28px,5vw,42px);color:var(--moon);margin-bottom:12px;text-shadow:0 0 40px rgba(245,230,178,.2);}
+.page-header p{font-size:16px;color:var(--text-secondary);line-height:1.8;}
+
+/* 릴리즈 카드 */
+.release-card{background:rgba(45,40,88,.4);backdrop-filter:blur(12px);border:1px solid rgba(166,124,239,.1);border-radius:20px;padding:32px 28px;margin-bottom:24px;transition:all .3s;position:relative;overflow:hidden;}
+.release-card::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 50% 50%,rgba(166,124,239,.04),transparent 50%);pointer-events:none;opacity:0;transition:opacity .3s;}
+.release-card:hover{border-color:rgba(166,124,239,.25);box-shadow:0 8px 32px rgba(124,92,191,.15);}
+.release-card:hover::before{opacity:1;}
+
+.release-header{display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap;}
+.release-version{font-family:'Gowun Dodum',serif;font-size:22px;color:var(--moon);font-weight:700;text-shadow:0 0 12px rgba(245,230,178,.15);}
+.release-date{font-size:var(--fs-small);color:var(--text-muted);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:4px 12px;}
+.release-label{font-size:var(--fs-tag);color:var(--purple-bright);font-weight:600;letter-spacing:1px;text-transform:uppercase;background:rgba(166,124,239,.1);border:1px solid rgba(166,124,239,.15);border-radius:12px;padding:4px 12px;}
+
+.release-items{display:flex;flex-direction:column;gap:10px;}
+.release-item{display:flex;align-items:flex-start;gap:10px;font-size:var(--fs-body);color:var(--text-secondary);line-height:1.7;}
+
+.release-tag{display:inline-block;border-radius:8px;padding:2px 10px;font-size:12px;font-weight:700;color:#111;flex-shrink:0;margin-top:3px;letter-spacing:0.5px;}
+.release-tag.new{background:var(--amber);}
+.release-tag.improved{background:var(--teal);}
+.release-tag.fix{background:var(--pink);}
+
+/* 구분선 */
+.release-divider{width:60px;height:1px;background:linear-gradient(to right,transparent,rgba(166,124,239,.3),transparent);margin:8px auto 32px;}
+
+/* 푸터 */
+.footer{text-align:center;padding:32px 0;border-top:1px solid rgba(255,255,255,.05);font-size:var(--fs-small);color:var(--text-muted);}
+.footer a{color:var(--text-muted);text-decoration:none;transition:color .3s;}
+.footer a:hover{color:var(--purple-bright);}
+
+/* 스크롤 애니메이션 */
+.reveal{opacity:0;transform:translateY(30px);transition:all .8s cubic-bezier(.2,0,.2,1);}
+.reveal.visible{opacity:1;transform:translateY(0);}
+.reveal-delay-1{transition-delay:.12s;}
+.reveal-delay-2{transition-delay:.24s;}
+
+/* 반응형 */
+@media (max-width:640px){
+  .releases-container{padding:100px 18px 60px;}
+  .release-card{padding:24px 20px;}
+  .release-header{gap:10px;}
+  .release-version{font-size:18px;}
+}
+@media (min-width:1200px){
+  .releases-container{max-width:800px;}
+  .nav{max-width:1080px;}
+}
+</style>
+</head>
+<body>
+
+<div id="sky"></div>
+
+<nav class="nav" id="nav">
+  <a href="landing.html" class="nav-logo">
+    <div class="nav-logo-icon">🌙</div>
+    몽글몽글
+  </a>
+  <a href="index.html" class="nav-cta">시작하기</a>
+</nav>
+
+<div class="releases-container">
+
+  <div class="page-header reveal">
+    <h1>릴리즈노트</h1>
+    <p>몽글몽글이 더 좋아지고 있어요.<br>새로운 기능과 개선사항을 확인하세요.</p>
+  </div>
+
+  <!-- v0.22.0 -->
+  <div class="release-card reveal">
+    <div class="release-header">
+      <div class="release-version">v0.22.0</div>
+      <div class="release-date">2026년 3월 25일</div>
+      <div class="release-label">Latest</div>
+    </div>
+    <div class="release-items">
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>결제 시스템 준비 중 — 곧 별빛 플랜을 구독할 수 있어요</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- v0.21.0 -->
+  <div class="release-card reveal">
+    <div class="release-header">
+      <div class="release-version">v0.21.0</div>
+      <div class="release-date">2026년 3월 24일</div>
+    </div>
+    <div class="release-items">
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>PC에서도 편하게 볼 수 있어요 — 넓은 화면 레이아웃 지원</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag improved">IMPROVED</span>
+        <span>태블릿, 노트북, 데스크탑 환경에서 가독성이 크게 좋아졌어요</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="release-divider"></div>
+
+  <!-- v0.20.0 -->
+  <div class="release-card reveal">
+    <div class="release-header">
+      <div class="release-version">v0.20.0</div>
+      <div class="release-date">2026년 3월 24일</div>
+    </div>
+    <div class="release-items">
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>네이버, 다음에서 "꿈해몽"을 검색하면 몽글몽글을 찾을 수 있어요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>인터넷 없이도 앱을 사용할 수 있어요 — 오프라인 모드 지원</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>꿈 프로필 이미지를 만들어 SNS에 공유할 수 있어요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>꿈을 쓰다가 앱을 닫아도 자동 저장돼요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>MY 탭에서 내 꿈 패턴을 한눈에 볼 수 있는 대시보드가 생겼어요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag improved">IMPROVED</span>
+        <span>꿈 해몽 SEO 페이지 36개 추가 — 다양한 꿈 해석을 미리 확인하세요</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="release-divider"></div>
+
+  <!-- v0.9.0 -->
+  <div class="release-card reveal">
+    <div class="release-header">
+      <div class="release-version">v0.9.0</div>
+      <div class="release-date">2026년 3월 24일</div>
+    </div>
+    <div class="release-items">
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>앱 알림을 받을 수 있어요 — 웹 푸시 알림 지원</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>반복되는 꿈 패턴을 AI가 예측해서 알려줘요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag improved">IMPROVED</span>
+        <span>API 연결이 불안정해도 자동으로 재시도해요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag improved">IMPROVED</span>
+        <span>앱 로딩 속도가 빨라졌어요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag fix">FIX</span>
+        <span>간헐적으로 발생하던 오류 3건을 수정했어요</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="release-divider"></div>
+
+  <!-- v0.8.0 -->
+  <div class="release-card reveal">
+    <div class="release-header">
+      <div class="release-version">v0.8.0</div>
+      <div class="release-date">2026년 3월 22일</div>
+    </div>
+    <div class="release-items">
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>꿈에서 행운 번호를 뽑을 수 있어요 — 꿈 로또 기능</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag improved">IMPROVED</span>
+        <span>커뮤니티 봇이 더 다양하게 대화해요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag improved">IMPROVED</span>
+        <span>음성으로 꿈을 기록할 때 더 잘 인식돼요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag fix">FIX</span>
+        <span>달이 대화창 크기가 이상하게 보이던 문제를 해결했어요</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="release-divider"></div>
+
+  <!-- v0.7.0 -->
+  <div class="release-card reveal">
+    <div class="release-header">
+      <div class="release-version">v0.7.0</div>
+      <div class="release-date">2026년 3월 21일</div>
+    </div>
+    <div class="release-items">
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>구글, 애플, 카카오, 네이버로 간편 로그인할 수 있어요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>홈 화면에 앱처럼 설치할 수 있어요 (PWA)</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>꿈 상징 사전이 200개 이상으로 대폭 확장됐어요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>업적 시스템 — 꿈을 기록할수록 보상을 받아요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>나만의 꿈 성격 프로필을 확인할 수 있어요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>별가루 포인트로 특별한 기능을 이용하세요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag improved">IMPROVED</span>
+        <span>해몽 결과에 꿈 상징 매칭 카드가 추가됐어요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag improved">IMPROVED</span>
+        <span>레이더 차트가 더 크고 보기 좋아졌어요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag improved">IMPROVED</span>
+        <span>전체 디자인이 더 세련되고 아름다워졌어요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag improved">IMPROVED</span>
+        <span>달이가 시간대에 맞게 인사해요 — 아침/오후/저녁/심야</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag improved">IMPROVED</span>
+        <span>반복꿈을 감지하면 달이가 맞춤 상담을 해줘요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag fix">FIX</span>
+        <span>보안이 강화됐어요 — 개인정보 보호 개선</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag fix">FIX</span>
+        <span>로그인 화면이 안 뜨던 문제를 해결했어요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag fix">FIX</span>
+        <span>화면 겹침, 간격, 모달 충돌 등 여러 UI 문제를 수정했어요</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="release-divider"></div>
+
+  <!-- v0.6.0 -->
+  <div class="release-card reveal">
+    <div class="release-header">
+      <div class="release-version">v0.6.0</div>
+      <div class="release-date">2026년 3월 21일</div>
+    </div>
+    <div class="release-items">
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>클라우드에 꿈 기록이 저장돼요 — 기기를 바꿔도 안전해요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>하루 2회 무료 해몽, 별빛 플랜으로 무제한 이용 가능</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag improved">IMPROVED</span>
+        <span>API 키가 안전하게 보호돼요 — 보안 구조 개선</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag improved">IMPROVED</span>
+        <span>무료/유료 경계가 명확해졌어요</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="release-divider"></div>
+
+  <!-- v0.5.0 -->
+  <div class="release-card reveal">
+    <div class="release-header">
+      <div class="release-version">v0.5.0</div>
+      <div class="release-date">2026년 3월 20일</div>
+    </div>
+    <div class="release-items">
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>앱이 완전히 새로워졌어요 — 해몽 특화 앱으로 리빌드</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>해몽 / 달이 / 커뮤니티 / MY 4개 탭으로 깔끔하게 정리</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag improved">IMPROVED</span>
+        <span>UI가 깔끔하게 정돈되고 카드 가독성이 좋아졌어요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag improved">IMPROVED</span>
+        <span>인기 해몽 사전이 추가됐어요</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="release-divider"></div>
+
+  <!-- v0.4.0 -->
+  <div class="release-card reveal">
+    <div class="release-header">
+      <div class="release-version">v0.4.0</div>
+      <div class="release-date">2026년 3월 20일</div>
+    </div>
+    <div class="release-items">
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>음성으로 꿈을 기록할 수 있어요 — 말로 편하게 입력하세요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>꿈에 감정 태그를 붙일 수 있어요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>꿈 기록을 검색할 수 있어요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>꿈 기록을 이미지나 텍스트로 내보낼 수 있어요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>닉네임을 설정하고 나만의 프로필을 만들 수 있어요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>매일 행운 메시지를 받아볼 수 있어요</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="release-divider"></div>
+
+  <!-- v0.3.0 -->
+  <div class="release-card reveal">
+    <div class="release-header">
+      <div class="release-version">v0.3.0</div>
+      <div class="release-date">2026년 3월 20일</div>
+    </div>
+    <div class="release-items">
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>해몽 결과를 예쁜 카드로 만들어 공유할 수 있어요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>12가지 업적에 도전해보세요 — 7일 연속 기록 보상도!</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>해몽 횟수와 남은 무료 횟수를 한눈에 확인할 수 있어요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag improved">IMPROVED</span>
+        <span>대화 내용이 자동 저장되고 복원돼요</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag improved">IMPROVED</span>
+        <span>터치 반응이 더 빠르고 부드러워졌어요</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="release-divider"></div>
+
+  <!-- v0.1.0 ~ v0.2.0 -->
+  <div class="release-card reveal">
+    <div class="release-header">
+      <div class="release-version">v0.1.0</div>
+      <div class="release-date">2026년 3월 20일</div>
+    </div>
+    <div class="release-items">
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>몽글몽글이 세상에 처음 나왔어요!</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>AI가 꿈을 분석하고 해몽해주는 기능</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>달이 — 꿈 이야기를 나눌 수 있는 AI 친구</span>
+      </div>
+      <div class="release-item">
+        <span class="release-tag new">NEW</span>
+        <span>꿈 기록을 저장하고 모아볼 수 있는 MY 탭</span>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p><a href="landing.html">홈으로 돌아가기</a></p>
+    <p style="margin-top:12px;">몽글몽글 &copy; 2025. All rights reserved.</p>
+  </footer>
+
+</div>
+
+<script>
+// 별 생성
+(function(){
+  const sky=document.getElementById('sky');
+  [{cls:'star-s',count:80},{cls:'star-m',count:30},{cls:'star-l',count:12}].forEach(({cls,count})=>{
+    for(let i=0;i<count;i++){
+      const s=document.createElement('div');
+      s.className='bg-star '+cls;
+      s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${3+Math.random()*5}s;--dl:${Math.random()*5}s;`;
+      if(Math.random()>.7)s.classList.add(Math.random()>.5?'star-warm':'star-blue');
+      sky.appendChild(s);
+    }
+  });
+  for(let i=0;i<3;i++){
+    const m=document.createElement('div');
+    m.className='shooting-star meteor-trail';
+    m.style.cssText=`left:${20+Math.random()*60}%;top:${5+Math.random()*30}%;--sd:${8+Math.random()*10}s;--sdl:${Math.random()*12}s;--len:${80+Math.random()*80}px;--angle:${-25-Math.random()*20}deg;--dx:${-250-Math.random()*200}px;--dy:${150+Math.random()*100}px;`;
+    sky.appendChild(m);
+  }
+})();
+
+// 네비게이션 스크롤 효과
+const nav=document.getElementById('nav');
+window.addEventListener('scroll',()=>{
+  nav.classList.toggle('scrolled',window.scrollY>60);
+},{passive:true});
+
+// 스크롤 reveal
+const observer=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.classList.add('visible');
+      observer.unobserve(e.target);
+    }
+  });
+},{threshold:0.1,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+</script>
+
+</body>
+</html>

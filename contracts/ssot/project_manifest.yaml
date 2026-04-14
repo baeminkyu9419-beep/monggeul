@@ -1,0 +1,28 @@
+# MONGGEUL Project Manifest — Single Source of Truth
+project:
+  name: MONGGEUL
+  root: "C:\\JARVIS_NEW\\projects\\MONGGEUL"
+  status: active
+  priority: 8
+  tech: [javascript]
+  created: "2026-04-14"
+
+required_files:
+  - CLAUDE.md
+  - HANDOFF.md
+  - CURRENT_TASK.md
+  - ROLLBACK.md
+  - EVIDENCE.md
+  - contracts/ssot/project_manifest.yaml
+
+e2e_cycle:
+  constitution: true
+  objective: pending
+  contract: true
+  execution: pending
+  test: pending
+  evidence: true
+  state_update: pending
+  rollback_ready: true
+  handoff: true
+  next_action: pending

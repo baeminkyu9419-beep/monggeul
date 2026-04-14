@@ -1,0 +1,37 @@
+{
+  "name": "monggeul",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "generate:seo": "node scripts/generate-seo-pages.js",
+    "generate:blog": "node scripts/generate-blog-content.js",
+    "build": "node scripts/generate-seo-pages.js && vite build",
+    "preview": "vite preview",
+    "cap:sync": "vite build && npx cap sync",
+    "cap:android": "vite build && npx cap sync android && npx cap open android",
+    "cap:ios": "vite build && npx cap sync ios && npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor-community/admob": "^8.0.0",
+    "@capacitor/android": "^8.2.0",
+    "@capacitor/app": "^8.0.1",
+    "@capacitor/cli": "^8.2.0",
+    "@capacitor/core": "^8.2.0",
+    "@capacitor/haptics": "^8.0.1",
+    "@capacitor/ios": "^8.2.0",
+    "@capacitor/keyboard": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.1",
+    "@supabase/supabase-js": "^2.49.0",
+    "html5-qrcode": "^2.3.8",
+    "jspdf": "^4.2.1",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "puppeteer": "^24.40.0",
+    "sharp": "^0.34.5",
+    "vite": "^6.0.0"
+  }
+}

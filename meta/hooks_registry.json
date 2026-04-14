@@ -1,0 +1,11 @@
+{
+  "project": "MONGGEUL", "version": 1, "updated": "2026-03-31",
+  "hooks": [
+    {"name":"dream_entry_check","trigger_point":"꿈 기록 저장 직전","owner_clevel":"COO","department":"QA","purpose":"기록 최소 길이/내용 유효성 검증","input_conditions":"꿈 텍스트","output_action":"통과/입력 안내","linked_stage":"Intake","blocking_or_nonblocking":"blocking","status":"active","notes":""},
+    {"name":"archive_snapshot","trigger_point":"기록 저장 직후","owner_clevel":"CTO","department":"Infra","purpose":"꿈 기록 자동 백업","input_conditions":"저장된 기록","output_action":"Supabase 동기화","linked_stage":"Build","blocking_or_nonblocking":"nonblocking","status":"active","notes":"supabase/ 연계"},
+    {"name":"emotional_signal_refresh","trigger_point":"감정 태깅 완료 시","owner_clevel":"CKO","department":"Analytics Support","purpose":"감정 시계열 갱신 및 변화 탐지","input_conditions":"새 감정 태그","output_action":"시계열 업데이트 + 변화 신호","linked_stage":"Build","blocking_or_nonblocking":"nonblocking","status":"active","notes":""},
+    {"name":"literary_output_guard","trigger_point":"문학화 변환 직후","owner_clevel":"COO","department":"QA","purpose":"변환 결과 품질 최소 기준 검증","input_conditions":"변환 텍스트","output_action":"통과/재변환","linked_stage":"QA","blocking_or_nonblocking":"blocking","status":"experimental","notes":""},
+    {"name":"privacy_mask_hook","trigger_point":"기록 외부 공유 직전","owner_clevel":"COO","department":"Ops Control","purpose":"개인정보/민감정보 마스킹","input_conditions":"공유 대상 텍스트","output_action":"마스킹 처리 후 통과","linked_stage":"Launch","blocking_or_nonblocking":"blocking","status":"active","notes":""},
+    {"name":"cell_state_sync","trigger_point":"stage/status 변경 시","owner_clevel":"CTO","department":"Infra","purpose":"Cell 상태 변경 런타임 동기화","input_conditions":"변경 이벤트","output_action":"로그 기록","linked_stage":"all","blocking_or_nonblocking":"nonblocking","status":"active","notes":""}
+  ]
+}

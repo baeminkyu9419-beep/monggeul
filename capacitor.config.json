@@ -1,0 +1,24 @@
+{
+  "appId": "com.monggeul.app",
+  "appName": "몽글몽글",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "StatusBar": {
+      "backgroundColor": "#0e0c1a",
+      "style": "LIGHT"
+    },
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "launchShowDuration": 1500,
+      "backgroundColor": "#0e0c1a",
+      "showSpinner": false
+    },
+    "Keyboard": {
+      "resize": "body",
+      "resizeOnFullScreen": true
+    }
+  }
+}

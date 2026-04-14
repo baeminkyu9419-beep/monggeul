@@ -1,0 +1,135 @@
+{
+  "_description": "인사이드아웃 페르소나별 학습 기억 — 경험이 쌓일수록 성숙해지는 구조",
+  "_update_rule": "매 작업 완료 시 해당 페르소나의 lessons에 추가. Phase 종료 시 summary 갱신. 다음 Phase 시작 시 자동 로드.",
+  "RED": {
+    "lessons": [
+      {
+        "phase": "ONGLE Phase 1",
+        "event": "42개 항목 만들었지만 paying user 0",
+        "lesson": "코드 양과 매출은 비례하지 않음. 실제 발행이 선행되어야 함.",
+        "pattern": "구축 편향"
+      },
+      {
+        "phase": "ONGLE Phase 1",
+        "event": "위탁판매 주문관리 구축",
+        "lesson": "사방넷 연 624만원 절감. 직접 구축이 ROI 높을 때도 있음.",
+        "pattern": "비용 대비 자체구축 판단"
+      }
+    ],
+    "patterns_discovered": [],
+    "current_maturity": "성장 - 경험 2건",
+    "phase_summaries": {}
+  },
+  "BLUE": {
+    "lessons": [
+      {
+        "phase": "ONGLE Phase 1",
+        "event": "BATCH 수정 → SINGLE 누락 반복",
+        "lesson": "의존 파일 연쇄 체크 필수. cascade-checker 훅으로 해결.",
+        "pattern": "연쇄 영향 미체크"
+      },
+      {
+        "phase": "ONGLE Phase 1",
+        "event": "모듈 10개 만들었으나 7개 미통합",
+        "lesson": "모듈 존재 ≠ 통합. 파이프라인 연결까지가 완료.",
+        "pattern": "모듈 독립 존재"
+      },
+      {
+        "phase": "ONGLE Phase 1",
+        "event": "2차 효과 추론 실패 반복",
+        "lesson": "1차 효과만 하지 말고 '그 다음엔?'을 최소 2단계 추론.",
+        "pattern": "1차 효과 함정"
+      }
+    ],
+    "patterns_discovered": [],
+    "current_maturity": "성장 - 경험 3건",
+    "phase_summaries": {}
+  },
+  "GREEN": {
+    "lessons": [
+      {
+        "phase": "ONGLE Phase 1",
+        "event": "페르소나 14종인데 구별 안 됨",
+        "lesson": "설명만 있으면 껍데기. 실제 말투 예시+금지 표현+필수 패턴이 있어야 실체.",
+        "pattern": "껍데기 구현"
+      }
+    ],
+    "patterns_discovered": [],
+    "current_maturity": "초기 - 경험 1건",
+    "phase_summaries": {}
+  },
+  "YELLOW": {
+    "lessons": [
+      {
+        "phase": "ONGLE Phase 1",
+        "event": "BAT 파일 많아지면 기억 부담",
+        "lesson": "사용자 관점에서 구조 단순화 필요. 통일 이름 + BATCH→SINGLE 호출.",
+        "pattern": "기능 과다 = UX 악화"
+      }
+    ],
+    "patterns_discovered": [],
+    "current_maturity": "초기 - 경험 1건",
+    "phase_summaries": {}
+  },
+  "ORANGE": {
+    "lessons": [
+      {
+        "phase": "ONGLE Phase 1",
+        "event": "5시간+ 세션, 42개 항목 동시 진행",
+        "lesson": "병렬 효율은 높지만 검증 부채 누적. 속도와 검증 둘 다 필요.",
+        "pattern": "속도 vs 검증 트레이드오프"
+      }
+    ],
+    "patterns_discovered": [],
+    "current_maturity": "초기 - 경험 1건",
+    "phase_summaries": {}
+  },
+  "PURPLE": {
+    "lessons": [
+      {
+        "phase": "ONGLE Phase 1",
+        "event": "보이스 64점 — 소소언니가 소소언니답지 않음",
+        "lesson": "기술적 패턴 교체만으로는 '영혼'이 안 들어감. 실제 블로거 글 few-shot이 필요.",
+        "pattern": "기술 vs 영혼"
+      }
+    ],
+    "patterns_discovered": [],
+    "current_maturity": "초기 - 경험 1건",
+    "phase_summaries": {}
+  },
+  "WHITE": {
+    "lessons": [
+      {
+        "phase": "ONGLE Phase 1",
+        "event": "헌장 읽고도 위반 반복",
+        "lesson": "기록하는 것과 실행하는 것은 다르다. 시스템으로 강제해야 함.",
+        "pattern": "지식 vs 행동 괴리"
+      },
+      {
+        "phase": "ONGLE Phase 1",
+        "event": "Model Collapse 위험을 인간이 먼저 지적",
+        "lesson": "AI가 스스로 만든 것의 위험을 스스로 감지 못함. Critic 분리 필수.",
+        "pattern": "자기 맹점"
+      }
+    ],
+    "patterns_discovered": [],
+    "current_maturity": "성장 - 경험 2건",
+    "phase_summaries": {}
+  },
+  "_example_lesson": {
+    "phase": "ONGLE Phase 1",
+    "persona": "BLUE",
+    "timestamp": "2026-03-25",
+    "event": "BATCH 수정 시 SINGLE 연쇄 갱신 누락",
+    "lesson": "파일 A를 수정하면 의존 파일 B,C,D도 반드시 확인",
+    "pattern": "연쇄 영향 미체크",
+    "action_taken": "cascade-checker.sh 훅 생성",
+    "effectiveness": "pending"
+  },
+  "_maturity_levels": {
+    "초기": "실전 경험 0~5건. 체크리스트만으로 판단.",
+    "성장": "경험 5~20건. 패턴 발견 시작. 프로젝트별 특화 시작.",
+    "성숙": "경험 20~50건. 패턴 기반 예측 가능. 사전 경고 가능.",
+    "전문가": "경험 50+건. 유사 상황 자동 감지. 다른 프로젝트에 교훈 전파."
+  }
+}

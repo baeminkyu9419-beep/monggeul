@@ -1,0 +1,24 @@
+{
+  "project": "MONGGEUL", "owner_clevel": "NV", "version": 2,
+  "c_levels": {
+    "COO": {"departments": [
+      {"name":"QA","responsibilities":["기록 유효성 검증","변환 품질 검증"],"mapped_paths":[],"mapped_capabilities":[],"notes":"dream_entry_check, literary_output_guard 귀속"},
+      {"name":"Ops Control","responsibilities":["앱 운영","개인정보 마스킹"],"mapped_paths":[],"mapped_capabilities":[],"notes":"privacy_mask_hook 귀속"}
+    ]},
+    "CTO": {"departments": [
+      {"name":"Agent Engine","responsibilities":["꿈 기록 UX","모바일 앱 컴포넌트","탭 뷰"],"mapped_paths":["src/components/","src/tabs/","src/app.js"],"mapped_capabilities":["journaling_prompt_generation"]},
+      {"name":"Infra","responsibilities":["Capacitor","Supabase","스토어","빌드"],"mapped_paths":["capacitor.config.json","android/","ios/","supabase/","src/store/","vite.config.js"],"mapped_capabilities":["memory_threading","emotional_archive"]}
+    ]},
+    "CKO": {"departments": [
+      {"name":"Content Design","responsibilities":["꿈 해석","문학화","프롬프트 생성","회고 요약"],"mapped_paths":["src/services/"],"mapped_capabilities":["dream_interpretation","literary_rewrite","journaling_prompt_generation","reflection_summary"]},
+      {"name":"Knowledge Ops","responsibilities":["감정 아카이브","패턴 군집"],"mapped_paths":["data/"],"mapped_capabilities":["emotional_archive","dream_pattern_clustering"]},
+      {"name":"Analytics Support","responsibilities":["감정 신호 탐지","꿈 통계"],"mapped_paths":["scripts/"],"mapped_capabilities":["mood_signal_detection"]}
+    ]},
+    "CMO": {"departments": [
+      {"name":"Channel Ops","responsibilities":["랜딩","앱스토어","릴리즈"],"mapped_paths":["landing.html","releases.html","public/"],"mapped_capabilities":[]}
+    ]},
+    "NV": {"departments": [
+      {"name":"Experiment","responsibilities":["수면 연구","웰니스 연계","구독 모델"],"mapped_paths":[],"mapped_capabilities":["sleep_pattern_analysis"],"notes":"planned"}
+    ]}
+  }
+}

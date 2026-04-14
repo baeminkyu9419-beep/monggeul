@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script>
+// GitHub Pages SPA redirect — 앱 경로만 index.html로 라우팅
+// 정적 페이지(dreams/, landing, privacy, terms)는 제외
+const path = window.location.pathname;
+const staticPaths = ['/monggeul/dreams/', '/monggeul/landing.html', '/monggeul/privacy-policy.html', '/monggeul/terms-of-service.html', '/monggeul/brand.html'];
+const isStatic = staticPaths.some(p => path.startsWith(p));
+if (!isStatic && path !== '/monggeul/' && path !== '/monggeul/index.html') {
+  window.location.replace('/monggeul/' + window.location.search + window.location.hash);
+}
+</script>
+</head>
+<body></body>
+</html>

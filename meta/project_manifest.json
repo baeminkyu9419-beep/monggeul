@@ -1,0 +1,32 @@
+{
+  "project_name": "MONGGEUL",
+  "owner_clevel": "NV",
+  "primary_departments": [
+    "CTO/Agent Engine",
+    "CKO/Content Design",
+    "CKO/Knowledge Ops",
+    "CTO/Infra",
+    "CMO/Channel Ops"
+  ],
+  "focus": "AI 꿈 해몽 — 꿈 기록/해석/통계/감성 아카이브",
+  "current_phase": "Phase 0 Archive — 상용화 준비",
+  "core_capabilities": [
+    "dream_interpretation",
+    "journaling_ux",
+    "emotional_archive",
+    "dream_statistics",
+    "literary_generation",
+    "sleep_pattern_analysis"
+  ],
+  "key_cells": [
+    {"id": "monggeul-cell-01", "name": "꿈 기록 UX 개선", "stage": "Design", "owner": "NV"}
+  ],
+  "main_states": ["queued", "active", "blocked", "hold", "launched", "archived"],
+  "dependencies": ["shared/", "supabase/", "capacitor"],
+  "current_priority": "앱 UX 개선 및 C-Level 정렬",
+  "next_alignment_targets": [
+    "Skills Registry 생성",
+    "Org Mapping 생성",
+    "CLAUDE.md C-Level 반영"
+  ]
+}

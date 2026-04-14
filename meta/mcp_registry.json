@@ -1,0 +1,8 @@
+{
+  "project":"MONGGEUL","version":1,"updated":"2026-03-31",
+  "mcp_servers":[
+    {"name":"supabase","category":"backend_storage","owner_clevel":"CTO","department":"Infra","purpose":"꿈 기록/사용자 데이터 클라우드 저장 및 동기화","input_conditions":"사용자 인증 + 데이터","output_format":"저장 확인 / 쿼리 결과","linked_stages":["Build","Launch"],"linked_cells":["monggeul-cell-01"],"permission_scope":"write_limited","prohibited_use":"PII 비암호화 저장 금지","status":"active","notes":"supabase/ 설정 파일"},
+    {"name":"capacitor_native","category":"mobile_bridge","owner_clevel":"CTO","department":"Infra","purpose":"웹앱↔네이티브 브릿지 (카메라/알림/저장소)","input_conditions":"JS 호출","output_format":"네이티브 응답","linked_stages":["Build"],"linked_cells":["monggeul-cell-01"],"permission_scope":"infra_internal","prohibited_use":"백그라운드 무한 실행 금지","status":"active","notes":"capacitor.config.json"},
+    {"name":"push_notification","category":"communication","owner_clevel":"CMO","department":"Channel Ops","purpose":"꿈 기록 리마인더/해석 결과 알림","input_conditions":"사용자 ID + 메시지","output_format":"전송 상태","linked_stages":["Launch"],"linked_cells":[],"permission_scope":"write_limited","prohibited_use":"마케팅 스팸 금지","status":"planned","notes":"FCM 연동 예정"}
+  ]
+}

@@ -1,0 +1,209 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CURRENT_PROJECT=MONGGEUL bash /c/JARVIS_NEW/runtime/mother_root/hooks/session-lifecycle.sh start",
+            "timeout": 3,
+            "statusMessage": "세션 기록..."
+          },
+          {
+            "type": "command",
+            "command": "bash /c/JARVIS_NEW/runtime/mother_root/hooks/session-start.sh",
+            "timeout": 30,
+            "statusMessage": "세션 시작 중..."
+          },
+          {
+            "type": "command",
+            "command": "bash C:/JARVIS_NEW/projects/MONGGEUL/scripts/arch-test.sh C:/JARVIS_NEW/projects/MONGGEUL",
+            "timeout": 10,
+            "statusMessage": "아키텍처 경계 검증..."
+          },
+          {
+            "type": "command",
+            "command": "CURRENT_PROJECT=MONGGEUL bash /c/JARVIS_NEW/runtime/mother_root/hooks/lane-message-poll.sh",
+            "timeout": 10,
+            "statusMessage": "레인 메시지 확인..."
+          },
+          {
+            "type": "command",
+            "command": "CURRENT_PROJECT=MONGGEUL PROJECT_ROOT=/c/JARVIS_NEW/projects/MONGGEUL bash /c/JARVIS_NEW/runtime/mother_root/hooks/mother-first-check.sh",
+            "timeout": 10,
+            "statusMessage": "mother-first-check..."
+          },
+          {
+            "type": "command",
+            "command": "CURRENT_PROJECT=MONGGEUL PROJECT_ROOT=/c/JARVIS_NEW/projects/MONGGEUL bash /c/JARVIS_NEW/runtime/mother_root/hooks/env-first-check.sh",
+            "timeout": 10,
+            "statusMessage": "env-first-check..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/stop.sh",
+            "timeout": 15,
+            "statusMessage": "MONGGEUL: 자동 커밋+백업+세션기록..."
+          },
+          {
+            "type": "command",
+            "command": "bash C:/JARVIS_NEW/projects/MONGGEUL/scripts/violation-autofix.sh",
+            "timeout": 30,
+            "statusMessage": "위반 검출+자동 수정..."
+          },
+          {
+            "type": "command",
+            "command": "bash C:/JARVIS_NEW/projects/MONGGEUL/scripts/self-strengthen.sh",
+            "timeout": 10,
+            "statusMessage": "자기강화 분석..."
+          },
+          {
+            "type": "command",
+            "command": "PROJECT_ROOT=/c/JARVIS_NEW/projects/MONGGEUL VIOLATION_LOG=/c/JARVIS_NEW/projects/MONGGEUL/data/harness-violations.jsonl bash /c/JARVIS_NEW/runtime/mother_root/hooks/violation-learner.sh",
+            "timeout": 10,
+            "statusMessage": "위반 학습 분석..."
+          },
+          {
+            "type": "command",
+            "command": "PROJECT_ROOT=/c/JARVIS_NEW/projects/MONGGEUL bash /c/JARVIS_NEW/runtime/mother_root/hooks/phantom-detector.sh",
+            "timeout": 15,
+            "statusMessage": "PHANTOM 검출..."
+          },
+          {
+            "type": "command",
+            "command": "CURRENT_PROJECT=MONGGEUL bash /c/JARVIS_NEW/runtime/mother_root/hooks/session-lifecycle.sh stop",
+            "timeout": 3,
+            "statusMessage": "세션 종료 기록..."
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /c/JARVIS_NEW/runtime/mother_root/hooks/pre_compact_commit.sh /c/JARVIS_NEW/projects/MONGGEUL main",
+            "timeout": 15,
+            "statusMessage": "MONGGEUL: compact 전 자동 커밋..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "py -3 .claude/hooks/loop_breaker.py",
+            "timeout": 3,
+            "statusMessage": "루프 브레이커 체크..."
+          },
+          {
+            "type": "command",
+            "command": "py -3 C:/JARVIS_NEW/hooks/track_activity.py",
+            "timeout": 2,
+            "statusMessage": "활동 추적..."
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash C:/JARVIS_NEW/projects/MONGGEUL/.claude/hooks/boundary-check.sh write",
+            "timeout": 3,
+            "statusMessage": "파일 경계 검증..."
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /c/JARVIS_NEW/runtime/mother_root/hooks/env-guard.sh",
+            "timeout": 3,
+            "statusMessage": "ENV 가드..."
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PROJECT_ROOT=/c/JARVIS_NEW/projects/MONGGEUL CURRENT_PROJECT=MONGGEUL bash /c/JARVIS_NEW/runtime/mother_root/hooks/harness-enforcer.sh",
+            "timeout": 3,
+            "statusMessage": "하네스 규칙 검증..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /c/JARVIS_NEW/runtime/mother_root/hooks/cascade-checker.sh",
+            "timeout": 5,
+            "statusMessage": "연쇄 영향 체크..."
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash C:/JARVIS_NEW/projects/MONGGEUL/.claude/hooks/post-bash-check.sh",
+            "timeout": 5,
+            "statusMessage": "실행 결과 검증..."
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PROJECT_ROOT=/c/JARVIS_NEW/projects/MONGGEUL bash /c/JARVIS_NEW/runtime/mother_root/hooks/anti-illusion-guard.sh",
+            "timeout": 5,
+            "statusMessage": "착시 패턴 검사..."
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CURRENT_PROJECT=MONGGEUL PROJECT_ROOT=/c/JARVIS_NEW/projects/MONGGEUL bash /c/JARVIS_NEW/runtime/mother_root/hooks/error-logger.sh",
+            "timeout": 3,
+            "statusMessage": "에러 기록..."
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash C:/JARVIS_NEW/projects/MONGGEUL/.claude/hooks/intent-classifier.sh",
+            "timeout": 3,
+            "statusMessage": "의도 분류..."
+          }
+        ]
+      }
+    ]
+  }
+}

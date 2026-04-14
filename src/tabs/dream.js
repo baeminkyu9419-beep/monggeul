@@ -1,0 +1,1848 @@
+// 몽글몽글 — 해몽 탭
+import { store } from '../store.js';
+import { callOpenAI } from '../services/api.js';
+import { showToast } from '../components/toast.js';
+import { showPaywall, showPremiumPaywall } from '../components/paywall.js';
+import { drawRadar, drawRadarCompare, drawDualRadar } from '../components/radar.js';
+import { canUseDream, incDreamCount, getDreamCount, getCachedTier, getUserTier, getCredits, useCredit, updateCreditInfo } from '../services/subscription.js';
+import { LMSGS, DAILY_SYMBOLS, DICT_DATA, FEED_DEMO } from '../utils/symbols.js';
+import { logEvent } from '../services/analytics.js';
+import { trackFunnelStep } from '../utils/funnel.js';
+import { esc, sanitize, validateDreamResult } from '../utils/sanitize.js';
+import { addXP, ALL_DICT_REF } from './my.js';
+import { getContextForPrompt, getLifeStagePrompt, showContextQuestions } from '../services/dream-context.js';
+
+let loadStepTimer=null;
+const FEED_THUMBS={};
+
+// ── 상징 자동 링크: 해몽 결과에서 DICT_DATA 키워드를 탭 가능한 링크로 변환 ──
+const _symbolNames = DICT_DATA.map(d => d.n).sort((a,b) => b.length - a.length); // 긴 것 먼저 매칭
+function linkSymbols(html) {
+  if (!html) return html;
+  let result = html;
+  for (const name of _symbolNames) {
+    const escaped = name.replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&');
+    const re = new RegExp('(?<!<[^>]*)(' + escaped + ')(?![^<]*>)', 'g');
+    result = result.replace(re, '<span class="symbol-link" data-symbol="' + name + '" onclick="window._openSymbol(\'' + name + '\')">$1</span>');
+  }
+  return result;
+}
+window._openSymbol = function(name) {
+  window.openDictPage();
+  setTimeout(() => {
+    const si = document.getElementById('dictSearchInput');
+    if (si) { si.value = name; window.filterDict(); }
+    setTimeout(() => { window.toggleDictItem(name); }, 100);
+  }, 200);
+};
+
+// ── 꿈 입력 자동 저장 (초안) ──
+let _draftTimer=null;
+export function saveDreamDraft(val){
+  clearTimeout(_draftTimer);
+  _draftTimer=setTimeout(()=>{
+    if(val&&val.trim().length>=5) localStorage.setItem('mg_dream_draft',val);
+    else localStorage.removeItem('mg_dream_draft');
+  },500);
+}
+export function restoreDreamDraft(){
+  const draft=localStorage.getItem('mg_dream_draft');
+  if(draft){
+    const ta=document.getElementById('dreamInput');
+    if(ta&&!ta.value){
+      ta.value=draft;
+      ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,200)+'px';
+      showToast('이전에 작성 중이던 꿈이 있어요 📝');
+    }
+  }
+}
+function clearDreamDraft(){ localStorage.removeItem('mg_dream_draft'); }
+
+window.saveDreamDraft=saveDreamDraft;
+
+// 동적 placeholder 로테이션 (탭 보일 때만 동작)
+const DREAM_PLACEHOLDERS=[
+  '어젯밤 꿈을 자유롭게 적어보세요...',
+  '뱀이 나왔어요, 하늘을 날았어요...',
+  '꿈에서 누군가를 만났어요...',
+  '이상한 장소에 있었어요...',
+  '기분이 묘한 꿈이었어요...',
+  '반복되는 꿈을 꿨어요...',
+];
+let _phIdx=0,_phTimer=null;
+function startPlaceholderRotation(){
+  if(_phTimer)return;
+  _phTimer=setInterval(()=>{
+    const ta=document.getElementById('dreamInput');
+    const page=document.getElementById('page-dream');
+    if(!page||!page.classList.contains('active')){stopPlaceholderRotation();return;}
+    if(ta&&!ta.value&&document.activeElement!==ta){
+      _phIdx=(_phIdx+1)%DREAM_PLACEHOLDERS.length;
+      ta.placeholder=DREAM_PLACEHOLDERS[_phIdx];
+    }
+  },4000);
+}
+function stopPlaceholderRotation(){if(_phTimer){clearInterval(_phTimer);_phTimer=null;}}
+// 탭 보일 때 시작
+setTimeout(startPlaceholderRotation,1000);
+
+// 음성 말풍선: textarea 비어있을 때 보이고, 입력/포커스 시 숨김
+setTimeout(()=>{
+  const ta=document.getElementById('dreamInput');
+  const bubble=document.getElementById('voiceBubble');
+  if(!ta||!bubble)return;
+  const toggle=()=>{
+    if(ta.value.trim().length>0||document.activeElement===ta){
+      bubble.classList.add('hidden');
+    }else{
+      bubble.classList.remove('hidden');
+    }
+  };
+  ta.addEventListener('input',toggle);
+  ta.addEventListener('focus',toggle);
+  ta.addEventListener('blur',toggle);
+},500);
+
+export function fillDream(t){document.getElementById('dreamInput').value=t+'을 꿨어요.';}
+
+export function quickSearch(k){
+  const dictEntry=DICT_DATA.find(d=>d.n===k.replace('꿈','').replace('을','').trim()||k.includes(d.n));
+  if(dictEntry){
+    window.openDictPage();
+    setTimeout(()=>{
+      document.getElementById('dictSearchInput').value=dictEntry.n;
+      window.filterDict();
+      setTimeout(()=>{window.toggleDictItem(dictEntry.n);},100);
+    },200);
+  }else{
+    document.getElementById('dreamInput').value=k+'을 꿨어요.';
+    analyzeDream();
+  }
+}
+
+export function startLoadingSteps(){
+  const steps=['lstep1','lstep2','lstep3','lstep4'];
+  let idx=0;
+  steps.forEach(id=>{const el=document.getElementById(id);if(el){el.classList.remove('active');el.classList.remove('done');}});
+  if(document.getElementById('lstep1'))document.getElementById('lstep1').classList.add('active');
+  loadStepTimer=setInterval(()=>{
+    // 현재 단계를 done으로
+    const prev=document.getElementById(steps[idx]);
+    if(prev){prev.classList.remove('active');prev.classList.add('done');}
+    idx=(idx+1)%steps.length;
+    // 다음 단계를 active로
+    steps.forEach((id,i)=>{const el=document.getElementById(id);if(el&&i===idx)el.classList.add('active');});
+  },2000);
+}
+
+export function stopLoadingSteps(){clearInterval(loadStepTimer);}
+
+function isNonsenseInput(text){
+  const stripped=text.replace(/\s/g,'').replace(/[^\w가-힣ㄱ-ㅎㅏ-ㅣ]/g,'');
+  // 1글자라도 한글이면 통과 (뱀, 꿈 등)
+  const korean=(text.match(/[가-힣]/g)||[]).length;
+  if(korean>=1&&stripped.length>=1)return false;
+  // 내용 없음
+  if(stripped.length<2)return true;
+  // 같은 문자 반복 (ㅋㅋㅋㅋㅋ, aaaaa 등)
+  if(/^(.)\1{4,}$/.test(stripped))return true;
+  // 순수 영어만 (dream 같은 단어가 아닌 랜덤 타이핑)
+  if(/^[a-zA-Z]+$/.test(stripped)){
+    // 모음이 거의 없으면 랜덤 타이핑 (asdfghjkl)
+    const vowels=(stripped.match(/[aeiouAEIOU]/g)||[]).length;
+    if(vowels/stripped.length<0.15)return true;
+    // 의미 있는 영어 단어 체크
+    const dreamWords=['dream','snake','fall','fly','teeth','water','fire','die','run','chase','baby','cat','dog','money'];
+    if(!dreamWords.some(w=>stripped.toLowerCase().includes(w)))return true;
+  }
+  // 순수 숫자만
+  if(/^\d+$/.test(stripped))return true;
+  // 특수문자/자음만 (ㅁㄴㅇㄹ)
+  if(korean===0&&!/[a-zA-Z]/.test(stripped)&&stripped.length>0)return true;
+  return false;
+}
+
+export async function analyzeDream(){
+  const inp=document.getElementById('dreamInput').value.trim();
+  if(!inp){showToast('꿈 내용을 입력해주세요 🌙');return;}
+  if(isNonsenseInput(inp)){showToast('꿈 내용을 알아볼 수 있게 적어주세요 🌙');return;}
+  logEvent('dream_started',{length:inp.length,emotionTags:store.selectedEmotions});
+  trackFunnelStep('dream_input_complete',{length:inp.length});trackFunnelStep('interpretation_loading');
+  clearDreamDraft();
+  document.getElementById('dreamInput').blur();
+  const userContext=getContextForPrompt();
+  const emotionContext=getEmotionContext();
+  // 감정 강도 톤 조절: 부정 감정 키워드가 많으면 위로 모드
+  const negWords=['무서','공포','불안','두려','겁','슬프','울','죽','쫓','떨어','악몽','가위'];
+  const negCount=negWords.filter(w=>inp.includes(w)).length;
+  const toneMod=negCount>=3?' 사용자가 매우 무서운 꿈을 꿔서 불안해하고 있어. 위로와 안심을 최우선으로 해석해줘. 긍정적 의미를 반드시 함께 제시하고 따뜻하게 마무리해.'
+    :negCount>=1?' 부정적 감정이 포함된 꿈이야. 공포 마케팅 없이 탐색적 어조로, 긍정적 해석도 균형 있게 제시해줘.':'';
+  const lifeStagePrompt=getLifeStagePrompt();
+  const fullInput=inp+userContext+emotionContext;
+  document.getElementById('resultEl').classList.remove('on');
+  document.querySelectorAll('#resultEl > [onclick]').forEach(el=>{if(el.textContent.includes('해금'))el.remove();});
+  const ld=document.getElementById('loadingEl');ld.classList.add('on');
+  startLoadingSteps();
+  let mi=0;const iv=setInterval(()=>{mi=(mi+1)%LMSGS.length;document.getElementById('loadTxt').textContent=LMSGS[mi];},1800);
+  try{
+    const minLoadTime=new Promise(r=>setTimeout(r,2000));
+    // 1차 해석 (가벼운 호출 — 광고 시청 후 공개)
+    const apiCall=callOpenAI('chat',{model:'gpt-4o',messages:[{role:'system',content:`너는 30년 경력 꿈 해석가야. 친구한테 얘기하듯 편하게 해석해줘.
+한국 할머니가 들려주는 해몽 이야기처럼 따뜻하고 자연스럽게 써줘.${toneMod}${lifeStagePrompt ? '\n' + lifeStagePrompt : ''}
+학술 용어 쓰지 마. 영어 쓰지 마. 불릿포인트(■●✦) 쓰지 마. 그냥 자연스러운 글처럼 써.
+반드시 아래 JSON으로만 응답해.
+
+{
+  "title": "꿈 제목 (이모지+한글, 10자 이내)",
+  "badges": ["길몽","흉몽","태몽","연애운","재물운","건강운" 중 1~3개],
+  "stats": {"길흉":0~100,"연애운":0~100,"재물운":0~100,"건강운":0~100,"활력":0~100,"직관":0~100},
+  "emotions": ["이모지 감정명" 3~5개. 복합감정 가능: "😢→😌 슬프다가 편안해짐"],
+  "preview": "맛보기 해석 3~4문장. 핵심 상징 2개를 친근하게 짚어주고 '이 꿈엔 더 깊은 이야기가 숨어있어요...'로 마무리. <strong>강조</strong> 가능",
+  "traditional": "전통 해몽 이야기 300자+. 옛날 해몽책에서는 이걸 어떻게 봤는지, 우리 할머니가 이런 꿈 꾸면 뭐라고 했을지, 민간에서 전해오는 해석을 편하게 풀어서 써줘.",
+  "psychology": "마음 이야기 300자+. 이 꿈이 지금 네 마음 상태랑 어떻게 연결되는지, 왜 이런 꿈을 꾸게 됐는지, 무의식이 뭘 말하려는 건지 친구한테 설명하듯 써줘. 전문 용어 쓰지 마.",
+  "advice": "현실 조언 300자+. 이 꿈을 꾼 뒤 일주일 안에 해보면 좋을 것 3가지를 구체적이고 현실적으로 알려줘. 실천할 수 있는 것만.",
+  "fullInterpretation": "깊은 해석 1000자+. 에세이처럼 자연스럽게 이어지는 글로 써줘. 꿈에 나온 것들이 각각 무슨 의미인지, 네 마음이 지금 어떤 상태인지, 이 꿈이 앞으로 어떤 힌트를 주는지, 비슷한 꿈을 또 꾸면 어떤 의미인지, 그리고 따뜻한 마무리 한마디까지. 목록이나 번호 매기지 마. 단락을 나눠서 읽기 쉽게만 해줘."
+}`},{role:'user',content:fullInput}],temperature:.85,max_tokens:2500});
+    const [data]=await Promise.all([apiCall,minLoadTime]);
+    const raw=JSON.parse(data.choices[0].message.content.replace(/```json|```/g,'').trim());
+    showResult(validateDreamResult(raw)||demoResult(inp),inp);
+  }catch(e){
+    await new Promise(r=>setTimeout(r,2000));
+    showResult(demoResult(inp),inp);
+    // 오프라인/API 실패 시 안내
+    setTimeout(()=>{
+      showToast(!navigator.onLine?'오프라인 상태예요. 기본 해석을 보여드려요 🌙':'기본 해석을 보여드려요. 나중에 다시 시도해 주세요 🌙');
+    },500);
+  }
+  finally{clearInterval(iv);stopLoadingSteps();ld.classList.remove('on');await incDreamCount();
+    // 무료 사용자: 해몽 후 전면광고 (3회에 1번)
+    if(typeof showInterstitialIfReady==='function')showInterstitialIfReady();
+    if(typeof _bumpHeroCounter==='function')_bumpHeroCounter();
+  }
+}
+
+export function demoResult(i){
+  const k=i.toLowerCase();
+  if(k.includes('뱀'))return{
+    title:'🐍 재물이 온다',badges:['길몽','재물운'],
+    stats:{길흉:82,연애운:45,재물운:91,건강운:60,활력:74,직관:88},
+    emotions:['😮 놀라움','😨 긴장','✨ 기대감'],
+    preview:'뱀꿈은 <strong>재물과 행운</strong>의 강력한 상징이에요. 특히 이 꿈 속 뱀의 색과 행동에 중요한 비밀이 숨겨져 있어요...',
+    fullInterpretation:`【꿈의 핵심 상징】\n뱀은 한국 전통 해몽에서 재물신의 화신이에요. 집 안으로 들어오거나 몸에 감기는 뱀은 큰 재물이 들어온다는 최상의 징조예요. 황금빛 뱀이라면 그 효과가 세 배로 강해진답니다.\n\n【무의식의 메시지】\n이 꿈은 당신의 내면이 현재 재물 흐름에 예민하게 반응하고 있다는 신호예요. 심리학적으로 뱀은 변화와 재생을 상징하기도 해요. 삶의 전환점에 서 있을 가능성이 높아요.\n\n【운세 분석】\n재물운: 이번 달 예상치 못한 수입이 생길 가능성이 높아요. 소소한 투자나 새로운 기회에 열린 마음으로 임해보세요. 연애운: 재물운이 강한 시기라 연애보다는 자기계발이 더 빛나요. 건강운: 큰 문제는 없지만 소화기계에 신경 써주세요.\n\n【이 꿈이 특별한 이유】\n뱀이 무서웠는지, 친근했는지가 해석의 핵심이에요. 무서웠다면 재물은 오지만 약간의 고생이 따를 수 있어요. 친근하거나 아름다웠다면 순탄하게 좋은 일이 펼쳐질 거예요.\n\n【앞으로의 흐름】\n꿈을 꾼 후 3일 내 평소와 다른 기회나 제안이 들어올 수 있어요. 거절하지 말고 신중하게 검토해보세요. 7일 내 금전적으로 작지 않은 소식이 올 가능성이 있어요.\n\n【달이의 한마디】\n정말 귀한 꿈을 꾸셨어요! 오늘 하루 좋은 기운을 받으셨으니 새로운 도전을 시작해보는 건 어떨까요? 달이가 응원할게요 🌙`
+  };
+  if(k.includes('떨어지')||k.includes('추락')||k.includes('절벽'))return{
+    title:'😰 불안의 신호',badges:['흉몽'],
+    stats:{길흉:22,연애운:40,재물운:35,건강운:45,활력:30,직관:65},
+    emotions:['😱 공포','😰 무력감','💨 긴장'],
+    preview:'떨어지는 꿈은 <strong>통제력 상실</strong>에 대한 불안이에요. 현재 삶에서 불안정하게 느끼는 부분이 있는 것 같아요...',
+    fullInterpretation:`【꿈의 핵심 상징】\n추락은 현실에서 통제력을 잃고 있다는 무의식의 경고예요. 높은 곳에서 떨어졌다면 현재 가지고 있는 것을 잃을까 봐 두려워하고 있는 거예요.\n\n【무의식의 메시지】\n이 꿈은 업무 과부하, 인간관계 스트레스, 미래에 대한 불확실감이 원인일 수 있어요. 떨어지다 깨어났다면 위기를 모면한다는 긍정적 의미도 있어요.\n\n【운세 분석】\n건강운: 극도의 피로 상태일 수 있어요. 충분한 수면과 휴식이 필요해요. 재물운: 큰 투자나 도박은 피하세요. 연애운: 감정의 기복이 심할 수 있으니 조심하세요.\n\n【앞으로의 흐름】\n속도를 줄이고 현재 상황을 점검하세요. 무리한 일정이나 급한 결정을 피하면 안정을 되찾을 수 있어요.\n\n【달이의 한마디】\n지금은 쉬어도 괜찮아요. 달이가 곁에서 지켜보고 있을게요 🌙`
+  };
+  if(k.includes('쫓기')||k.includes('도망')||k.includes('쫓아'))return{
+    title:'🏃 직면해야 할 것',badges:['흉몽'],
+    stats:{길흉:18,연애운:30,재물운:25,건강운:40,활력:35,직관:72},
+    emotions:['😱 공포','😰 절박함','💨 긴장'],
+    preview:'쫓기는 꿈은 <strong>회피하고 있는 문제</strong>가 있다는 신호예요. 직면하면 이 꿈은 사라질 거예요...',
+    fullInterpretation:`【꿈의 핵심 상징】\n쫓기는 꿈은 현실에서 직면하지 못하고 있는 문제가 있다는 가장 명확한 신호예요. 미뤄둔 결정, 해결하지 않은 갈등이 꿈에 나타난 거예요.\n\n【무의식의 메시지】\n쫓아오는 존재가 정체불명이면 불안 자체를 상징하고, 아는 사람이면 그 사람과의 관계에서 압박을 느끼고 있어요. 다리가 안 움직이면 무력감의 극단적 표현이에요.\n\n【운세 분석】\n전반적으로 스트레스 지수가 높은 시기예요. 건강 관리에 특히 신경 쓰세요. 작은 운동이나 산책이 큰 도움이 될 수 있어요.\n\n【앞으로의 흐름】\n문제를 직면하면 이 꿈은 자연히 사라져요. 작은 것부터 해결해 나가보세요.\n\n【달이의 한마디】\n혼자서 다 해결할 필요 없어요. 도움을 요청하는 것도 용기예요 🌙`
+  };
+  if(k.includes('똥')||k.includes('화장실'))return{
+    title:'💩 대길! 재물의 징조',badges:['길몽','재물운'],
+    stats:{길흉:90,연애운:55,재물운:95,건강운:65,활력:70,직관:60},
+    emotions:['😆 기쁨','😊 안도','✨ 기대감'],
+    preview:'똥 꿈은 한국에서 <strong>최고의 재물 꿈</strong>이에요! 예상치 못한 행운이 가까이 있어요...',
+    fullInterpretation:`【꿈의 핵심 상징】\n똥 꿈은 전통 해몽에서 가장 강력한 재물의 상징이에요! 지저분해 보여도 실제로는 최고의 길몽이랍니다. 양이 많을수록, 넘칠수록 더 큰 재물을 의미해요.\n\n【무의식의 메시지】\n시원하게 볼일을 보는 꿈은 막혔던 일이 풀리고 스트레스가 해소된다는 의미예요. 참고 있던 것을 내보낸다는 심리적 정화의 과정이기도 해요.\n\n【운세 분석】\n재물운이 매우 강해요! 이번 달 예상치 못한 수입이 생길 가능성이 높아요. 복권을 사본다면 이번이 기회일 수 있어요. 연애운도 나쁘지 않아요.\n\n【앞으로의 흐름】\n3일 내 작은 행운이, 7일 내 좀 더 큰 기회가 올 수 있어요.\n\n【달이의 한마디】\n정말 좋은 꿈이에요! 오늘 하루 뭔가 좋은 일이 생길 거예요 🌙`
+  };
+  if(k.includes('돼지'))return{
+    title:'🐷 복이 들어온다',badges:['길몽','재물운'],
+    stats:{길흉:88,연애운:50,재물운:93,건강운:60,활력:72,직관:65},
+    emotions:['😊 기쁨','🤩 흥분','😌 따뜻함'],
+    preview:'돼지 꿈은 <strong>재물과 풍요</strong>의 강력한 상징이에요. 가정에 복이 들어올 징조예요...',
+    fullInterpretation:`【꿈의 핵심 상징】\n돼지는 한국 전통 해몽에서 최고의 재물 상징이에요. 집에 들어오면 재물이, 안으면 큰 행운이 찾아와요. 수가 많을수록 복도 크답니다.\n\n【무의식의 메시지】\n풍요와 만족에 대한 욕구가 반영된 꿈이에요. 현재 재정적으로 안정을 원하거나 새로운 기회를 찾고 있을 수 있어요.\n\n【운세 분석】\n재물운 최고조! 사업이나 투자 기회에 열린 마음으로 임해보세요. 로또나 복권도 소소한 즐거움이 될 수 있어요.\n\n【앞으로의 흐름】\n좋은 재물 기운이 일주일간 지속돼요. 이 기간에 새로운 시도를 해보세요.\n\n【달이의 한마디】\n대길! 달이도 함께 기뻐요. 오늘 좋은 일 가득하길 바라요 🐷🌙`
+  };
+  if(k.includes('물')||k.includes('바다')||k.includes('강'))return{
+    title:'🌊 감정의 물결',badges:['중립'],
+    stats:{길흉:60,연애운:72,재물운:50,건강운:68,활력:65,직관:80},
+    emotions:['😌 평온','🌊 몰입','😰 깊이'],
+    preview:'물 꿈은 <strong>감정 상태</strong>를 직접 반영해요. 물의 상태가 지금 마음의 상태를 보여주고 있어요...',
+    fullInterpretation:`【꿈의 핵심 상징】\n물은 감정과 무의식의 대표적 상징이에요. 맑은 물은 마음의 평화, 탁한 물은 혼란, 거센 파도는 감정 폭발의 신호예요.\n\n【무의식의 메시지】\n물속에서 편안했다면 감정적으로 건강한 상태예요. 물에 빠지거나 두려웠다면 감정에 압도당하고 있을 수 있어요.\n\n【운세 분석】\n직관이 높은 시기예요. 감이 오는 것을 무시하지 마세요. 연애운도 나쁘지 않아요.\n\n【앞으로의 흐름】\n감정을 솔직하게 표현하는 것이 도움이 되는 주간이에요.\n\n【달이의 한마디】\n마음이 보내는 신호에 귀 기울여보세요 🌙`
+  };
+  if(k.includes('귀신')||k.includes('유령')||k.includes('가위'))return{
+    title:'👻 직면해야 할 감정',badges:['흉몽'],
+    stats:{길흉:15,연애운:30,재물운:35,건강운:30,활력:25,직관:85},
+    emotions:['😱 공포','😰 불안','🌫 혼란'],
+    preview:'귀신 꿈은 <strong>직면하지 못한 감정</strong>이 형체를 갖고 나타난 거예요. 무의식의 중요한 메시지예요...',
+    fullInterpretation:`【꿈의 핵심 상징】\n귀신은 억압된 감정, 해결하지 못한 과거, 또는 두려움의 상징이에요. 무서울수록 회피하는 문제가 크다는 뜻이에요.\n\n【무의식의 메시지】\n가위눌림이라면 극도의 피로와 수면 부족이 원인이에요. 돌아가신 분이 나타나면 그리움이나 보호의 메시지예요.\n\n【운세 분석】\n건강운에 특히 주의하세요. 충분한 수면이 가장 중요해요.\n\n【앞으로의 흐름】\n피하던 문제를 직면하면 이 꿈은 자연히 사라져요.\n\n【달이의 한마디】\n무서웠죠? 괜찮아요, 달이가 지켜줄게요 🐱🌙`
+  };
+  if(k.includes('하늘')||k.includes('날아')||k.includes('비행'))return{
+    title:'☁️ 자유와 해방',badges:['길몽'],
+    stats:{길흉:88,연애운:65,재물운:55,건강운:80,활력:92,직관:85},
+    emotions:['😌 해방감','😊 설렘','🌟 자유'],
+    preview:'하늘을 나는 꿈은 <strong>자유와 성취</strong>의 상징이에요. 좋은 일이 가까이 있어요...',
+    fullInterpretation:`【꿈의 핵심 상징】\n비행 꿈은 가장 긍정적인 꿈 중 하나예요. 자유, 해방, 높은 목표를 향한 의지를 나타내며 자신감이 차오르고 있다는 신호예요.\n\n【무의식의 메시지】\n현실의 제약에서 벗어나고 싶은 욕구이자, 곧 해방감을 느낄 수 있다는 길몽이에요.\n\n【운세 분석】\n활력과 직관이 최고조! 새로운 도전을 시작하기에 최적의 시기예요.\n\n【앞으로의 흐름】\n목표를 향해 대담하게 나아가세요. 좋은 결과가 기다리고 있어요.\n\n【달이의 한마디】\n날개를 활짝 펴고 날아보세요! 달이가 응원해요 ✨🌙`
+  };
+  if(k.includes('이빨')||k.includes('치아'))return{
+    title:'🦷 변화의 신호',badges:['흉몽','건강운'],
+    stats:{길흉:28,연애운:35,재물운:40,건강운:25,활력:50,직관:70},
+    emotions:['😰 불안','😣 당황','😢 상실감'],
+    preview:'이빨 빠지는 꿈은 <strong>불안과 변화</strong>의 신호예요. 지금 마음속에서 놓고 싶지 않은 무언가가 있는 것 같아요...',
+    fullInterpretation:`【꿈의 핵심 상징】\n이빨은 자신감과 사회적 이미지를 상징해요. 빠진다는 것은 그것에 대한 두려움이나 상실감을 나타내요. 많이 빠질수록 현재 느끼는 압박감이 크다는 의미예요.\n\n【무의식의 메시지】\n이 꿈을 꿨다면 최근 중요한 결정이나 변화 앞에서 두려움을 느끼고 있을 가능성이 높아요. 또는 소중한 관계나 기회를 잃을까봐 걱정하는 마음이 반영된 거예요.\n\n【운세 분석】\n건강운: 몸이 보내는 신호에 귀 기울여야 해요. 특히 구강 건강뿐 아니라 전반적인 피로도를 확인해보세요. 재물운: 지금은 큰 투자나 새로운 사업보다는 안정을 유지하는 게 좋아요. 연애운: 오해가 생기기 쉬운 시기예요. 소통에 더 신경 써주세요.\n\n【이 꿈이 특별한 이유】\n이빨이 저절로 빠졌는지, 누가 뽑았는지에 따라 해석이 달라져요. 저절로 빠졌다면 자연스러운 변화, 누군가가 뽑았다면 외부적인 압박이나 인간관계의 갈등을 나타내요.\n\n【앞으로의 흐름】\n앞으로 일주일은 중요한 결정을 미루는 게 좋아요. 충분히 쉬고 나서 다시 판단해보세요. 가까운 사람들과 솔직하게 대화를 나눠보는 것도 도움이 될 거예요.\n\n【달이의 한마디】\n이런 꿈을 꾼다는 건 지금 많이 힘드다는 신호일 수 있어요. 달이한테 고민을 털어놓아봐요. 혼자 감당하지 않아도 돼요 🌙`
+  };
+  return{
+    title:'🌙 신비로운 꿈',badges:['길몽'],
+    stats:{길흉:65,연애운:70,재물운:60,건강운:72,활력:68,직관:75},
+    emotions:['🌀 신비로움','😌 편안함','🤔 궁금함'],
+    preview:'<strong>내면의 에너지</strong>가 활발하게 움직이는 시기예요. 이 꿈 속에 숨겨진 메시지가 생각보다 깊어요...',
+    fullInterpretation:`【꿈의 핵심 상징】\n이 꿈에 등장한 요소들은 당신의 무의식이 현재 상황을 어떻게 인식하고 있는지 보여줘요. 꿈 속의 장소, 인물, 감정이 모두 중요한 상징을 담고 있어요.\n\n【무의식의 메시지】\n꿈은 낮에 처리하지 못한 감정과 생각을 밤에 정리하는 과정이에요. 이 꿈을 꿨다는 건 내면에서 중요한 변화가 일어나고 있다는 신호예요.\n\n【운세 분석】\n전반적으로 안정된 운세예요. 연애운이 조금 높게 나왔으니 좋아하는 사람이 있다면 조심스럽게 다가가볼 만해요. 재물운은 큰 변동 없이 안정적이에요.\n\n【이 꿈이 특별한 이유】\n꿈에서 느낀 감정이 중요해요. 기분 좋은 꿈이었다면 좋은 일의 전조, 불안한 꿈이었다면 현실의 스트레스가 반영된 거예요.\n\n【앞으로의 흐름】\n앞으로 일주일은 큰 결정보다는 현재에 집중하는 게 좋아요. 작은 일상의 행복을 챙기면서 에너지를 충전하세요.\n\n【달이의 한마디】\n꿈을 기억하고 기록하는 것만으로도 자기 자신을 더 잘 이해하게 돼요. 오늘도 좋은 하루 보내세요 🌙`
+  };
+}
+
+export function showResult(data,inp){
+  logEvent('dream_completed',{title:data.title,badges:data.badges});
+  trackFunnelStep('interpretation_viewed',{title:data.title});
+  // 퍼널 추적
+  const logs=JSON.parse(localStorage.getItem('mg_logs')||'[]');
+  if(typeof trackFunnel==='function'){
+    if(logs.length===0)trackFunnel('first_dream');
+    else if(logs.length===1)trackFunnel('second_dream');
+  }
+  document.getElementById('rTitle').textContent=data.title;
+  document.getElementById('rDate').textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
+  // 길몽/흉몽 오라 효과
+  const resultEl=document.getElementById('resultEl');
+  let aura=resultEl.querySelector('.result-aura');
+  if(!aura){aura=document.createElement('div');aura.className='result-aura';resultEl.prepend(aura);}
+  aura.className='result-aura '+((data.badges||[]).includes('흉몽')?'bad':'good');
+  const bm={길몽:'bl',태몽:'bl',재물운:'bl',활력:'bl',흉몽:'bb',연애운:'bv',건강운:'bv'};
+  const badgeDesc={
+    '길몽':'좋은 기운의 꿈이에요',
+    '흉몽':'주의가 필요한 꿈이에요',
+    '태몽':'새 생명의 기운이 느껴져요',
+    '연애운':'사랑과 관계에 대한 꿈이에요',
+    '재물운':'돈과 기회에 대한 꿈이에요',
+    '건강운':'몸과 마음에 대한 꿈이에요',
+  };
+  const mainBadge=data.badges?.[0]||'';
+  const desc=badgeDesc[mainBadge]||'';
+  document.getElementById('badgeRow').innerHTML=data.badges.map(b=>`<span class="badge ${bm[b]||'bl'}">${esc(b)}</span>`).join('')
+    +(desc?`<div style="font-size:10px;color:var(--text-muted);margin-top:6px">${desc}</div>`:'');
+  // 달이가 분석한 감정 표시
+  const emotionRow=document.getElementById('resultEmotions');
+  if(emotionRow&&data.emotions&&data.emotions.length>0){
+    emotionRow.style.display='block';
+    emotionRow.innerHTML=`<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;"><span style="color:var(--purple-bright)">🐱</span> 달이가 분석한 감정</div><div class="emotion-chips">${data.emotions.map(e=>`<span class="echip on">${esc(e)}</span>`).join('')}</div>`;
+  }
+  document.getElementById('interpText').innerHTML=linkSymbols(sanitize(data.preview||data.interpretation||''));
+  const insightEl=document.getElementById('dreamInsight');
+  const insightText=document.getElementById('insightText');
+  if(insightEl&&insightText){
+    const insights={
+      뱀:'변화에 민감하고 재물에 대한 감각이 뛰어난 편이에요. 직감을 믿어보세요!',
+      이빨:'완벽주의 성향이 있고, 현재 중요한 결정 앞에 서 있을 가능성이 높아요.',
+      하늘:'자유를 갈망하고 높은 목표를 가진 사람이에요. 도전을 두려워하지 마세요!',
+      물:'감수성이 풍부하고 감정의 흐름에 민감한 사람이에요. 내면의 목소리에 귀 기울여보세요.',
+      불:'열정적이고 에너지가 넘치는 시기예요. 그 힘을 긍정적으로 사용해보세요!',
+      돈:'실용적이고 목표 지향적인 성향이에요. 좋은 기회가 다가오고 있을 수 있어요.',
+      돼지:'풍요와 행운을 끌어당기는 기운이 있어요. 주변 사람들에게도 좋은 영향을 줘요!',
+    };
+    const key=Object.keys(insights).find(k=>inp.includes(k));
+    if(key){insightEl.style.display='block';insightText.textContent=insights[key];}
+    else{insightEl.style.display='block';insightText.textContent='변화의 시기에 있으며, 무의식이 중요한 메시지를 보내고 있어요. 꿈을 기록하는 습관이 자기 이해를 깊게 해줄 거예요.';}
+  }
+  const kwEl=document.getElementById('dreamKeywords');
+  if(kwEl){
+    const found=_symbolNames.filter(s=>inp.includes(s));
+    kwEl.innerHTML=found.map(k=>{const d=DICT_DATA.find(x=>x.n===k);return '<span class="symbol-link" data-symbol="'+k+'" onclick="window._openSymbol(\''+k+'\')" style="font-size:10px;background:rgba(166,124,239,.12);border:1px solid rgba(166,124,239,.2);border-radius:12px;padding:2px 8px;color:var(--star);cursor:pointer">'+(d?d.e+' ':'')+k+'</span>';}).join('');
+  }
+  if(data.traditional||data.psychology||data.advice){
+    const w=document.getElementById('interp3Wrap');
+    if(w){
+      w.style.display='block';
+      document.getElementById('i3traditional').innerHTML=sanitize((data.traditional||'').replace(/\n/g,'<br>'));
+      document.getElementById('i3psychology').innerHTML=sanitize((data.psychology||'').replace(/\n/g,'<br>'));
+      document.getElementById('i3advice').innerHTML=sanitize((data.advice||'').replace(/\n/g,'<br>'));
+      document.querySelectorAll('.i3tab').forEach((b,i)=>{b.classList.toggle('active',i===0);});
+      document.querySelectorAll('.i3content').forEach((c,i)=>{c.style.display=i===0?'block':'none';});
+    }
+  }
+  const full=data.fullInterpretation||data.interpretation||'';
+  document.getElementById('lockPreview').innerHTML=sanitize(full.substring(0,250).replace(/\n/g,'<br>'))+'...';
+  document.getElementById('interpFull').innerHTML=linkSymbols(sanitize(full.replace(/\n/g,'<br>')));
+  document.getElementById('detailLock').style.display='block';
+  document.getElementById('detailFull').style.display='none';
+  // 레이더 차트: 이전 꿈 3개 이상이면 비교 모드 (현재 vs 평균 오버레이)
+  if(logs.filter(l=>!l.noDream).length>=3){
+    const prevLogs=logs.filter(l=>!l.noDream&&l.stats);
+    const avgStats={};
+    const statKeys=['길흉','연애운','재물운','건강운','활력','직관'];
+    statKeys.forEach(k=>{
+      const vals=prevLogs.map(l=>(l.stats||{})[k]||0).filter(v=>v>0);
+      avgStats[k]=vals.length>0?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):50;
+    });
+    drawRadarCompare(data.stats,avgStats);
+  }else{
+    drawRadar(data.stats);
+  }
+  document.getElementById('resultEl').classList.add('on');
+  document.getElementById('resultEl').scrollIntoView({behavior:'smooth',block:'start'});
+  spawnConfetti();
+  // 마일스톤별 특별 메시지
+  const dreamCount=logs.filter(l=>!l.noDream).length;
+  if(dreamCount===0){
+    showToast('🎉 첫 번째 해몽 완료! 달이가 기다리고 있어요');
+  }else if(dreamCount===2){
+    showToast('🌟 3번째 해몽! 이제 달이가 패턴을 보기 시작해요');
+  }else if(dreamCount===4){
+    showToast('🔮 5번째 해몽 달성! 꿈 사전에서 상징을 찾아보세요');
+  }else if(dreamCount===9){
+    showToast('🏆 10번째 해몽! 당신은 진정한 꿈 탐험가예요');
+  }else{
+    const luckMsgs=['오늘은 좋은 일이 생길 거예요! 🍀','작은 행운이 다가오고 있어요 ✨','마음을 열면 기회가 보여요 🌟','꿈이 알려준 신호를 기억하세요 💫'];
+    showToast(luckMsgs[Math.floor(Math.random()*luckMsgs.length)]);
+  }
+  showSimilarDreams();
+  addXP(30);
+  window._last={data,inp};
+  renderLotto(data.stats,inp);
+  renderDaliResultInsight(data,inp);
+  renderRecurringComparison(data,inp);
+  // 관련 상징 카드 표시
+  try{ renderSymbolCards(inp); }catch(e){}
+  // 프리미엄 해석 잠금 (₩500 단건 결제)
+  const credits=getCredits();
+  const lockBtn=document.getElementById('lockBtn');
+  const lockSub=document.getElementById('lockSubText');
+  if(credits>0){
+    if(lockBtn)lockBtn.textContent=`🔓 프리미엄 해석 보기 (${credits}회 보유)`;
+    if(lockSub)lockSub.textContent='크레딧을 사용해서 전문가급 해석을 확인하세요';
+  }else{
+    if(lockBtn)lockBtn.textContent='📜 프리미엄 해석 · ₩500';
+    if(lockSub)lockSub.textContent='융 심리학 · 전통 해몽서 · 학술 연구 기반 분석';
+  }
+  document.getElementById('detailLock').style.display='block';
+  document.getElementById('detailFull').style.display='none';
+  generateResultThumbnail(inp);
+  // CRM: 맞춤형 질문 표시
+  try{ showContextQuestions(data); }catch(e){}
+  // 리텐션 훅: 내일 다시 오기 유도
+  try{ showRetentionHook(); }catch(e){}
+}
+
+
+// ── 반복꿈 감지 + 이전 해몽과 비교 섹션 ──
+function showRepeatDreamCompare(data, inp){
+  const el=document.getElementById('repeatDreamCompare');
+  if(!el){ // DOM 없으면 동적 생성
+    const wrap=document.createElement('div');
+    wrap.id='repeatDreamCompare';
+    wrap.style.cssText='display:none;margin-top:14px';
+    const resultEl=document.getElementById('resultEl');
+    const retHook=document.getElementById('retentionHook');
+    if(retHook) resultEl.insertBefore(wrap, retHook);
+    else resultEl.appendChild(wrap);
+  }
+  const container=document.getElementById('repeatDreamCompare');
+  if(!container)return;
+
+  const logs=JSON.parse(localStorage.getItem('mg_logs')||'[]').filter(l=>l.text&&l.stats&&!l.noDream);
+  if(logs.length<2){container.style.display='none';return;}
+
+  // 키워드 유사도로 반복꿈 찾기
+  const inpWords=inp.toLowerCase().split(/\s+/).filter(w=>w.length>=2);
+  let bestMatch=null, bestScore=0;
+
+  for(const log of logs){
+    const logWords=(log.text||'').toLowerCase().split(/\s+/).filter(w=>w.length>=2);
+    const common=inpWords.filter(w=>logWords.includes(w));
+    const score=common.length/Math.max(inpWords.length,1);
+    if(score>bestScore && score>=0.3){
+      bestScore=score;
+      bestMatch=log;
+    }
+  }
+
+  if(!bestMatch||!bestMatch.stats){container.style.display='none';return;}
+
+  container.style.display='block';
+  const similarity=Math.round(bestScore*100);
+  const prevStats=bestMatch.stats;
+  const curStats=data.stats;
+
+  // 변화 분석
+  const changes=Object.keys(curStats).map(k=>{
+    const diff=(curStats[k]||0)-(prevStats[k]||0);
+    return {key:k,diff,cur:curStats[k]||0,prev:prevStats[k]||0};
+  }).filter(c=>c.diff!==0).sort((a,b)=>Math.abs(b.diff)-Math.abs(a.diff));
+
+  const changeHtml=changes.slice(0,3).map(c=>{
+    const arrow=c.diff>0?'\u2191':'\u2193';
+    const color=c.diff>0?'var(--teal)':'var(--pink)';
+    return '<span style="font-size:11px;color:'+color+';font-weight:700">'+c.key+' '+arrow+Math.abs(c.diff)+'</span>';
+  }).join(' ');
+
+  container.innerHTML=`<div class="card" style="border:1px solid rgba(248,201,76,.15);background:linear-gradient(135deg,rgba(248,201,76,.04),rgba(166,124,239,.04))">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:700;color:var(--moon)">\u{1F504} \uBC18\uBCF5\uAFC8 \uAC10\uC9C0</div>
+      <span style="font-size:10px;background:rgba(248,201,76,.12);border:1px solid rgba(248,201,76,.2);border-radius:8px;padding:2px 8px;color:var(--amber)">\uC720\uC0AC\uB3C4 ${similarity}%</span>
+    </div>
+    <div style="font-size:11px;color:var(--text-secondary);margin-bottom:8px">
+      <span style="color:var(--text-muted)">${bestMatch.date}</span> \uC758 \uAFC8\uACFC \uBE44\uC2B7\uD574\uC694
+    </div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">\u{1F4CA} \uC5D0\uB108\uC9C0 \uBCC0\uD654: ${changeHtml||'\uBCC0\uD654 \uC5C6\uC74C'}</div>
+    <div id="repeatDreamDual" style="display:flex;justify-content:center;margin:10px 0"></div>
+    <div style="font-size:10px;color:var(--text-muted);text-align:center;margin-top:6px">
+      \uBC18\uBCF5\uB418\uB294 \uAFC8\uC740 \uBB34\uC758\uC2DD\uC774 \uBCF4\uB0B4\uB294 \uC911\uC694\uD55C \uC2E0\uD638\uC77C \uC218 \uC788\uC5B4\uC694
+    </div>
+  </div>`;
+
+  // 듀얼 레이더 그리기
+  setTimeout(()=>{
+    drawDualRadar('repeatDreamDual', curStats, prevStats, '\uC624\uB298 \uAFC8', bestMatch.date);
+  },100);
+}
+window.showRepeatDreamCompare=showRepeatDreamCompare;
+
+function showRetentionHook(){
+  const el=document.getElementById('retentionHook');
+  if(!el)return;
+  const logs=JSON.parse(localStorage.getItem('mg_logs')||'[]');
+  const streak=parseInt(localStorage.getItem('mg_streak')||'0');
+
+  let msg='';
+  if(logs.length===0){
+    msg='🌙 첫 해몽 완료! 내일도 꿈을 기록하면 연속 기록이 시작돼요';
+  }else if(streak>=3){
+    msg='🔥 '+streak+'일 연속 기록 중! 내일도 이어가면 특별한 인사이트가 열려요';
+  }else{
+    msg='✨ 내일의 꿈 운세가 기다리고 있어요. 매일 달라지는 운세를 확인해보세요!';
+  }
+
+  el.style.display='block';
+  el.innerHTML='<div style="margin-top:14px;background:linear-gradient(135deg,rgba(248,201,76,.08),rgba(166,124,239,.06));border:1px solid rgba(248,201,76,.15);border-radius:14px;padding:14px;text-align:center;">'
+    +'<div style="font-size:12px;color:var(--moon);font-weight:700;margin-bottom:6px">'+msg+'</div>'
+    +'<div style="display:flex;gap:8px;justify-content:center;margin-top:8px;">'
+    +'<button onclick="switchTab(\'log\');initTodayFortune()" style="background:rgba(248,201,76,.1);border:1px solid rgba(248,201,76,.2);border-radius:10px;padding:6px 14px;font-size:11px;color:var(--amber);cursor:pointer;font-family:\'Noto Sans KR\',sans-serif">🔮 오늘의 운세 보기</button>'
+    +'<button onclick="switchTab(\'log\');renderQuiz()" style="background:rgba(166,124,239,.1);border:1px solid rgba(166,124,239,.2);border-radius:10px;padding:6px 14px;font-size:11px;color:var(--purple-bright);cursor:pointer;font-family:\'Noto Sans KR\',sans-serif">🧠 꿈 퀴즈 도전</button>'
+    +'</div></div>';
+}
+
+export async function watchAd(){
+  // 크레딧이 있으면 바로 사용
+  const credits=getCredits();
+  if(credits>0){
+    useCreditAndUnlock();
+    return;
+  }
+  // 없으면 결제 페이월
+  showPremiumPaywall();
+}
+
+// 광고 시청 → 1차 해석 unlock
+export async function unlockWithAd(){
+  if(typeof showRewardedAd==='function'){
+    const rewarded=await showRewardedAd();
+    if(rewarded){
+      const {markAdWatched}=await import('../services/subscription.js');
+      markAdWatched();
+      showToast('🎬 광고 시청 완료! 1차 해석을 확인하세요');
+      // 결과 보이기
+      document.getElementById('resultEl').classList.add('on');
+      document.getElementById('resultEl').scrollIntoView({behavior:'smooth'});
+    }
+  }else{
+    // 웹 폴백: 광고 없이 바로 보여주기 (하우스 광고 대신)
+    const {markAdWatched}=await import('../services/subscription.js');
+    markAdWatched();
+    document.getElementById('resultEl').classList.add('on');
+    document.getElementById('resultEl').scrollIntoView({behavior:'smooth'});
+  }
+}
+
+// 크레딧 사용 → 프리미엄 해석 unlock
+export async function useCreditAndUnlock(){
+  const used=await useCredit();
+  if(used){
+    unlockDetail();
+    showToast('📜 프리미엄 해석 공개! ✨');
+    logEvent('premium_unlocked',{method:'credit'});
+    trackFunnelStep('feature_used',{method:'credit'});
+  }else{
+    showPremiumPaywall();
+  }
+}
+
+// 결제 → 결제수단 선택 모달 표시 (v4: payment.js 통합)
+export async function buyPremium(productKey){
+  // 기존 productKey → 새 productId 매핑
+  const keyMap = { single: 'pack_1', pack5: 'pack_5', pack15: 'pack_15', profile: 'unconscious_profile', pro: 'pro_monthly' };
+  const productId = keyMap[productKey] || productKey;
+
+  // 네이티브 IAP
+  if(typeof Capacitor!=='undefined'&&Capacitor.isNativePlatform()){
+    const {purchase}=await import('../services/iap.js');
+    purchase(productKey);
+    return;
+  }
+
+  // 웹: 결제수단 선택 모달
+  if(typeof showMethodSelect==='function'){
+    showMethodSelect(productId);
+  }else{
+    // 폴백: 직접 payment.js 호출 (카드 기본)
+    const {startPayment}=await import('../services/payment.js');
+    startPayment({productId,method:'card'});
+  }
+}
+
+export function unlockDetail(){
+  trackFunnelStep('detail_cta_shown');
+  document.getElementById('detailLock').style.display='none';
+  document.getElementById('detailFull').style.display='block';
+  document.getElementById('detailFull').scrollIntoView({behavior:'smooth',block:'start'});
+  addXP(10);
+}
+
+export function shareResult(){
+  // 바이럴 공유 (레퍼럴 코드 포함)
+  if(window._last&&window._last.data&&typeof shareDreamResult==='function'){
+    shareDreamResult(window._last.data);
+    return;
+  }
+  logEvent('dream_shared');
+  generateShareCard().then(blob=>{
+    if(blob&&navigator.share&&navigator.canShare){
+      const file=new File([blob],'monggeul_dream.png',{type:'image/png'});
+      if(navigator.canShare({files:[file]})){
+        navigator.share({title:'몽글몽글 꿈 해몽',text:document.getElementById('rTitle').textContent+' - 몽글몽글에서 해몽!',files:[file]});
+        return;
+      }
+    }
+    if(navigator.share)navigator.share({title:'몽글몽글 꿈 해몽',text:document.getElementById('rTitle').textContent+' - 몽글몽글에서 해몽해봤어요!',url:location.href});
+    else navigator.clipboard.writeText(location.href).then(()=>showToast('링크 복사됐어요! 📋'));
+  });
+}
+
+export async function generateShareCard(){
+  try{
+    const c=document.createElement('canvas');c.width=1080;c.height=1920;
+    const ctx=c.getContext('2d');
+    const W=1080,H=1920;
+
+    // 배경 — 깊은 밤하늘 그라데이션
+    const bg=ctx.createLinearGradient(0,0,W*0.3,H);
+    bg.addColorStop(0,'#08061a');bg.addColorStop(0.3,'#150e35');bg.addColorStop(0.6,'#1a1040');bg.addColorStop(1,'#0a0d20');
+    ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+    // 성운 효과
+    const nebula=ctx.createRadialGradient(W*0.3,H*0.2,0,W*0.3,H*0.2,400);
+    nebula.addColorStop(0,'rgba(120,60,180,.12)');nebula.addColorStop(1,'transparent');
+    ctx.fillStyle=nebula;ctx.fillRect(0,0,W,H);
+    const nebula2=ctx.createRadialGradient(W*0.7,H*0.6,0,W*0.7,H*0.6,350);
+    nebula2.addColorStop(0,'rgba(60,40,120,.1)');nebula2.addColorStop(1,'transparent');
+    ctx.fillStyle=nebula2;ctx.fillRect(0,0,W,H);
+
+    // 별 — 다양한 크기/색상/밝기
+    for(let i=0;i<80;i++){
+      const x=Math.random()*W,y=Math.random()*H*0.7;
+      const r=Math.random()*2.5+0.5;
+      const alpha=0.2+Math.random()*0.6;
+      const colors=['255,255,255','255,250,220','255,220,150','200,210,255'];
+      const col=colors[Math.floor(Math.random()*colors.length)];
+      ctx.fillStyle=`rgba(${col},${alpha})`;
+      ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+      if(r>1.8){ctx.fillStyle=`rgba(${col},${alpha*0.3})`;ctx.beginPath();ctx.arc(x,y,r*3,0,Math.PI*2);ctx.fill();}
+    }
+
+    // 유성 1개
+    ctx.save();ctx.translate(W*0.7,H*0.08);ctx.rotate(-0.6);
+    const mg=ctx.createLinearGradient(0,0,200,0);
+    mg.addColorStop(0,'rgba(255,240,200,.8)');mg.addColorStop(0.3,'rgba(200,180,255,.4)');mg.addColorStop(1,'transparent');
+    ctx.fillStyle=mg;ctx.fillRect(0,-1,200,2);ctx.restore();
+
+    // 제목
+    ctx.fillStyle='#f5e6b2';ctx.font='bold 56px sans-serif';ctx.textAlign='center';
+    ctx.shadowColor='rgba(245,230,178,.4)';ctx.shadowBlur=20;
+    ctx.fillText(document.getElementById('rTitle').textContent||'🌙 해몽 결과',W/2,180);
+    ctx.shadowBlur=0;
+
+    // 날짜
+    ctx.fillStyle='#8a7eb0';ctx.font='28px sans-serif';
+    ctx.fillText(new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'}),W/2,240);
+
+    // 배지
+    const badges=(document.getElementById('badgeRow')?.textContent||'').trim();
+    if(badges){ctx.fillStyle='#c8bff8';ctx.font='30px sans-serif';ctx.fillText(badges,W/2,300);}
+
+    // 구분선
+    const divGrad=ctx.createLinearGradient(W*0.15,0,W*0.85,0);
+    divGrad.addColorStop(0,'transparent');divGrad.addColorStop(0.5,'rgba(166,124,239,.4)');divGrad.addColorStop(1,'transparent');
+    ctx.fillStyle=divGrad;ctx.fillRect(W*0.15,330,W*0.7,1);
+
+    // 해석 텍스트
+    ctx.fillStyle='#c8c0e8';ctx.font='30px sans-serif';ctx.textAlign='left';
+    const interp=(document.getElementById('interpText')?.textContent||'').substring(0,300);
+    let line='',y=400;
+    for(const ch of interp){
+      line+=ch;
+      if(ctx.measureText(line).width>W-160||ch==='\n'){ctx.fillText(line,80,y);y+=48;line='';if(y>900)break;}
+    }
+    if(line)ctx.fillText(line,80,y);
+
+    // 스탯 바
+    if(window._last&&window._last.data.stats){
+      const stats=window._last.data.stats;
+      const colors=['#a67cef','#f8c94c','#f0a8c8','#7de8d8','#f08080','#90d0ff'];
+      let sy=1050;
+      ctx.font='26px sans-serif';
+      Object.entries(stats).forEach(([k,v],i)=>{
+        ctx.fillStyle='#6b5e8a';ctx.textAlign='left';ctx.fillText(k,80,sy);
+        // 바 배경
+        ctx.fillStyle='rgba(255,255,255,0.06)';
+        const rx=240,rw=660,rh=20,ry=sy-15;
+        ctx.beginPath();ctx.roundRect(rx,ry,rw,rh,10);ctx.fill();
+        // 바 채우기
+        ctx.fillStyle=colors[i%colors.length];
+        ctx.beginPath();ctx.roundRect(rx,ry,rw*v/100,rh,10);ctx.fill();
+        // 값
+        ctx.fillStyle='#f0ecff';ctx.font='bold 24px sans-serif';ctx.textAlign='right';
+        ctx.fillText(v+'',W-80,sy);
+        ctx.font='26px sans-serif';
+        sy+=52;
+      });
+    }
+
+    // 하단 브랜딩
+    ctx.fillStyle=divGrad;ctx.fillRect(W*0.15,H-200,W*0.7,1);
+    ctx.fillStyle='rgba(200,191,248,.5)';ctx.font='28px sans-serif';ctx.textAlign='center';
+    ctx.fillText('🌙 몽글몽글',W/2,H-150);
+    ctx.fillStyle='rgba(248,201,76,.6)';ctx.font='bold 20px sans-serif';
+    ctx.fillText('나도 꿈 해몽 해보기 👇',W/2,H-110);
+    ctx.fillStyle='rgba(200,191,248,.3)';ctx.font='18px sans-serif';
+    ctx.fillText('monggeul.app',W/2,H-75);
+
+    return new Promise(ok=>c.toBlob(ok,'image/png'));
+  }catch(e){return null;}
+}
+
+export function saveToDreamlog(){
+  if(!window._last){showToast('먼저 해몽을 해보세요 🌙');return;}
+  const {data,inp}=window._last;
+  const logs=JSON.parse(localStorage.getItem('mg_logs')||'[]');
+
+  // 반복꿈 감지 — 같은 상징이 이전에도 나왔는지
+  const prevSimilar=logs.filter(l=>l.title&&data.title&&(
+    l.badges?.some(b=>data.badges?.includes(b))||
+    inp.split(' ').some(w=>w.length>=2&&l.text?.includes(w))
+  )).slice(0,3);
+
+  logs.unshift({id:Date.now(),text:inp,title:data.title,badges:data.badges,emotions:data.emotions||[],stats:data.stats||{},date:new Date().toLocaleDateString('ko-KR'),thumbnail:window._last?.thumbnail||null});
+  localStorage.setItem('mg_logs',JSON.stringify(logs.slice(0,50)));
+
+  // 반복꿈이면 특별 메시지
+  if(prevSimilar.length>0){
+    showToast('📖 저장 완료! 비슷한 꿈을 '+prevSimilar.length+'번 더 꿨어요. 달이한테 패턴을 물어보세요 🐱');
+  }else if(logs.length===1){
+    showToast('📖 첫 꿈 기록 완료! 꿈을 쌓을수록 달이가 더 잘 해석해줘요 ✨');
+  }else if(logs.length===3){
+    showToast('📖 저장 완료! 3개째! 이제 패턴이 보이기 시작해요 📊');
+  }else{
+    showToast('📖 저장 완료!');
+  }
+
+  // 저장 후 업셀 트리거 재평가
+  if (typeof checkSmartUpsell === "function") checkSmartUpsell();
+  else window.checkSmartUpsell?.();
+
+  // 저장 후 다음 행동 유도 배너
+  setTimeout(function(){
+    var nextAction=document.getElementById('dreamNextAction');
+    if(nextAction){
+      nextAction.style.display='block';
+      nextAction.innerHTML='<div style="display:flex;gap:6px;margin-top:10px;">'
+        +'<button onclick="switchTab(\'chat\');this.parentElement.parentElement.style.display=\'none\'" style="flex:1;background:rgba(255,153,68,.1);border:1px solid rgba(255,153,68,.2);border-radius:10px;padding:8px;font-size:11px;color:var(--amber);cursor:pointer;font-family:\'Noto Sans KR\',sans-serif">🐱 달이에게 더 물어보기</button>'
+        +'<button onclick="shareResult();this.parentElement.parentElement.style.display=\'none\'" style="flex:1;background:rgba(166,124,239,.1);border:1px solid rgba(166,124,239,.2);border-radius:10px;padding:8px;font-size:11px;color:var(--purple-bright);cursor:pointer;font-family:\'Noto Sans KR\',sans-serif">📤 친구에게 공유하기</button>'
+        +'</div>';
+    }
+  },500);
+}
+
+// 꿈 속 상징 매칭 카드
+function renderSymbolCards(inp){
+  const el=document.getElementById('dreamSymbolCards');
+  if(!el)return;
+  try{
+    const dict=ALL_DICT_REF.get();
+    const matched=dict.filter(d=>inp.includes(d.n.split('/')[0])||inp.includes(d.n.split('/')[1]||'§§§'));
+    if(matched.length===0){el.style.display='none';return;}
+    el.style.display='block';
+    el.innerHTML='<div style="font-size:12px;font-weight:700;color:var(--teal);margin-bottom:8px">🔍 이 꿈 속 상징</div>'
+      +matched.slice(0,3).map(d=>
+        '<div style="background:rgba(125,232,216,.06);border:1px solid rgba(125,232,216,.12);border-radius:10px;padding:10px 12px;margin-bottom:6px">'
+        +'<div style="font-size:13px;font-weight:700;margin-bottom:4px">'+d.e+' '+esc(d.n)+'</div>'
+        +'<div style="font-size:11px;color:var(--text-secondary);line-height:1.6">'+esc(d.meaning.substring(0,80))+'...</div>'
+        +'<div style="margin-top:6px;font-size:10px;color:var(--text-muted)">'+d.contexts.slice(0,2).map(c=>c.t.replace(/<\/?strong>/g,'')).join(' | ')+'</div>'
+        +'</div>'
+      ).join('');
+  }catch{}
+}
+
+export function initTodaySymbol(){
+  const s=DAILY_SYMBOLS[new Date().getDate()%DAILY_SYMBOLS.length];
+  const el=document.getElementById('tsSymbol');
+  const desc=document.getElementById('tsDesc');
+  const cnt=document.getElementById('tsCount');
+  if(el)el.textContent=s.symbol;
+  if(desc)desc.textContent=s.desc;
+  const hourBonus=new Date().getHours()*3+Math.floor(Math.random()*5);
+  if(cnt)cnt.innerHTML=`오늘 <strong>${s.count+hourBonus}명</strong>이<br>꿨어요`;
+  window._todayKeyword=s.keyword;
+}
+
+export function switchToInput(){document.getElementById('dreamInput').scrollIntoView({behavior:'smooth'});}
+
+// ── 반복꿈 비교 섹션: 현재 해몽과 유사한 이전 꿈 비교 ──
+export function showRecurringComparison(data, inp) {
+  let el = document.getElementById('recurringCompare');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'recurringCompare';
+    const anchor = document.getElementById('similarDreamRow') || document.getElementById('dreamSymbolCards');
+    if (anchor) anchor.parentElement.insertBefore(el, anchor);
+    else return;
+  }
+
+  const logs = JSON.parse(localStorage.getItem('mg_logs') || '[]');
+  if (logs.length < 1) { el.style.display = 'none'; return; }
+
+  const curBadges = new Set(data.badges || []);
+  const curWords = inp.split(/\s+/).filter(w => w.length >= 2);
+
+  const similar = logs.filter(l => {
+    const badgeOverlap = (l.badges || []).some(b => curBadges.has(b) && b !== '길몽' && b !== '흉몽');
+    const wordOverlap = curWords.some(w => (l.text || '').includes(w));
+    return badgeOverlap || wordOverlap;
+  }).slice(0, 3);
+
+  if (similar.length === 0) { el.style.display = 'none'; return; }
+
+  const prev = similar[0];
+  const prevStats = prev.stats || {};
+  const curStats = data.stats || {};
+  const statKeys = ['길흉', '연애운', '재물운', '건강운', '활력', '직관'];
+
+  const trends = statKeys.map(k => {
+    const diff = (curStats[k] || 0) - (prevStats[k] || 0);
+    return { key: k, diff, arrow: diff > 5 ? '↑' : diff < -5 ? '↓' : '→', color: diff > 5 ? '#7de8d8' : diff < -5 ? '#ff6b8a' : '#8b8ba0' };
+  });
+
+  const overallDiff = trends.reduce((s, t) => s + t.diff, 0);
+  const trendMsg = overallDiff > 15 ? '전반적으로 운세가 좋아지고 있어요!' : overallDiff < -15 ? '마음의 에너지가 좀 낮아졌어요. 쉬어가세요.' : '비슷한 흐름이 이어지고 있어요.';
+
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div style="background:rgba(166,124,239,.06);border:1px solid rgba(166,124,239,.15);border-radius:14px;padding:14px;margin-top:14px;">
+      <div style="font-size:12px;font-weight:700;color:var(--purple-bright);margin-bottom:10px">🔄 비슷한 꿈을 ${similar.length}번 더 꿨어요</div>
+      <div style="display:flex;gap:10px;margin-bottom:10px;">
+        <div style="flex:1;background:rgba(255,255,255,.03);border-radius:10px;padding:10px;">
+          <div style="font-size:9px;color:var(--text-muted);margin-bottom:4px">이전</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:2px">${esc(prev.title || '기록된 꿈')}</div>
+          <div style="font-size:10px;color:var(--text-muted)">${esc(prev.date || '')}</div>
+        </div>
+        <div style="flex:1;background:rgba(255,255,255,.03);border-radius:10px;padding:10px;">
+          <div style="font-size:9px;color:var(--text-muted);margin-bottom:4px">오늘</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:2px">${esc(data.title || '')}</div>
+          <div style="font-size:10px;color:var(--text-muted)">${new Date().toLocaleDateString('ko-KR')}</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">
+        ${trends.map(t => `<span style="font-size:10px;background:rgba(255,255,255,.04);border:1px solid ${t.color}33;border-radius:8px;padding:2px 8px;color:${t.color}">${t.key} ${t.arrow}${Math.abs(t.diff)>0?Math.abs(t.diff):''}</span>`).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--text-secondary);line-height:1.5">💬 ${trendMsg}</div>
+      ${similar.length >= 2 ? `<div style="font-size:10px;color:var(--star);margin-top:6px">⚡ 반복꿈 패턴이 감지됐어요. 달이에게 분석을 요청해보세요!</div>` : ''}
+    </div>`;
+
+  logEvent('recurring_comparison_shown', { similar_count: similar.length, trend: overallDiff > 15 ? 'up' : overallDiff < -15 ? 'down' : 'stable' });
+}
+
+export function showSimilarDreams(){
+  const row=document.getElementById('similarDreamRow');
+  const cnt=document.getElementById('sdCount');
+  if(!row||!cnt)return;
+  const inp=(window._last?.inp||'').toLowerCase();
+  let base=30;
+  if(inp.includes('뱀'))base=120;else if(inp.includes('이빨'))base=95;else if(inp.includes('돈')||inp.includes('돼지'))base=85;
+  else if(inp.includes('물')||inp.includes('바다'))base=70;else if(inp.includes('하늘'))base=60;
+  const count=base+Math.floor(Math.random()*30);
+  const recent=Math.floor(count*0.15)+Math.floor(Math.random()*5);
+  cnt.textContent=`${count}명이 비슷한 꿈을 꿨어요 · 최근 7일 ${recent}건`;
+  row.style.display='flex';
+}
+
+
+export function switchInterp3(type,btn){
+  document.querySelectorAll('.i3tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.i3content').forEach(c=>c.style.display='none');
+  btn.classList.add('active');
+  const map={traditional:'i3traditional',psychology:'i3psychology',advice:'i3advice'};
+  const el=document.getElementById(map[type]);
+  if(el){el.style.display='block';el.style.animation='su .25s ease';}
+}
+
+export function spawnConfetti(){
+  const emojis=['🌟','⭐','✨','🌙','💫','🔮'];
+  for(let i=0;i<12;i++){
+    const el=document.createElement('div');
+    el.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+    el.style.cssText=`position:fixed;top:-20px;left:${10+Math.random()*80}%;font-size:${14+Math.random()*10}px;z-index:9990;pointer-events:none;animation:confettiFall ${1.5+Math.random()*1.5}s ease-out forwards;animation-delay:${Math.random()*0.5}s;`;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),3000);
+  }
+}
+
+export async function generateDreamThumbnail(dreamText){
+  try{
+    const keywords=dreamText.substring(0,80);
+    const data=await callOpenAI('image',{
+        model:'dall-e-3',
+        prompt:'A dreamy illustration for dream journal. Dream: '+keywords+'. Style: soft purple tones, starry night, mystical. No text.',
+        n:1,
+        size:'1024x1024',
+        quality:'standard'
+      });
+    return data.data[0].url;
+  }catch(e){
+    return null;
+  }
+}
+
+export async function generateResultThumbnail(inp){
+  if(!window._last)return;
+  const url=await generateDreamThumbnail(inp);
+  if(url){
+    window._last.thumbnail=url;
+    const resultEl=document.getElementById('resultEl');
+    const existing=document.getElementById('dreamThumb');
+    if(existing)existing.remove();
+    const imgDiv=document.createElement('div');
+    imgDiv.id='dreamThumb';
+    imgDiv.style.cssText='border-radius:16px;overflow:hidden;margin-bottom:14px;border:1px solid rgba(166,124,239,.2);';
+    imgDiv.innerHTML=`<img src="${url}" style="width:100%;display:block;border-radius:16px;" alt="꿈 이미지">`;
+    const firstCard=resultEl.querySelector('.card');
+    if(firstCard)resultEl.insertBefore(imgDiv,firstCard);
+  }
+}
+
+export function getFeedThumbHtml(id){
+  if(FEED_THUMBS[id])return`<div style="border-radius:12px;overflow:hidden;margin-bottom:9px;max-height:160px;"><img src="${FEED_THUMBS[id]}" style="width:100%;display:block;object-fit:cover;max-height:160px;" alt="꿈"></div>`;
+  return'';
+}
+
+export function toggleNoDreamMode(){
+  const area=document.getElementById('noDreamArea');
+  const arrow=document.getElementById('noDreamArrow');
+  if(area.style.display==='none'){
+    area.style.display='block';
+    area.style.animation='su .3s ease';
+    if(arrow)arrow.textContent='▴';
+  }else{
+    area.style.display='none';
+    if(arrow)arrow.textContent='▾';
+  }
+}
+
+export function recordNoDream(){
+  const today=new Date().toDateString();
+  if(localStorage.getItem('mg_nodream')===today){showToast('오늘은 이미 기록했어요 😴');return;}
+  localStorage.setItem('mg_nodream',today);
+  const logs=JSON.parse(localStorage.getItem('mg_logs')||'[]');
+  logs.unshift({id:Date.now(),text:'꿈 없이 푹 잤어요 😴',title:'😴 숙면의 밤',badges:['숙면'],date:new Date().toLocaleDateString('ko-KR'),noDream:true});
+  localStorage.setItem('mg_logs',JSON.stringify(logs.slice(0,50)));
+  const btn=document.getElementById('noDreamBtn');
+  if(btn){btn.style.opacity='.5';btn.onclick=null;btn.querySelector('div > div:first-child').textContent='✓ 오늘 기록 완료!';}
+  window.renderLog();window.renderCalendar();
+  showToast('😴 푹 잔 기록이 저장됐어요! +3 XP +2 꿈가루');
+}
+
+export function checkNoDreamStatus(){
+  const today=new Date().toDateString();
+  if(localStorage.getItem('mg_nodream')===today){
+    const btn=document.getElementById('noDreamBtn');
+    if(btn){btn.style.opacity='.5';btn.onclick=null;btn.querySelector('div > div:first-child').textContent='✓ 오늘 기록 완료!';}
+  }
+}
+
+export async function animateCounter(){
+  const el=document.getElementById('heroCounter');if(!el)return;
+  const {store}=await import('../store.js');
+
+  let cur=1331; // 기본값
+
+  // Supabase에서 실제 카운터 가져오기
+  if(store.supabase){
+    try{
+      const {data}=await store.supabase.from('app_stats').select('value').eq('key','total_dreams').single();
+      if(data)cur=parseInt(data.value)||1331;
+    }catch{
+      // 테이블 없으면 시간 기반 폴백
+      const launch=new Date('2026-03-21T00:00:00+09:00').getTime();
+      cur=1331+Math.floor(Math.max(0,Date.now()-launch)/(1000*60*6));
+    }
+  }else{
+    const launch=new Date('2026-03-21T00:00:00+09:00').getTime();
+    cur=1331+Math.floor(Math.max(0,Date.now()-launch)/(1000*60*6));
+  }
+
+  // 카운트업 애니메이션
+  let display=Math.max(1331,cur-30);
+  const countUp=()=>{
+    display+=Math.max(1,Math.ceil((cur-display)*0.08));
+    if(display>=cur)display=cur;
+    el.textContent=display.toLocaleString();
+    if(display<cur)requestAnimationFrame(countUp);
+  };
+  requestAnimationFrame(countUp);
+
+  // 실시간 증가 (20~40초마다)
+  setInterval(()=>{
+    cur++;
+    el.style.transition='color .3s';
+    el.style.color='#f8c94c';
+    el.textContent=cur.toLocaleString();
+    setTimeout(()=>{el.style.color='';},400);
+  },20000+Math.floor(Math.random()*20000));
+
+  // 해몽 완료 시 +1 (DB에도 기록)
+  window._bumpHeroCounter=async function(){
+    cur++;
+    el.style.color='#7de8d8';
+    el.textContent=cur.toLocaleString();
+    setTimeout(()=>{el.style.color='';},500);
+    // Supabase 카운터 증가
+    if(store.supabase){
+      try{
+        await store.supabase.rpc('increment_app_stat',{stat_key:'total_dreams'});
+      }catch{}
+    }
+  };
+}
+
+export function updateCharCount(){
+  if(!updateCharCount._tracked){const inp=document.getElementById('dreamInput');if(inp&&inp.value.length>0){updateCharCount._tracked=true;trackFunnelStep('dream_input_start');}}
+  const el=document.getElementById('charCount');
+  const inp=document.getElementById('dreamInput');
+  if(!el||!inp)return;
+  const len=inp.value.length;
+  const hint=document.getElementById('dreamDetailHint');
+  if(len===0){
+    el.textContent='';
+    if(hint)hint.style.display='none';
+  }else if(len<30){
+    el.textContent=len+'자';
+    if(hint){hint.style.display='block';hint.textContent='💡 장소, 등장인물, 감정을 더 적으면 해몽이 정확해져요';hint.style.color='var(--purple-bright)';}
+  }else if(len<80){
+    el.textContent=len+'자';
+    if(hint){hint.style.display='block';hint.textContent='👀 색깔, 소리, 냄새 같은 디테일이 있으면 더 깊은 해석이 가능해요';hint.style.color='var(--teal)';}
+  }else{
+    el.textContent=len+'자';
+    if(hint){hint.style.display='block';hint.textContent='✨ 아주 좋아요! 정확한 해몽을 할 수 있어요';hint.style.color='var(--purple-bright)';}
+  }
+}
+
+// 현재 활성 음성 인식 인스턴스 (탭 전환/뒤로가기 시 중단용)
+let _activeRecognition=null;
+let _voiceTimeout=null;
+
+// 음성 인식 강제 중단 (외부에서 호출 가능)
+export function stopVoiceInput(){
+  if(_activeRecognition){
+    try{_activeRecognition.abort();}catch(e){}
+    _activeRecognition=null;
+  }
+  if(_voiceTimeout){clearTimeout(_voiceTimeout);_voiceTimeout=null;}
+  // UI 초기화
+  const btn=document.getElementById('voiceBtn');
+  const bubble=document.getElementById('voiceBubble');
+  if(btn){
+    btn.classList.remove('recording');
+    const icon=btn.querySelector('.voice-icon');
+    if(icon)icon.textContent='🎙';
+  }
+  if(bubble)bubble.style.display='';
+}
+
+export function startVoiceInput(){
+  // 이미 녹음 중이면 중단
+  if(_activeRecognition){stopVoiceInput();return;}
+
+  // 브라우저 지원 확인
+  if(!('webkitSpeechRecognition' in window)&&!('SpeechRecognition' in window)){
+    showToast('이 브라우저에서는 음성 입력을 지원하지 않아요');
+    return;
+  }
+
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const rec=new SR();
+  rec.lang='ko-KR';rec.continuous=false;rec.interimResults=true;
+  _activeRecognition=rec;
+
+  const btn=document.getElementById('voiceBtn');
+  const inp=document.getElementById('dreamInput');
+  const bubble=document.getElementById('voiceBubble');
+
+  const resetBtn=()=>{
+    _activeRecognition=null;
+    if(_voiceTimeout){clearTimeout(_voiceTimeout);_voiceTimeout=null;}
+    if(btn){
+      btn.classList.remove('recording');
+      const icon=btn.querySelector('.voice-icon');
+      if(icon)icon.textContent='🎙';
+    }
+    if(bubble)bubble.style.display='';
+  };
+
+  // 녹음 상태 UI
+  btn.classList.add('recording');
+  btn.querySelector('.voice-icon').textContent='⏹';
+  if(bubble)bubble.style.display='none';
+  showToast('🎙 편하게 말해주세요... 친구한테 얘기하듯이!');
+
+  rec.onresult=(e)=>{
+    let text='';
+    for(let i=0;i<e.results.length;i++)text+=e.results[i][0].transcript;
+    inp.value=text;
+    updateCharCount();
+  };
+
+  rec.onend=()=>{resetBtn();};
+
+  rec.onerror=(e)=>{
+    resetBtn();
+    const err=e.error||'';
+    if(err==='not-allowed'){
+      showToast('음성 입력을 사용하려면 마이크 권한이 필요해요. 브라우저 설정에서 허용해주세요.');
+    }else if(err==='no-speech'){
+      showToast('음성이 감지되지 않았어요. 다시 시도해주세요');
+    }else if(err==='network'){
+      showToast('네트워크 오류로 음성 인식에 실패했어요');
+    }else if(err==='aborted'){
+      // 사용자가 직접 중단하거나 탭 전환으로 중단된 경우 — 조용히 처리
+    }else{
+      showToast('음성 인식에 실패했어요. 다시 시도해주세요');
+    }
+  };
+
+  try{
+    rec.start();
+  }catch(e){
+    resetBtn();
+    showToast('음성 인식을 시작할 수 없어요. 잠시 후 다시 시도해주세요');
+    return;
+  }
+  _voiceTimeout=setTimeout(()=>{try{rec.stop();}catch(e){}},10000);
+}
+
+// 페이지 가시성 변경(뒤로가기/다른 앱 전환) 시 음성 인식 중단
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden&&_activeRecognition)stopVoiceInput();
+});
+
+// 뒤로가기(popstate) 시 음성 인식 중단
+window.addEventListener('popstate',()=>{
+  if(_activeRecognition)stopVoiceInput();
+});
+
+// window 노출
+
+// ── 반복꿈 비교 섹션 렌더 ──
+function renderRepeatDreamCompare(currentData, prevDreams){
+  const area=document.getElementById('dreamNextAction');
+  if(!area)return;
+  const prev=prevDreams[0]; // 가장 최근 유사 꿈
+  if(!prev||!prev.stats||!currentData.stats)return;
+
+  const statKeys=Object.keys(currentData.stats);
+  const diffHtml=statKeys.map(k=>{
+    const cur=currentData.stats[k]||0;
+    const old=prev.stats[k]||0;
+    const diff=cur-old;
+    if(diff===0)return '';
+    const arrow=diff>0?'\u2191':'\u2193';
+    const color=diff>0?'#7de8d8':'#f0a8c8';
+    return '<span style="font-size:10px;color:'+color+';margin-right:6px">'+k+' '+arrow+Math.abs(diff)+'</span>';
+  }).filter(Boolean).join('');
+
+  // 공통 키워드
+  const curWords=(currentData.badges||[]).concat(currentData.emotions||[]);
+  const prevWords=(prev.badges||[]).concat(prev.emotions||[]);
+  const common=curWords.filter(w=>prevWords.includes(w));
+
+  let compareHtml='<div style="margin-top:12px;background:rgba(248,201,76,.06);border:1px solid rgba(248,201,76,.15);border-radius:14px;padding:14px;">';
+  compareHtml+='<div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:8px">\uD83D\uDD04 이전 비슷한 꿈과 비교</div>';
+  compareHtml+='<div style="display:flex;justify-content:space-between;margin-bottom:8px">';
+  compareHtml+='<div style="flex:1;text-align:center"><div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">이번</div><div style="font-size:13px;font-weight:700;color:var(--moon)">'+(currentData.title||'')+'</div></div>';
+  compareHtml+='<div style="color:var(--text-muted);padding:0 8px;font-size:16px">vs</div>';
+  compareHtml+='<div style="flex:1;text-align:center"><div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">'+(prev.date||'이전')+'</div><div style="font-size:13px;font-weight:700;color:var(--amber)">'+(prev.title||'')+'</div></div>';
+  compareHtml+='</div>';
+  if(diffHtml) compareHtml+='<div style="margin-bottom:6px">'+diffHtml+'</div>';
+  if(common.length>0) compareHtml+='<div style="font-size:10px;color:var(--text-muted)">\uD83D\uDD17 공통: '+common.join(', ')+'</div>';
+  compareHtml+='<div style="font-size:10px;color:var(--teal);margin-top:6px">\uD83D\uDCA1 반복 꿈은 무의식이 해결을 원하는 주제일 수 있어요</div>';
+  compareHtml+='</div>';
+
+  area.style.display='block';
+  area.innerHTML=compareHtml+area.innerHTML;
+}
+
+window.fillDream = fillDream;
+window.quickSearch = quickSearch;
+window.analyzeDream = analyzeDream;
+window.showResult = showResult;
+window.watchAd = watchAd;
+window.unlockWithAd = unlockWithAd;
+window.useCreditAndUnlock = useCreditAndUnlock;
+window.buyPremium = buyPremium;
+window.unlockDetail = unlockDetail;
+window.shareResult = shareResult;
+window.generateShareCard = generateShareCard;
+window.saveToDreamlog = saveToDreamlog;
+window.initTodaySymbol = initTodaySymbol;
+window.switchToInput = switchToInput;
+window.showSimilarDreams = showSimilarDreams;
+window.showRecurringComparison = showRecurringComparison;
+window.switchInterp3 = switchInterp3;
+window.spawnConfetti = spawnConfetti;
+window.toggleNoDreamMode = toggleNoDreamMode;
+window.recordNoDream = recordNoDream;
+window.checkNoDreamStatus = checkNoDreamStatus;
+window.animateCounter = animateCounter;
+window.updateCharCount = updateCharCount;
+window.startVoiceInput = startVoiceInput;
+window.stopVoiceInput = stopVoiceInput;
+window.startLoadingSteps = startLoadingSteps;
+window.stopLoadingSteps = stopLoadingSteps;
+window.renderPopularStories = renderPopularStories;
+window.goToStoryTag = goToStoryTag;
+window.renderDaliMini = renderDaliMini;
+window.renderDaliResultInsight = renderDaliResultInsight;
+window.toggleDreamGuide = toggleDreamGuide;
+window.nextGuideStep = nextGuideStep;
+window.selectGuideOption = selectGuideOption;
+
+// 인기 꿈 이야기 — 커뮤니티 글 미리보기
+const POPULAR_TAGS=[
+  {tag:'뱀 꿈',emoji:'🐍',label:'뱀꿈'},
+  {tag:'이빨 꿈',emoji:'🦷',label:'이빨빠지는꿈'},
+  {tag:'하늘 꿈',emoji:'☁️',label:'하늘나는꿈'},
+  {tag:'추락 꿈',emoji:'😰',label:'추락하는꿈'},
+  {tag:'물 꿈',emoji:'🌊',label:'물꿈'},
+  {tag:'재물 꿈',emoji:'🐷',label:'돼지/재물꿈'},
+  {tag:'이별 꿈',emoji:'💕',label:'이별꿈'},
+  {tag:'쫓기는 꿈',emoji:'🏃',label:'쫓기는꿈'},
+  {tag:'귀신 꿈',emoji:'👻',label:'귀신꿈'},
+  {tag:'시험 꿈',emoji:'📝',label:'시험꿈'},
+];
+
+export function renderPopularStories(){
+  const el=document.getElementById('popularStories');
+  if(!el)return;
+  el.innerHTML=POPULAR_TAGS.map(t=>{
+    const post=FEED_DEMO.find(f=>f.tag===t.tag);
+    if(!post)return '';
+    const count=FEED_DEMO.filter(f=>f.tag===t.tag).length;
+    const bodyShort=post.body.length>45?post.body.slice(0,45)+'...':post.body;
+    return `<div class="pstory" onclick="goToStoryTag('${t.tag}')">
+      <div class="pstory-tag">
+        <span class="pstory-emoji">${t.emoji}</span>
+        <span class="pstory-label">${t.label}</span>
+        <span class="pstory-count">${count}건</span>
+      </div>
+      <div class="pstory-title">${post.title.replace(/^[^\s]+\s/,'')}</div>
+      <div class="pstory-body">${bodyShort}</div>
+      <div class="pstory-footer">
+        <span>🌟 ${post.likes}</span>
+        <span>💬 ${post.comments.length}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+export function goToStoryTag(tag){
+  window.switchTab('community');
+  setTimeout(()=>{window.setFilter(tag);},100);
+}
+
+// ═══ 달이 미니카드 (메인탭 상단) ═══
+export function renderDaliMini(){
+  const el=document.getElementById('daliMini');
+  const msg=document.getElementById('daliMiniMsg');
+  if(!el||!msg)return;
+
+  const logs=JSON.parse(localStorage.getItem('mg_logs')||'[]');
+  const h=new Date().getHours();
+  const mem=JSON.parse(localStorage.getItem('mg_dari_memory')||'[]');
+
+  let text='';
+  if(logs.length===0){
+    text='안녕! 나는 달이야. 꿈을 기록하면 내가 패턴을 분석해줄게 🌙';
+  }else if(h>=5&&h<9){
+    text=`좋은 아침! 어젯밤 꿈이 기억나요? 기억날 때 빨리 적어보세요 ☀️`;
+  }else if(h>=21||h<5){
+    const last=logs[0];
+    text=`오늘 하루 수고했어요. ${last?`저번 "${last.title}" 꿈 이후로 어때요?`:'편안한 밤 되세요'} 🌙`;
+  }else{
+    // 낮 — 인사이트 하나 짚어주기
+    const kwCount={};
+    logs.forEach(l=>{(l.keywords||[]).forEach(k=>{kwCount[k]=(kwCount[k]||0)+1;});(l.badges||[]).forEach(b=>{kwCount[b]=(kwCount[b]||0)+1;});});
+    const top=Object.entries(kwCount).sort((a,b)=>b[1]-a[1])[0];
+    if(top&&top[1]>=2){
+      text=`요즘 꿈에서 "${top[0]}"이(가) ${top[1]}번 반복되고 있어요. 같이 얘기해볼까요?`;
+    }else if(mem.length>0){
+      const lastMem=mem[mem.length-1].replace('- ','').replace(/\(.+\)/,'').trim();
+      text=`${lastMem} — 그 후로 어떻게 됐는지 궁금해요 🐱`;
+    }else{
+      text=`${logs.length}개 꿈을 분석했어요. 나한테 오면 패턴을 알려줄게!`;
+    }
+  }
+  msg.innerHTML=text;
+  el.style.display='flex';
+}
+
+// ═══ 해몽 결과 달이 인사이트 ═══
+export function renderDaliResultInsight(data,inp){
+  const card=document.getElementById('daliResultCard');
+  const msgEl=document.getElementById('daliResultMsg');
+  if(!card||!msgEl)return;
+
+  const logs=JSON.parse(localStorage.getItem('mg_logs')||'[]');
+  const mem=JSON.parse(localStorage.getItem('mg_dari_memory')||'[]');
+
+  let msg='';
+
+  // 1. 반복 패턴 연결
+  const currentKws=[...(data.badges||[])];
+  const dreamSymbols=['뱀','물','불','이빨','하늘','돈','돼지','고양이','달','꽃','비','바다','산'];
+  dreamSymbols.forEach(s=>{if(inp.includes(s))currentKws.push(s);});
+
+  const pastMatches=logs.filter(l=>{
+    const lkw=[...(l.keywords||[]),...(l.badges||[])];
+    return currentKws.some(k=>lkw.includes(k));
+  });
+
+  if(pastMatches.length>=2){
+    const matchKw=currentKws.find(k=>pastMatches.filter(l=>[...(l.keywords||[]),...(l.badges||[])].includes(k)).length>=2);
+    if(matchKw){
+      msg=`"${matchKw}" 관련 꿈을 <b>${pastMatches.length}번째</b> 꾸고 있어요. 반복되는 꿈은 무의식이 강하게 보내는 신호예요. 달이한테 오면 이 패턴이 뭘 의미하는지 같이 풀어볼 수 있어요.`;
+    }
+  }
+
+  // 2. 감정 변화 연결
+  if(!msg&&logs.length>=3){
+    const recentBadges=logs.slice(0,3).map(l=>(l.badges||[])).flat();
+    const goodCount=recentBadges.filter(b=>b==='길몽').length;
+    const badCount=recentBadges.filter(b=>b==='흉몽').length;
+    if((data.badges||[]).includes('길몽')&&badCount>=2){
+      msg='최근 흉몽이 많았는데 오늘은 길몽이에요! 마음이 안정되고 있는 신호일 수 있어요. 달이한테 감정 흐름을 분석받아보세요.';
+    }else if((data.badges||[]).includes('흉몽')&&goodCount>=2){
+      msg='최근 좋은 꿈이 이어지다가 오늘은 무거운 꿈이었네요. 혹시 요즘 스트레스 받는 일이 있어요? 달이한테 얘기해봐요.';
+    }
+  }
+
+  // 3. 메모리 연결
+  if(!msg&&mem.length>0){
+    const lastMem=mem[mem.length-1].replace('- ','').replace(/\(.+\)/,'').trim();
+    msg=`이전에 "${lastMem}"이라고 했었죠? 오늘 꿈이 그것과 연결될 수 있어요. 달이한테 오면 같이 풀어볼게요.`;
+  }
+
+  // 4. 기본 (꿈 기록 수 기반)
+  if(!msg){
+    if(logs.length<=2){
+      msg='꿈을 3개 이상 기록하면 달이가 패턴을 분석해줄 수 있어요. 꾸준히 기록해봐요!';
+    }else{
+      msg=`지금까지 ${logs.length}개 꿈을 기록했어요. 달이한테 오면 당신만의 꿈 패턴과 감정 흐름을 분석해줄게요 🐱`;
+    }
+  }
+
+  msgEl.innerHTML=msg;
+  card.style.display='block';
+  logEvent('dali_result_insight_shown');
+}
+
+
+// ═══ 반복꿈 비교 섹션 ═══
+export function renderRecurringComparison(data,inp){
+  const wrap=document.getElementById('recurringComparison');
+  const body=document.getElementById('recurringCmpBody');
+  if(!wrap||!body)return;
+
+  const logs=JSON.parse(localStorage.getItem('mg_logs')||'[]');
+  if(logs.length===0){wrap.style.display='none';return;}
+
+  // 현재 꿈 키워드 추출
+  const curKws=[...(data.badges||[])];
+  const symbols=['뱀','물','불','이빨','하늘','돈','돼지','고양이','달','꽃','비','바다','산','차','집','학교','아기','죽음','결혼','시험'];
+  symbols.forEach(s=>{if(inp.includes(s))curKws.push(s);});
+
+  // 유사 과거 꿈 찾기
+  const similar=logs.filter(l=>{
+    if(!l.title)return false;
+    const lkw=[...(l.badges||[]),...(l.emotions||[]).map(e=>e.replace(/^[^\s]+\s/,''))];
+    const textMatch=inp.split(' ').filter(w=>w.length>=2).some(w=>l.text?.includes(w));
+    const kwMatch=curKws.some(k=>lkw.includes(k)||(l.text||'').includes(k));
+    return kwMatch||textMatch;
+  });
+
+  if(similar.length===0){wrap.style.display='none';return;}
+
+  const prev=similar[0];
+  const prevStats=prev.stats||{};
+  const curStats=data.stats||{};
+  const statKeys=['길흉','연애운','재물운','건강운','활력','직관'];
+
+  const statRows=statKeys.map(k=>{
+    const pv=prevStats[k]??'-';
+    const cv=curStats[k]??'-';
+    let arrow='→',cls='stat-same';
+    if(typeof pv==='number'&&typeof cv==='number'){
+      if(cv>pv){arrow='↑';cls='stat-up';}
+      else if(cv<pv){arrow='↓';cls='stat-down';}
+    }
+    return '<div class="recurring-cmp-row">'
+      +'<div class="recurring-cmp-col"><div class="recurring-cmp-label">'+esc(k)+'</div><div class="recurring-cmp-val">'+pv+'</div></div>'
+      +'<div class="recurring-cmp-arrow '+cls+'">'+arrow+'</div>'
+      +'<div class="recurring-cmp-col"><div class="recurring-cmp-label">'+esc(k)+'</div><div class="recurring-cmp-val '+cls+'">'+cv+'</div></div>'
+      +'</div>';
+  }).join('');
+
+  const overlap=curKws.filter(k=>(prev.text||'').includes(k)||(prev.badges||[]).includes(k));
+  const overlapText=overlap.length>0?overlap.map(k=>'"'+k+'"').join(', '):'';
+
+  const prevEmotions=(prev.emotions||[]).map(e=>e.replace(/^[^\s]+\s/,'')).join(', ');
+  const curEmotions=(data.emotions||[]).map(e=>e.replace(/^[^\s]+\s/,'')).join(', ');
+
+  let changeSummary='';
+  const goodKeys=['길흉','재물운','활력'];
+  let improved=0,declined=0;
+  goodKeys.forEach(k=>{
+    if(typeof curStats[k]==='number'&&typeof prevStats[k]==='number'){
+      if(curStats[k]>prevStats[k])improved++;
+      else if(curStats[k]<prevStats[k])declined++;
+    }
+  });
+  if(improved>declined){
+    changeSummary='이전보다 <b>긍정적인 방향</b>으로 변하고 있어요. 무의식이 안정을 찾아가는 신호일 수 있어요.';
+  }else if(declined>improved){
+    changeSummary='이전 꿈보다 <b>에너지가 낮아진</b> 느낌이에요. 요즘 마음이 힘든 건 아닌지 살펴봐주세요.';
+  }else{
+    changeSummary='비슷한 흐름이 <b>반복</b>되고 있어요. 무의식이 같은 메시지를 계속 보내고 있는 것 같아요.';
+  }
+  if(similar.length>=3){
+    changeSummary+=' <b>'+similar.length+'번째</b> 비슷한 꿈이에요. 달이에게 패턴 분석을 요청해보세요.';
+  }
+
+  body.innerHTML='<div class="recurring-cmp-prev">'
+    +'<div class="recurring-cmp-prev-title">'+esc(prev.title||'이전 꿈')+'</div>'
+    +'<div class="recurring-cmp-prev-date">'+esc(prev.date||'')+'</div>'
+    +'<div class="recurring-cmp-badges">'+(prev.badges||[]).map(b=>'<span class="badge bl">'+esc(b)+'</span>').join('')+'</div>'
+    +(prevEmotions?'<div style="font-size:10px;color:var(--text-muted)">감정: '+esc(prevEmotions)+'</div>':'')
+    +'</div>'
+    +'<div style="text-align:center;font-size:10px;color:var(--text-muted);margin:6px 0">'
+    +'<span style="display:inline-flex;align-items:center;gap:4px">이전'+(overlapText?' ('+overlapText+')':'')+' → 오늘</span>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:2px;align-items:center">'
+    +statRows
+    +'</div>'
+    +(curEmotions?'<div style="margin-top:8px;font-size:10px;color:var(--text-muted)">오늘 감정: '+esc(curEmotions)+'</div>':'')
+    +'<div class="recurring-cmp-change">'+changeSummary+'</div>';
+  wrap.style.display='block';
+  logEvent('recurring_comparison_shown',{prevTitle:prev.title,matchCount:similar.length,overlap});
+}
+// ═══ 꿈 회상 가이드 ═══
+const GUIDE_STEPS=[
+  {q:'꿈에서 어디에 있었어요?', opts:['집','학교/직장','야외/자연','낯선 곳','기억 안 남'],key:'place'},
+  {q:'누가 나왔어요?', opts:['혼자','가족','친구','연인/전 애인','낯선 사람','동물'],key:'who'},
+  {q:'무슨 일이 있었어요?', opts:['쫓기거나 도망','날거나 떨어짐','무언가를 찾음','싸움/갈등','행복한 장면'],key:'event',hasInput:true},
+  {q:'어떤 기분이었어요?', opts:['무서웠어요','불안했어요','신났어요','슬펐어요','편안했어요','혼란스러웠어요'],key:'feeling'},
+  {q:'그 외 기억나는 디테일이 있어요?', key:'detail',inputOnly:true,placeholder:'색깔, 물건, 소리, 냄새 등 자유롭게...'},
+];
+
+let guideStep=0;
+let guideAnswers={};
+let guideActive=false;
+
+export function toggleDreamGuide(){
+  guideActive=!guideActive;
+  const area=document.getElementById('dreamGuideArea');
+  const btn=document.getElementById('dreamGuideBtn');
+  if(!area)return;
+  if(guideActive){
+    guideStep=0;guideAnswers={};
+    area.style.display='block';
+    btn.classList.add('active');
+    renderGuideStep();
+    logEvent('dream_guide_started');
+  }else{
+    area.style.display='none';
+    btn.classList.remove('active');
+  }
+}
+
+function renderGuideStep(){
+  const step=GUIDE_STEPS[guideStep];
+  if(!step)return finishGuide();
+
+  document.getElementById('dgTitle').textContent=`(${guideStep+1}/${GUIDE_STEPS.length}) 달이가 도와줄게요`;
+  document.getElementById('dgQuestion').textContent=step.q;
+
+  const optsEl=document.getElementById('dgOptions');
+  const inputRow=document.getElementById('dgInputRow');
+  const dgInput=document.getElementById('dgInput');
+
+  if(step.inputOnly){
+    optsEl.innerHTML='';
+    inputRow.style.display='flex';
+    dgInput.value='';
+    dgInput.placeholder=step.placeholder||'자유롭게 적어주세요...';
+    dgInput.focus();
+  }else{
+    optsEl.innerHTML=(step.opts||[]).map(o=>
+      `<button class="dg-opt" onclick="selectGuideOption('${o}')">${o}</button>`
+    ).join('');
+    inputRow.style.display=step.hasInput?'flex':'none';
+    if(step.hasInput){dgInput.value='';dgInput.placeholder='또는 직접 적어주세요...';}
+  }
+
+  // 프로그레스
+  document.getElementById('dgProgress').innerHTML=GUIDE_STEPS.map((_,i)=>
+    `<div class="dg-dot ${i<guideStep?'done':i===guideStep?'active':''}"></div>`
+  ).join('');
+}
+
+export function selectGuideOption(opt){
+  const step=GUIDE_STEPS[guideStep];
+  guideAnswers[step.key]=opt;
+  guideStep++;
+  renderGuideStep();
+}
+
+export function nextGuideStep(){
+  const step=GUIDE_STEPS[guideStep];
+  const input=document.getElementById('dgInput').value.trim();
+  if(input){
+    guideAnswers[step.key]=input;
+  }else if(!guideAnswers[step.key]){
+    guideAnswers[step.key]='';
+  }
+  guideStep++;
+  renderGuideStep();
+}
+
+function finishGuide(){
+  // 답변을 자연스러운 꿈 텍스트로 조합
+  const parts=[];
+  if(guideAnswers.place&&guideAnswers.place!=='기억 안 남') parts.push(`${guideAnswers.place}에서`);
+  if(guideAnswers.who&&guideAnswers.who!=='혼자') parts.push(`${guideAnswers.who}와(과) 함께`);
+  if(guideAnswers.event) parts.push(guideAnswers.event);
+  if(guideAnswers.feeling) parts.push(`기분은 ${guideAnswers.feeling}`);
+  if(guideAnswers.detail) parts.push(guideAnswers.detail);
+
+  const dreamText=parts.join(', ')+'인 꿈을 꿨어요.';
+  document.getElementById('dreamInput').value=dreamText;
+  updateCharCount();
+
+  // 가이드 닫기
+  guideActive=false;
+  document.getElementById('dreamGuideArea').style.display='none';
+  document.getElementById('dreamGuideBtn').classList.remove('active');
+
+  showToast('달이가 꿈을 정리해줬어요! 🐱');
+  logEvent('dream_guide_completed',{answers:Object.keys(guideAnswers).length});
+}
+
+// ═══ 꿈 로또 행운 번호 ═══
+
+// 한국 로또 6/45 역대 당첨 빈도 상위 번호 (실제 통계 기반 가중치)
+const LOTTO_FREQ={
+  34:198,43:196,27:193,1:191,12:190,18:189,33:188,20:187,17:186,14:185,
+  45:184,26:183,40:182,7:181,4:180,13:179,10:178,6:177,11:176,3:175,
+  37:174,21:173,2:172,15:171,39:170,31:169,24:168,36:167,9:166,44:165,
+  35:164,16:163,42:162,38:161,23:160,28:159,29:158,19:157,5:156,22:155,
+  41:154,30:153,8:152,25:151,32:150
+};
+
+// 꿈 상징→번호 그룹 매핑
+const SYMBOL_NUMBERS={
+  뱀:[7,17,27,37],물:[4,14,24,34,44],불:[3,13,23,33,43],하늘:[1,11,21,31,41],
+  돈:[8,18,28,38],돼지:[9,19,29,39],이빨:[5,15,25,35,45],달:[6,16,26,36],
+  꽃:[2,12,22,32,42],바다:[4,14,34,44],산:[1,11,31,41],새:[3,23,33,43],
+  나비:[7,17,27,37],아기:[1,10,20,30],집:[9,19,29,39],차:[6,16,26,36],
+  고양이:[2,12,22,32],사랑:[14,24,34,44],죽음:[13,31,43,45],비:[4,24,34,44],
+  눈:[1,11,21,41],학교:[5,15,25,35],거미:[8,18,28,38]
+};
+
+// 운세 에너지→번호 범위 가중치
+function getEnergyWeights(stats){
+  const w=new Array(46).fill(1);
+  // 재물운 높으면 고빈도 번호 가중치 UP
+  if(stats.재물운>=70) [34,43,27,1,12,18].forEach(n=>w[n]+=3);
+  // 연애운 높으면 짝수 번호 가중치
+  if(stats.연애운>=70) for(let i=2;i<=44;i+=2)w[i]+=1;
+  // 직관 높으면 소수(prime) 가중치
+  if(stats.직관>=70) [2,3,5,7,11,13,17,19,23,29,31,37,41,43].forEach(n=>w[n]+=2);
+  // 활력 높으면 큰 번호 가중치
+  if(stats.활력>=70) for(let i=30;i<=45;i++)w[i]+=1;
+  // 건강운 높으면 1의 자리 반복 번호
+  if(stats.건강운>=70) [11,22,33,44].forEach(n=>w[n]+=2);
+  // 길흉에 따라 조정
+  if(stats.길흉>=80) [7,8,18,28,38].forEach(n=>w[n]+=2); // 길한 번호
+  if(stats.길흉<40) [4,13,14,44].forEach(n=>w[n]+=1); // 흉한 에너지→반전 행운
+  return w;
+}
+
+// 입력 텍스트에서 해시 시드 생성
+function dreamHash(text){
+  let h=0;
+  for(let i=0;i<text.length;i++){h=((h<<5)-h)+text.charCodeAt(i);h|=0;}
+  return Math.abs(h);
+}
+
+// 의사난수 생성기 (시드 기반)
+function seededRandom(seed){
+  let s=seed;
+  return function(){s=(s*16807+0)%2147483647;return(s-1)/2147483646;};
+}
+
+// 가중치 기반 번호 선택
+function weightedPick(weights,rng,exclude){
+  const pool=[];
+  for(let n=1;n<=45;n++){
+    if(exclude.has(n))continue;
+    const freq=LOTTO_FREQ[n]||150;
+    const total=weights[n]*freq;
+    for(let i=0;i<total;i++)pool.push(n);
+  }
+  return pool[Math.floor(rng()*pool.length)];
+}
+
+// 번호 색상 클래스 (한국 로또 기준)
+function ballRange(n){
+  if(n<=10)return 'range1'; // 노란색
+  if(n<=20)return 'range2'; // 초록색
+  if(n<=30)return 'range3'; // 파란색
+  if(n<=40)return 'range4'; // 보라색
+  return 'range5'; // 빨간색
+}
+
+// 메인 생성 함수
+function generateLottoNumbers(stats,inp){
+  const symbols=Object.keys(SYMBOL_NUMBERS);
+  const foundSymbols=symbols.filter(s=>inp.includes(s));
+
+  // 시드: 꿈 텍스트 해시 + 오늘 날짜 + stats 합
+  const today=new Date().toISOString().split('T')[0];
+  const statSum=Object.values(stats).reduce((a,b)=>a+b,0);
+  const seed=dreamHash(inp+today)+statSum;
+  const rng=seededRandom(seed);
+
+  const weights=getEnergyWeights(stats);
+
+  // 상징 매칭 번호 가중치 추가
+  foundSymbols.forEach(sym=>{
+    (SYMBOL_NUMBERS[sym]||[]).forEach(n=>{weights[n]+=4;});
+  });
+
+  // 6개 번호 선택
+  const picked=new Set();
+
+  // 상징 매칭된 번호 중 1개 우선 선택
+  if(foundSymbols.length>0){
+    const symPool=foundSymbols.flatMap(s=>SYMBOL_NUMBERS[s]||[]);
+    if(symPool.length>0){
+      const n=symPool[Math.floor(rng()*symPool.length)];
+      picked.add(n);
+    }
+  }
+
+  // 나머지 가중치 기반 선택
+  let tries=0;
+  while(picked.size<6&&tries<200){
+    const n=weightedPick(weights,rng,picked);
+    if(n)picked.add(n);
+    tries++;
+  }
+
+  // 혹시 6개 못 채우면 랜덤 보충
+  while(picked.size<6){
+    const n=Math.floor(rng()*45)+1;
+    picked.add(n);
+  }
+
+  const numbers=[...picked].sort((a,b)=>a-b);
+
+  // 분석 텍스트 생성
+  let analysis='';
+  if(foundSymbols.length>0){
+    analysis+=`꿈 속 "${foundSymbols.join(', ')}" 상징에서 핵심 번호를 추출했어요. `;
+  }
+  const topStat=Object.entries(stats).sort((a,b)=>b[1]-a[1])[0];
+  analysis+=`${topStat[0]}(${topStat[1]}점)이 가장 높아서 관련 번호에 가중치를 뒀어요. `;
+  analysis+='역대 1,100회 당첨 빈도와 결합해서 최적화했어요.';
+
+  return {numbers,analysis,foundSymbols};
+}
+
+// 렌더링
+function renderLotto(stats,inp){
+  const card=document.getElementById('lottoCard');
+  const ballsEl=document.getElementById('lottoBalls');
+  const analysisEl=document.getElementById('lottoAnalysis');
+  if(!card||!ballsEl)return;
+
+  const {numbers,analysis}=generateLottoNumbers(stats,inp);
+
+  ballsEl.innerHTML=numbers.map(n=>
+    `<div class="lotto-ball ${ballRange(n)}">${n}</div>`
+  ).join('');
+  if(analysisEl)analysisEl.textContent=analysis;
+  card.style.display='block';
+
+  logEvent('lotto_shown',{numbers:numbers.join(',')});
+}
+
+// 다시 뽑기 (시드에 랜덤 요소 추가)
+window.rerollLotto=function(){
+  if(!window._last)return;
+  const {data,inp}=window._last;
+  // 다시 뽑기 시 입력에 타임스탬프 추가로 시드 변경
+  const newInp=inp+Date.now();
+  const card=document.getElementById('lottoCard');
+  const ballsEl=document.getElementById('lottoBalls');
+  const analysisEl=document.getElementById('lottoAnalysis');
+
+  // 애니메이션 리셋
+  ballsEl.innerHTML='';
+  setTimeout(()=>{
+    const {numbers,analysis}=generateLottoNumbers(data.stats,newInp);
+    ballsEl.innerHTML=numbers.map(n=>
+      `<div class="lotto-ball ${ballRange(n)}">${n}</div>`
+    ).join('');
+    if(analysisEl)analysisEl.textContent=analysis;
+    logEvent('lotto_reroll',{numbers:numbers.join(',')});
+  },100);
+};
+
+// ── 감정 태그 시스템 ──
+const EMOTION_TAGS=[
+  {id:'joy',icon:'😊',label:'기쁨',color:'#FFD700'},
+  {id:'fear',icon:'😨',label:'공포',color:'#FF6B6B'},
+  {id:'sadness',icon:'😢',label:'슬픔',color:'#4A90E2'},
+  {id:'confusion',icon:'😕',label:'혼란',color:'#FFA500'},
+  {id:'calm',icon:'😌',label:'평온',color:'#9B59B6'}
+];
+
+/**
+ * 감정 태그 UI 초기화 (꿈 입력란이 보일 때)
+ */
+export function initEmotionTags(){
+  const container=document.getElementById('emotionTagsContainer');
+  const section=document.getElementById('emotionTagsSection');
+  if(!container||!section)return;
+
+  container.innerHTML=EMOTION_TAGS.map(tag=>`
+    <button class="emotion-tag" data-emotion-id="${tag.id}" onclick="selectEmotionTag('${tag.id}')" title="${tag.label}" style="
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      padding:6px 10px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(166,124,239,.2);
+      border-radius:16px;
+      color:var(--text-secondary);
+      font-size:12px;
+      cursor:pointer;
+      transition:all .2s ease;
+    ">
+      <span style="font-size:14px">${tag.icon}</span>
+      <span>${tag.label}</span>
+    </button>
+  `).join('');
+}
+
+/**
+ * 감정 태그 선택/해제
+ */
+window.selectEmotionTag=function(emotionId){
+  const {store}=window._storeImport||{store:{}};
+  if(!store.selectedEmotions)store.selectedEmotions=[];
+
+  const idx=store.selectedEmotions.indexOf(emotionId);
+  if(idx>=0){
+    store.selectedEmotions.splice(idx,1);
+  }else{
+    if(store.selectedEmotions.length>=5){
+      showToast('감정 태그는 최대 5개까지 선택할 수 있어요 🎯');
+      return;
+    }
+    store.selectedEmotions.push(emotionId);
+  }
+
+  // UI 업데이트
+  const buttons=document.querySelectorAll('.emotion-tag');
+  buttons.forEach(btn=>{
+    const id=btn.getAttribute('data-emotion-id');
+    if(store.selectedEmotions.includes(id)){
+      btn.style.background='rgba(166,124,239,.3)';
+      btn.style.borderColor='rgba(166,124,239,.6)';
+      btn.style.color='var(--text-primary)';
+    }else{
+      btn.style.background='rgba(255,255,255,.05)';
+      btn.style.borderColor='rgba(166,124,239,.2)';
+      btn.style.color='var(--text-secondary)';
+    }
+  });
+
+  logEvent('emotion_tag_selected',{emotion:emotionId,count:store.selectedEmotions.length});
+};
+
+/**
+ * 선택된 감정 태그를 해석 프롬프트에 반영
+ */
+export function getEmotionContext(){
+  const {store}=window._storeImport||{store:{}};
+  const emotions=store.selectedEmotions||[];
+  if(emotions.length===0)return '';
+
+  const emotionNames=EMOTION_TAGS
+    .filter(t=>emotions.includes(t.id))
+    .map(t=>t.label)
+    .join(', ');
+
+  return `\n사용자가 느낀 감정: ${emotionNames}. 이 감정들을 고려해서 해석해줘.`;
+}
+
+/**
+ * 꿈 입력 탭 활성화 시 감정 태그 섹션 표시
+ */
+export function showEmotionTagsSection(){
+  const section=document.getElementById('emotionTagsSection');
+  const input=document.getElementById('dreamInput');
+  if(!section)return;
+
+  // 꿈 입력란이 포커스되면 감정 태그 섹션 표시
+  if(input){
+    input.addEventListener('focus',()=>{
+      if(input.value.length>0){
+        section.style.display='block';
+        if(!section.hasAttribute('data-initialized')){
+          initEmotionTags();
+          section.setAttribute('data-initialized','true');
+        }
+      }
+    });
+
+    input.addEventListener('blur',()=>{
+      // 텍스트가 없으면 숨김
+      if(input.value.length===0){
+        section.style.display='none';
+        const {store}=window._storeImport||{store:{}};
+        store.selectedEmotions=[];
+      }
+    });
+  }
+}

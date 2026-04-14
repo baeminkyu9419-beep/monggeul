@@ -1,0 +1,23 @@
+{
+  "name": "몽글몽글 - 꿈 해몽 & 꿈 기록",
+  "short_name": "몽글몽글",
+  "description": "꿈을 기록하고, 달이와 함께 해몽하는 나만의 꿈 동반자",
+  "start_url": "/monggeul/",
+  "scope": "/monggeul/",
+  "display": "standalone",
+  "background_color": "#0e0c1a",
+  "theme_color": "#0e0c1a",
+  "orientation": "portrait",
+  "categories": ["lifestyle", "health"],
+  "lang": "ko",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "icons": [
+    {"src": "assets/cat_normal.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "assets/cat_normal.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ],
+  "shortcuts": [
+    {"name": "꿈 해몽하기", "url": "/monggeul/", "icons": [{"src": "assets/cat_normal.png", "sizes": "96x96"}]},
+    {"name": "달이와 대화", "url": "/monggeul/?tab=chat", "icons": [{"src": "assets/cat_normal.png", "sizes": "96x96"}]}
+  ]
+}

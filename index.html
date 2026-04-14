@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="몽글몽글 - 꿈을 기록하고 달이와 함께 해몽하는 꿈 동반자 앱. 길몽·흉몽·연애운·재물운 분석.">
+<meta name="keywords" content="꿈해몽,꿈기록,꿈일기,해몽,꿈풀이,꿈해석,길몽,흉몽,태몽,운세,심리,수면">
+<link rel="canonical" href="https://baeminkyu9419-beep.github.io/monggeul/">
+<meta property="og:title" content="몽글몽글 🌙 꿈 해몽 & 꿈 기록">
+<meta property="og:description" content="꿈을 입력하면 달이가 길몽·흉몽·운세를 분석해줘요. 달이와 꿈 이야기를 나눠보세요!">
+<meta property="og:image" content="https://baeminkyu9419-beep.github.io/monggeul/og-image.png">
+<meta property="og:url" content="https://baeminkyu9419-beep.github.io/monggeul/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image:alt" content="몽글몽글 - 꿈 해몽 앱">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"몽글몽글","description":"꿈을 기록하고 달이와 함께 해몽하는 꿈 동반자 앱","url":"https://baeminkyu9419-beep.github.io/monggeul/","applicationCategory":"LifestyleApplication","operatingSystem":"Web, Android, iOS","offers":{"@type":"Offer","price":"0","priceCurrency":"KRW"},"inLanguage":"ko"}
+</script>
+<meta name="theme-color" content="#0e0c1a">
+<!-- Naver Search Advisor (등록 후 content 값 교체) -->
+<!-- <meta name="naver-site-verification" content="YOUR_NAVER_CODE"> -->
+<!-- Daum webmaster (등록 후 content 값 교체) -->
+<!-- <meta name="verify-v1" content="YOUR_DAUM_CODE"> -->
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/cat_normal.png">
+<title>몽글몽글 🌙 꿈 해몽 & 꿈 기록</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="dns-prefetch" href="https://mskwqlqpcsfvgvhhilma.supabase.co">
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet"></noscript>
+<script src="config.js" onerror="window.OPENAI_KEY=''"></script>
+<!-- GA4 — Google Analytics (등록 후 G-XXXXXXX를 실제 ID로 교체) -->
+<script>
+window.GA_ID=window.GA_ID||'';
+if(window.GA_ID){
+  var gs=document.createElement('script');gs.async=true;gs.src='https://www.googletagmanager.com/gtag/js?id='+window.GA_ID;document.head.appendChild(gs);
+  window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config',window.GA_ID);
+}
+</script>
+<!-- Google AdSense — 클라이언트 ID가 있을 때만 로드 -->
+<script>
+window.ADSENSE_CLIENT=window.ADSENSE_CLIENT||'';
+window.ADSENSE_SLOT=window.ADSENSE_SLOT||'';
+if(window.ADSENSE_CLIENT){
+  var as=document.createElement('script');as.async=true;as.crossOrigin='anonymous';as.src='https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='+window.ADSENSE_CLIENT;document.head.appendChild(as);
+}
+</script>
+<style>
+/* Critical CSS — splash screen (loads before JS) */
+html,body{height:100%;margin:0;background:#0e0c1a;color:#f0ecff;font-family:'Noto Sans KR',sans-serif;overflow:hidden;}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.1);opacity:.8}}
+@keyframes splashBar{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
+
+    /* WCAG 접��성: 키보드 포커스 스타일 */
+    :focus-visible{outline:2px solid #a67cef;outline-offset:2px;border-radius:4px}
+    .skip-link{position:absolute;top:-40px;left:0;background:#a67cef;color:#fff;padding:8px 16px;z-index:99999;font-size:14px;border-radius:0 0 8px 0;transition:top .2s}
+    .skip-link:focus{top:0}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+    @media(prefers-contrast:more){:root{--card-bg:#1a1a2e;--text-primary:#ffffff;--text-secondary:#e0e0e0}}
+  
+  </style>
+</head>
+<body>
+<!-- 로딩 스플래시 (JS 로드 전 표시, 로드 후 자동 제거) -->
+<div id="appSplash" style="position:fixed;inset:0;z-index:9999;background:#0e0c1a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;transition:opacity .4s ease;">
+  <div style="font-size:48px;animation:pulse 1.5s ease-in-out infinite">🌙</div>
+  <div style="font-size:16px;color:#c8bff8;font-family:sans-serif;font-weight:700;letter-spacing:2px">몽글몽글</div>
+  <div style="width:40px;height:3px;background:rgba(166,124,239,.3);border-radius:2px;overflow:hidden;margin-top:8px"><div style="width:60%;height:100%;background:#a67cef;border-radius:2px;animation:splashBar 1.2s ease-in-out infinite"></div></div>
+</div>
+<script>window.addEventListener('load',()=>{const s=document.getElementById('appSplash');if(s){s.style.opacity='0';setTimeout(()=>s.remove(),400);}});</script>
+
+<div id="sky">
+  <!-- 작은 별 (흰색, 희미) -->
+  <div class="bg-star star-s" style="top:3%;left:8%;--d:3.2s;--dl:0s"></div>
+  <div class="bg-star star-s" style="top:7%;left:32%;--d:4.5s;--dl:1.5s"></div>
+  <div class="bg-star star-s" style="top:12%;left:55%;--d:3.8s;--dl:0.8s"></div>
+  <div class="bg-star star-s" style="top:18%;left:82%;--d:5.2s;--dl:2.1s"></div>
+  <div class="bg-star star-s" style="top:25%;left:15%;--d:4.1s;--dl:0.3s"></div>
+  <div class="bg-star star-s" style="top:33%;left:68%;--d:3.5s;--dl:1.9s"></div>
+  <div class="bg-star star-s" style="top:40%;left:42%;--d:4.8s;--dl:2.8s"></div>
+  <div class="bg-star star-s" style="top:52%;left:90%;--d:3.3s;--dl:0.6s"></div>
+  <div class="bg-star star-s" style="top:60%;left:5%;--d:5.5s;--dl:1.2s"></div>
+  <div class="bg-star star-s" style="top:68%;left:48%;--d:4.3s;--dl:3.1s"></div>
+  <div class="bg-star star-s" style="top:75%;left:72%;--d:3.9s;--dl:0.4s"></div>
+  <div class="bg-star star-s" style="top:82%;left:22%;--d:4.7s;--dl:2.5s"></div>
+  <div class="bg-star star-s" style="top:88%;left:60%;--d:3.6s;--dl:1.7s"></div>
+  <div class="bg-star star-s" style="top:92%;left:38%;--d:5.1s;--dl:0.9s"></div>
+  <!-- 중간 별 (노란빛) -->
+  <div class="bg-star star-m" style="top:5%;left:45%;--d:4.2s;--dl:0.5s"></div>
+  <div class="bg-star star-m" style="top:15%;left:70%;--d:3.6s;--dl:2.3s"></div>
+  <div class="bg-star star-m star-warm" style="top:22%;left:28%;--d:5s;--dl:1.1s"></div>
+  <div class="bg-star star-m" style="top:38%;left:85%;--d:4.4s;--dl:0.7s"></div>
+  <div class="bg-star star-m star-warm" style="top:45%;left:12%;--d:3.7s;--dl:2.6s"></div>
+  <div class="bg-star star-m" style="top:55%;left:55%;--d:4.9s;--dl:1.4s"></div>
+  <div class="bg-star star-m star-warm" style="top:65%;left:78%;--d:3.4s;--dl:0.2s"></div>
+  <div class="bg-star star-m" style="top:72%;left:35%;--d:5.3s;--dl:3s"></div>
+  <div class="bg-star star-m" style="top:85%;left:88%;--d:4.1s;--dl:1.8s"></div>
+  <!-- 큰 별 (밝은 노란빛, 글로우) -->
+  <div class="bg-star star-l" style="top:10%;left:20%;--d:5.5s;--dl:0.8s"></div>
+  <div class="bg-star star-l star-warm" style="top:28%;left:52%;--d:6s;--dl:2s"></div>
+  <div class="bg-star star-l star-blue" style="top:48%;left:75%;--d:5.8s;--dl:1.3s"></div>
+  <div class="bg-star star-l" style="top:58%;left:18%;--d:6.2s;--dl:2.7s"></div>
+  <div class="bg-star star-l star-warm" style="top:78%;left:62%;--d:5.4s;--dl:0.5s"></div>
+  <div class="bg-star star-l star-blue" style="top:90%;left:8%;--d:6.5s;--dl:3.2s"></div>
+  <!-- 유성 (다양한 각도, 길이, 속도) -->
+  <div class="shooting-star meteor-trail" style="top:8%;left:65%;--sd:5s;--sdl:1s;--angle:-30deg;--dx:-280px;--dy:160px;--len:90px"></div>
+  <div class="shooting-star meteor-big" style="top:20%;left:80%;--sd:7s;--sdl:3s;--angle:-40deg;--dx:-400px;--dy:250px;--len:140px"></div>
+  <div class="shooting-star meteor-trail" style="top:40%;left:55%;--sd:6s;--sdl:5.5s;--angle:-25deg;--dx:-250px;--dy:120px;--len:70px"></div>
+  <div class="shooting-star meteor-big" style="top:55%;left:90%;--sd:8s;--sdl:8s;--angle:-35deg;--dx:-350px;--dy:200px;--len:160px"></div>
+  <div class="shooting-star meteor-trail" style="top:70%;left:45%;--sd:5.5s;--sdl:2.5s;--angle:-32deg;--dx:-300px;--dy:170px;--len:100px"></div>
+  <div class="shooting-star meteor-big" style="top:15%;left:40%;--sd:9s;--sdl:11s;--angle:-38deg;--dx:-380px;--dy:220px;--len:120px"></div>
+  <div class="shooting-star meteor-trail" style="top:85%;left:75%;--sd:6.5s;--sdl:7s;--angle:-28deg;--dx:-260px;--dy:140px;--len:80px"></div>
+</div>
+
+<div id="app">
+
+  <!-- 헤더 -->
+  <div class="hdr">
+    <div class="hdr-logo"><div class="hdr-logo-icon">🌙</div>몽글몽글</div>
+  </div>
+
+  <div class="pages">
+
+    <!-- ══ 해몽 탭 ══ -->
+    <div class="page active" id="page-dream">
+
+      <!-- 섹션 1: 히어로 -->
+      <div style="text-align:center;padding:20px 0 16px;">
+        <h1 style="font-family:'Gowun Dodum',serif;font-size:var(--fs-h1);color:var(--moon);line-height:1.4;margin-bottom:6px;text-shadow:0 0 20px rgba(245,230,178,.15),0 0 40px rgba(166,124,239,.1);">오늘 꾼 꿈,<br>몽글몽글이 해석해드려요</h1>
+        <p style="font-size:var(--fs-body);color:var(--text-secondary);line-height:1.5;margin-bottom:6px;">길몽·흉몽·연애운·재물운까지 한눈에</p>
+        <p style="font-size:var(--fs-caption);color:var(--text-muted);display:flex;align-items:center;justify-content:center;gap:4px;">지금까지 <strong style="color:var(--amber)" id="heroCounter">1,331</strong>명이 해몽했어요</p>
+        <div id="liveCounter" style="margin-top:6px;display:flex;align-items:center;justify-content:center;gap:5px;font-size:10px;color:var(--teal);">
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pl 2s ease-in-out infinite;"></span>
+          <span id="liveCountText"></span>
+        </div>
+      </div>
+      <script>
+      (function(){
+        const h=new Date().getHours();
+        const base=h>=22||h<6?30:h>=6&&h<9?80:h>=9&&h<12?120:h>=12&&h<18?90:60;
+        const jitter=Math.floor(Math.random()*40);
+        const el=document.getElementById('liveCountText');
+        if(el)el.textContent='지금 '+(base+jitter)+'명이 해몽 중';
+        // 30초마다 약간씩 변동
+        setInterval(()=>{
+          const n=base+Math.floor(Math.random()*40);
+          if(el)el.textContent='지금 '+n+'명이 해몽 중';
+        },30000);
+      })();
+      </script>
+
+
+      <!-- 달이 미니카드 -->
+      <div class="dali-mini" id="daliMini" style="display:none" onclick="switchTab('chat')">
+        <div class="dali-mini-face">🐱</div>
+        <div class="dali-mini-body">
+          <div class="dali-mini-msg" id="daliMiniMsg"></div>
+        </div>
+        <div class="dali-mini-arrow">›</div>
+      </div>
+
+      <!-- 섹션 2: 꿈 입력 + CTA -->
+      <div class="card" style="background:rgba(50,42,90,.6);border-color:rgba(166,124,239,.25);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:var(--fs-h3);font-weight:700;color:var(--text-primary);">꿈을 적어보세요</span>
+          <button onclick="toggleDreamGuide()" class="dali-guide-btn" id="dreamGuideBtn" title="달이가 도와줄게">🐱 도움</button>
+        </div>
+        <div style="position:relative">
+          <textarea class="dream-ta" id="dreamInput" rows="3" placeholder="어젯밤 꿈을 알려주세요..." oninput="updateCharCount();this.style.height='auto';this.style.height=Math.min(this.scrollHeight,200)+'px';saveDreamDraft(this.value)" style="padding-right:56px;overflow:hidden;resize:none;transition:height .2s ease"></textarea>
+          <div class="voice-btn-wrap" id="voiceBtnWrap">
+            <div class="voice-bubble" id="voiceBubble">친구한테 말하듯<br>편하게 말해보세요</div>
+            <button onclick="startVoiceInput()" class="voice-btn" title="음성 입력" aria-label="음성으로 꿈 입력" id="voiceBtn">
+              <span class="voice-icon">🎙</span>
+            </button>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:-6px;margin-bottom:6px">
+          <div id="dreamDetailHint" style="display:none;font-size:11px;transition:all .3s ease;"></div>
+          <div style="font-size:10px;color:var(--text-muted);margin-left:auto" id="charCount"></div>
+        </div>
+        <!-- 달이 꿈 회상 가이드 -->
+        <div id="dreamGuideArea" style="display:none">
+          <div class="dream-guide-card">
+            <div class="dg-header"><span>🐱</span> <span class="dg-title" id="dgTitle">달이가 도와줄게요!</span></div>
+            <div class="dg-question" id="dgQuestion"></div>
+            <div class="dg-options" id="dgOptions"></div>
+            <div class="dg-input-row" id="dgInputRow" style="display:none">
+              <input type="text" class="dg-input" id="dgInput" placeholder="자유롭게 적어주세요..." onkeydown="if(event.key==='Enter')nextGuideStep()">
+              <button class="dg-next" onclick="nextGuideStep()">다음</button>
+            </div>
+            <div class="dg-progress" id="dgProgress"></div>
+          </div>
+        </div>
+        <!-- 감정 태그 선택 UI -->
+        <div id="emotionTagsSection" style="margin-top:12px;padding:12px;background:rgba(166,124,239,.08);border:1px solid rgba(166,124,239,.15);border-radius:var(--r-lg);display:none">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;font-weight:600">🎯 어떤 기분의 꿈이었나요? (선택사항)</div>
+          <div id="emotionTagsContainer" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        </div>
+        <div class="chips" style="overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px;">
+          <span class="chip" onclick="fillDream('뱀꿈')">🐍 뱀</span>
+          <span class="chip" onclick="fillDream('이빨 빠지는 꿈')">🦷 이빨</span>
+          <span class="chip" onclick="fillDream('돈을 줍는 꿈')">💰 돈</span>
+          <span class="chip" onclick="fillDream('물에 빠지는 꿈')">🌊 물</span>
+          <span class="chip" onclick="fillDream('높은 곳에서 떨어지는 꿈')">😰 추락</span>
+          <span class="chip" onclick="fillDream('누군가에게 쫓기는 꿈')">🏃 쫓김</span>
+          <span class="chip" onclick="fillDream('돼지꿈')">🐷 돼지</span>
+          <span class="chip" onclick="fillDream('전 애인이 나온 꿈')">💔 전 애인</span>
+          <span class="chip" onclick="fillDream('똥꿈')">💩 똥</span>
+          <span class="chip" onclick="fillDream('귀신이 나온 꿈')">👻 귀신</span>
+          <span class="chip" onclick="fillDream('하늘을 나는 꿈')">☁️ 하늘</span>
+          <span class="chip" onclick="fillDream('죽는 꿈')">💀 죽음</span>
+        </div>
+        <button class="btn-main" onclick="analyzeDream()" aria-label="꿈 해몽 시작">🔮 해몽하기</button>
+        <div style="text-align:center;margin-top:6px;font-size:10px;color:var(--text-muted)" id="dreamCountInfo"></div>
+        <div id="lastDreamQuick" style="display:none;margin-top:8px;"></div>
+        <!-- 꿈 안 꿨어요 제거됨 -->
+      </div>
+
+      <!-- ═══ 꿈 안 꿨을 때 영역 (접힘식, 기본 숨김) ═══ -->
+      <div id="noDreamArea" style="display:none;">
+        <!-- 푹 잤어요 기록 -->
+        <div id="noDreamRecord" style="display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid rgba(166,124,239,.15);border-radius:var(--r-lg);padding:13px 16px;margin-bottom:10px;cursor:pointer" onclick="recordNoDream()">
+          <span style="font-size:22px">😴</span>
+          <div style="flex:1"><div style="font-size:13px;font-weight:700">푹 잤어요! 기록하기</div><div style="font-size:10px;color:var(--text-muted)">+3 XP +2 꿈가루 · 연속 기록 유지</div></div>
+          <span style="color:var(--purple-bright);font-size:12px">✦</span>
+        </div>
+        <!-- 오늘의 운세 (compact) -->
+        <div style="background:var(--card);border:1px solid rgba(166,124,239,.15);border-radius:var(--r-lg);padding:13px 16px;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:26px" id="fortuneEmoji">🔮</span>
+            <div style="flex:1">
+              <div style="font-size:10px;color:var(--purple-bright);font-weight:700">오늘의 꿈 운세</div>
+              <div style="font-size:14px;font-weight:700;color:var(--moon);font-family:'Gowun Dodum',serif" id="fortuneTitle"></div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;margin-top:8px" id="fortuneMsg"></div>
+          <div style="display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;">
+            <span style="background:rgba(248,201,76,.08);border-radius:6px;padding:3px 7px;font-size:10px;color:var(--amber)" id="fortuneLucky"></span>
+            <span style="background:rgba(240,168,200,.08);border-radius:6px;padding:3px 7px;font-size:10px;color:var(--pink)" id="fortuneColor"></span>
+            <span style="background:rgba(125,232,216,.08);border-radius:6px;padding:3px 7px;font-size:10px;color:var(--teal)" id="fortuneNum"></span>
+          </div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:6px;font-style:italic" id="fortuneTip"></div>
+          <button onclick="shareFortune()" style="margin-top:8px;background:rgba(166,124,239,.15);border:1px solid rgba(166,124,239,.25);border-radius:8px;padding:4px 10px;color:var(--purple-bright);font-size:10px;cursor:pointer;font-family:'Noto Sans KR',sans-serif">📤 운세 공유</button>
+        </div>
+        <!-- 퀴즈 (compact) -->
+        <div style="background:var(--card);border:1px solid rgba(166,124,239,.15);border-radius:var(--r-lg);padding:13px 16px;margin-bottom:10px;" id="quizCard">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="font-size:11px;color:var(--amber);font-weight:700">✦ 오늘의 퀴즈</div>
+            <div style="font-size:10px;color:var(--text-muted)" id="quizProgress">1/3</div>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:10px;line-height:1.5" id="quizQuestion"></div>
+          <div id="quizOptions" style="display:flex;flex-direction:column;gap:6px;"></div>
+          <div id="quizResult" style="display:none;text-align:center;padding:8px 0;">
+            <div style="font-size:22px;margin-bottom:4px" id="quizResultEmoji"></div>
+            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5" id="quizResultText"></div>
+          </div>
+        </div>
+        <!-- 어제 꿈 후기 -->
+        <div id="yesterdayReview" style="display:none;background:var(--card);border:1px solid rgba(248,201,76,.2);border-radius:var(--r-lg);padding:13px 16px;margin-bottom:10px;">
+          <div style="font-size:11px;color:var(--amber);font-weight:700;margin-bottom:6px">🔮 지난 해몽 돌아보기</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px" id="reviewDreamTitle"></div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;line-height:1.5" id="reviewDreamText"></div>
+          <div style="display:flex;gap:6px;">
+            <button class="review-btn" onclick="submitPastReview('맞았어요',this)" style="flex:1;font-size:11px">✅ 맞았어요</button>
+            <button class="review-btn" onclick="submitPastReview('조금요',this)" style="flex:1;font-size:11px">🤔 조금요</button>
+            <button class="review-btn" onclick="submitPastReview('아니에요',this)" style="flex:1;font-size:11px">❌ 아니에요</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 오늘의 상징 (compact 한 줄) -->
+      <div class="today-symbol-card" id="todaySymbolCard" style="padding:12px 14px">
+        <div class="ts-left">
+          <div class="ts-label" style="font-size:10px">🌙 오늘의 상징</div>
+          <div class="ts-symbol" id="tsSymbol" style="font-size:16px">물 🌊</div>
+          <div class="ts-desc" id="tsDesc" style="font-size:11px">오늘 물 관련 꿈이 많이 올라오고 있어요.</div>
+        </div>
+        <div class="ts-right">
+          <div class="ts-count" id="tsCount" style="font-size:10px">오늘 <strong>47명</strong>이<br>꿨어요</div>
+          <button class="ts-btn" onclick="quickSearch(document.getElementById('tsSymbol').textContent.split(' ')[0]+'꿈')" style="font-size:10px;padding:5px 8px">이건 무슨 꿈? 👀</button>
+        </div>
+      </div>
+
+      <div class="loading" id="loadingEl">
+        <div class="dream-loading-anim">
+          <div class="loading-glow"></div>
+          <div class="dream-rabbit">🐇</div>
+          <div class="dream-pestle">🌙</div>
+        </div>
+        <p class="ltxt" id="loadTxt">꿈토끼가 절구를 찧고 있어요...</p>
+        <div class="loading-steps" id="loadingSteps">
+          <div class="lstep active" id="lstep1">✦ 꿈 속 상징 분석 중</div>
+          <div class="lstep" id="lstep2">✦ 무의식 패턴 해독 중</div>
+          <div class="lstep" id="lstep3">✦ 운세 에너지 측정 중</div>
+          <div class="lstep" id="lstep4">✦ 해몽서 1만 페이지 열람 중</div>
+        </div>
+      </div>
+
+      <div class="result" id="resultEl">
+        <div class="rtitle" id="rTitle">🌙 해몽 결과</div>
+        <div class="rdate" id="rDate"></div>
+        <div style="text-align:center;font-size:9px;color:rgba(255,255,255,.15);margin-bottom:8px">꿈 해석은 재미와 자기 성찰을 위한 거예요 🌙</div>
+        <div class="card">
+          <div class="sct">✦ 꿈 에너지 분석</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
+            <svg id="radarSvg" width="240" height="240" viewBox="0 0 240 240" style="max-width:100%;"></svg>
+            <div class="sl" id="statLegend" style="width:100%;display:grid;grid-template-columns:1fr 1fr;gap:6px;"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="br" id="badgeRow"></div>
+          <div id="dreamKeywords" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;"></div>
+          <div id="resultEmotions" style="display:none;margin-bottom:10px;"></div>
+          <!-- 맛보기 해석 (항상 보임) -->
+          <p class="itxt" id="interpText"></p>
+          <!-- 3분기 해석 탭 -->
+          <div class="interp3-wrap" id="interp3Wrap" style="display:none">
+            <div class="interp3-tabs">
+              <button class="i3tab active" onclick="switchInterp3('traditional',this)">📜 전통 해몽</button>
+              <button class="i3tab" onclick="switchInterp3('psychology',this)">🧠 심리 해석</button>
+              <button class="i3tab" onclick="switchInterp3('advice',this)">💡 현실 조언</button>
+            </div>
+            <div class="i3content" id="i3traditional"></div>
+            <div class="i3content" id="i3psychology" style="display:none"></div>
+            <div class="i3content" id="i3advice" style="display:none"></div>
+          </div>
+          <!-- 상세해석 잠금 영역 -->
+          <div class="detail-lock" id="detailLock">
+            <div class="lock-preview" id="lockPreview"></div>
+            <div class="lock-overlay">
+              <div class="lock-icon">✨</div>
+              <div class="lock-title">상세 해몽</div>
+              <div class="lock-sub" id="lockSubText">오늘 무료 해몽 2회 중 사용 가능</div>
+              <button class="lock-btn" id="lockBtn" onclick="watchAd()">🔓 상세 해몽 보기</button>
+            </div>
+          </div>
+          <!-- 상세해석 전체 (광고 후 공개) -->
+          <div class="detail-full" id="detailFull" style="display:none">
+            <div class="detail-full-divider">✦ 상세 해몽</div>
+            <p class="itxt" id="interpFull"></p>
+          </div>
+          <!-- 반복꿈 비교 -->
+          <div id="recurringCompare" style="display:none;"></div>
+          <!-- 유사 꿈 추천 -->
+          <div class="similar-dream-row" id="similarDreamRow" style="display:none">
+            <div class="sd-label">🔍 비슷한 꿈을 꾼 사람들</div>
+            <div class="sd-count" id="sdCount"></div>
+            <button class="sd-btn" onclick="switchTab('community');setCommunityFilter('비슷한꿈')">커뮤니티에서 보기 →</button>
+          </div>
+          <div class="arow" style="margin-top:14px">
+            <button class="abtn" onclick="shareResult()">📤 공유</button>
+            <button class="abtn" onclick="saveToDreamlog()">📖 저장</button>
+            <button class="abtn" onclick="switchTab('chat')">🐱 달이에게 물어보기</button>
+          </div>
+          <!-- 꿈 로또 행운 번호 -->
+          <div id="lottoCard" class="lotto-card" style="display:none;margin-top:14px;">
+            <div class="lotto-header">
+              <span class="lotto-title">🎰 꿈이 알려준 행운의 번호</span>
+              <span class="lotto-sub">꿈 에너지 + 역대 당첨 패턴 분석</span>
+            </div>
+            <div class="lotto-balls" id="lottoBalls"></div>
+            <div class="lotto-analysis" id="lottoAnalysis"></div>
+            <button class="lotto-retry-btn" onclick="rerollLotto()">🔄 다시 뽑기</button>
+            <div class="lotto-disclaimer">꿈 해석 기반 재미 추천이에요. 실제 당첨을 보장하지 않아요 🌙</div>
+          </div>
+          <!-- 꿈 속 상징 매칭 -->
+          <div id="dreamSymbolCards" style="display:none;margin-top:12px;"></div>
+          <!-- 반복꿈 비교 섹션 -->
+          <div id="repeatDreamCompare" style="display:none"></div>
+          <!-- 리텐션 훅: 내일 다시 오기 -->
+          <div id="retentionHook" style="display:none;"></div>
+          <!-- 저장 후 다음 행동 유도 -->
+          <div id="dreamNextAction" style="display:none;"></div>
+          <!-- 꿈 인사이트 -->
+          <div id="dreamInsight" style="display:none;margin-top:10px;background:rgba(125,232,216,.06);border:1px solid rgba(125,232,216,.15);border-radius:12px;padding:10px;">
+            <div style="font-size:11px;color:var(--teal);font-weight:700;margin-bottom:4px">💡 이런 꿈을 꾸는 사람은</div>
+            <div style="font-size:11px;color:var(--text-secondary);line-height:1.6" id="insightText"></div>
+          </div>
+          <!-- 달이의 한마디 (해몽 결과 연결) -->
+          <div id="daliResultCard" style="display:none" class="dali-result-card" onclick="switchTab('chat')">
+            <div class="dali-rc-header">
+              <span class="dali-rc-face">🐱</span>
+              <span class="dali-rc-name">달이의 한마디</span>
+              <span class="dali-rc-arrow">달이에게 더 물어보기 ›</span>
+            </div>
+            <div class="dali-rc-msg" id="daliResultMsg"></div>
+          </div>
+          <!-- 반복꿈 비교 섹션 -->
+          <div id="recurringComparison" style="display:none;margin-top:14px;" class="recurring-cmp">
+            <div class="recurring-cmp-header">
+              <span class="recurring-cmp-icon">🔄</span>
+              <span class="recurring-cmp-title">이전 해몽과 비교</span>
+            </div>
+            <div id="recurringCmpBody"></div>
+          </div>
+          <!-- CRM: 맞춤형 질문 영역 -->
+          <div id="dreamContextArea" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- 광고 배너 슬롯 (무료 사용자만 표시) -->
+      <div class="ad-banner-slot" style="display:none;"></div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:28px;margin-bottom:14px;">
+        <span style="font-size:var(--fs-h3);font-weight:700;color:var(--text-primary);">다른 사람들의 꿈</span>
+        <button onclick="openDictPage()" style="background:rgba(166,124,239,.1);border:1px solid rgba(166,124,239,.2);border-radius:16px;color:var(--purple-bright);font-size:var(--fs-tiny);font-family:'Noto Sans KR',sans-serif;padding:3px 10px;cursor:pointer">📖 꿈 사전</button>
+      </div>
+      <div class="popular-stories" id="popularStories"></div>
+    </div>
+
+    <!-- ══ 꿈가루 탭 (드림로그 + 마이페이지) ══ -->
+    <div class="page" id="page-log">
+      <!-- 프로필 -->
+      <div class="my-profile">
+        <div class="my-avatar">🌙</div>
+        <div class="my-nickname" id="myNickname" onclick="editNickname()" style="cursor:pointer" title="탭해서 변경">꿈탐험가</div>
+        <div class="my-join" id="myJoinDays">몽글몽글과 함께한 지 1일째 ✨</div>
+      </div>
+      <!-- 스탯 -->
+      <div class="my-stats-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="my-stat-card">
+          <div class="my-stat-num" id="myLvNum">0</div>
+          <div class="my-stat-lbl">해몽</div>
+        </div>
+        <div class="my-stat-card">
+          <div class="my-stat-num" id="myLogCount">0</div>
+          <div class="my-stat-lbl">꿈 기록</div>
+        </div>
+        <div class="my-stat-card">
+          <div class="my-stat-num" id="myStreakNum">0</div>
+          <div class="my-stat-lbl">연속</div>
+        </div>
+        <div class="my-stat-card" style="background:rgba(248,201,76,.06);border-color:rgba(248,201,76,.15);">
+          <div class="my-stat-num" id="stardustCount" style="color:var(--amber)">0</div>
+          <div class="my-stat-lbl" style="color:var(--amber)">✦ 별가루</div>
+        </div>
+      </div>
+      <!-- 연속 기록 카드 -->
+      <div class="streak-card">
+        <div class="streak-av">🌙</div>
+        <div class="streak-det">
+          <div class="streak-nl"><span class="streak-nm">꿈탐험가</span></div>
+          <div class="streak-st">🔥 연속 <strong id="stDays">0</strong>일 기록 중</div>
+        </div>
+        <div class="cin-btn" id="cinBtn" onclick="doCheckin()">출석</div>
+      </div>
+      <!-- 7일 출석 보상 -->
+      <div class="card" style="padding:12px 14px;">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;display:flex;align-items:center;gap:4px"><span style="color:var(--amber)">✦</span> 7일 출석 보상</div>
+        <div id="weeklyCheckin" style="display:flex;gap:4px;justify-content:space-between;"></div>
+      </div>
+      <!-- 꿈 감정 상태 분석 (패턴 엔진) -->
+      <div id="dreamGallery" style="display:none"></div>
+        <div id="levelCard" style="display:none;margin-bottom:14px" class="card" style2="padding:14px"></div>
+        <div id="dreamPatternCard" style="display:none;margin-bottom:14px">
+        <div class="sec-title">꿈 감정 분석</div>
+        <div class="card" style="padding:14px">
+          <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+            <div id="patternPredIcon" style="font-size:28px">🔮</div>
+            <div>
+              <div id="patternPredTitle" style="font-size:13px;font-weight:700;color:var(--moon)"></div>
+              <div id="patternPredSub" style="font-size:11px;color:var(--text-muted)"></div>
+            </div>
+          </div>
+          <div id="patternEmotionBars" style="display:flex;flex-direction:column;gap:6px"></div>
+          <div id="patternCluster" style="margin-top:10px;font-size:11px;color:var(--text-secondary)"></div>
+          <div id="symbolTrackerMini" style="margin-top:10px"></div>
+          <div id="patternEmotionFlow" style="margin-top:12px;border-top:1px solid rgba(255,255,255,.06);padding-top:10px"></div>
+        </div>
+      </div>
+      <!-- 꿈 기록 -->
+      <div class="sec-title">나의 꿈 기록</div>
+      <input type="text" id="dreamSearchInput" placeholder="🔍 꿈 기록 검색..." oninput="searchDreamLog()" style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);color:var(--text-primary);font-family:'Noto Sans KR',sans-serif;font-size:12px;padding:8px 12px;outline:none;margin-bottom:10px;">
+      <!-- 캘린더 -->
+      <div class="dream-calendar" id="dreamCalendar"></div>
+      <!-- 반복꿈 감지 -->
+      <div id="repeatDreamAlert" style="display:none" class="repeat-alert">
+        <div class="repeat-icon">🔄</div>
+        <div class="repeat-content">
+          <div class="repeat-title">반복꿈 감지!</div>
+          <div class="repeat-body" id="repeatDreamBody"></div>
+        </div>
+      </div>
+      <div id="logList"><div class="empty"><div class="empty-icon">📖</div><div class="empty-txt">아직 기록된 꿈이 없어요.<br>해몽 후 저장하면 여기에 쌓여요!</div></div></div>
+      <!-- 광고 배너 슬롯 (MY 탭) -->
+      <div class="ad-banner-slot" style="display:none;"></div>
+      <!-- 메뉴 -->
+      <!-- 꿈 성격 프로필 -->
+      <div id="dreamPersonality" style="display:none;margin-bottom:20px;">
+        <div class="sec-title">🌙 나의 꿈 성격</div>
+        <div style="background:linear-gradient(135deg,rgba(166,124,239,.08),rgba(125,232,216,.05));border:1px solid rgba(166,124,239,.15);border-radius:20px;padding:18px;text-align:center;">
+          <div id="dpEmoji" style="font-size:36px;margin-bottom:6px"></div>
+          <div id="dpType" style="font-size:16px;font-weight:900;color:var(--moon);font-family:'Gowun Dodum',serif;margin-bottom:4px"></div>
+          <div id="dpDesc" style="font-size:11px;color:var(--text-secondary);line-height:1.6;margin-bottom:10px"></div>
+          <div id="dpTags" style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;"></div>
+        </div>
+      </div>
+
+      <!-- 무의식 미니 프로파일 -->
+      <div id="unconsciousProfile" style="display:none;margin-bottom:20px;background:linear-gradient(135deg,rgba(91,191,186,.06),rgba(166,124,239,.04));border:1px solid rgba(91,191,186,.15);border-radius:20px;padding:18px;"></div>
+
+      <div class="sec-title">✨ 프리미엄</div>
+      <div class="premium-card" onclick="showPremiumModal()">
+        <div class="pc-top">
+          <div class="pc-badge">📜 상세 해몽</div>
+          <div class="pc-price">₩1,900 / 1회</div>
+        </div>
+        <div class="pc-benefits">
+          <div class="pc-benefit">🌙 심층 해석 + 5축 레이더 + 무의식 다이브</div>
+          <div class="pc-benefit">✦ 맞춤 후속 질문 + 2차 해석</div>
+          <div class="pc-benefit">✦ 15회팩 ₩19,900 (회당 ₩1,327)</div>
+        </div>
+        <button class="pc-btn">상세 해몽 알아보기 →</button>
+      </div>
+      <div class="premium-card" onclick="showPaywall('unconscious_profile')" style="margin-top:10px;border-color:rgba(91,191,186,.2);background:linear-gradient(135deg,rgba(91,191,186,.05),rgba(91,191,186,.02))">
+        <div class="pc-top">
+          <div class="pc-badge" style="color:var(--teal,#5bbfba)">🧠 무의식 프로파일</div>
+          <div class="pc-price">₩2,900</div>
+        </div>
+        <div class="pc-benefits">
+          <div class="pc-benefit">🔮 5축 무의식 심층 분석</div>
+          <div class="pc-benefit">✦ 누적 꿈 기반 성격 프로파일</div>
+          <div class="pc-benefit">✦ 프로 구독(₩9,900/월)이면 무료!</div>
+        </div>
+        <button class="pc-btn" style="background:linear-gradient(135deg,#5bbfba,#3d9e99)">무의식 프로파일 보기 →</button>
+      </div>
+      <!-- 업적 -->
+      <div class="sec-title">🏆 업적</div>
+      <div class="card" id="achievementList"></div>
+      <div class="sec-title">설정</div>
+      <div class="my-menu-item" onclick="showToast('곧 만나요! 달이가 열심히 준비 중 🐱')"><span class="my-menu-icon">🔔</span><span class="my-menu-text">알림 설정</span><span class="my-menu-arrow">›</span></div>
+      <div class="my-menu-item" onclick="showToast('다음 업데이트에서 만나요! ✨')"><span class="my-menu-icon">🐱</span><span class="my-menu-text">프로필 설정</span><span class="my-menu-arrow">›</span></div>
+      <div class="my-menu-item" onclick="openReportPage()"><span class="my-menu-icon">📊</span><span class="my-menu-text">주간 꿈 리포트</span><span class="my-menu-arrow">›</span></div>
+      <div class="my-menu-item" onclick="openFlowPage()"><span class="my-menu-icon">🌊</span><span class="my-menu-text">꿈 흐름 보기</span><span class="my-menu-arrow">›</span></div>
+      <div class="my-menu-item" onclick="openDictPage()"><span class="my-menu-icon">📖</span><span class="my-menu-text">꿈 상징 사전</span><span class="my-menu-arrow">›</span></div>
+      <div class="my-menu-item" onclick="showExportModal()"><span class="my-menu-icon">📤</span><span class="my-menu-text">꿈 기록 내보내기 (TXT)</span><span class="my-menu-arrow">›</span></div>
+      <div class="my-menu-item" onclick="exportDreamImage()"><span class="my-menu-icon">🖼️</span><span class="my-menu-text">꿈 프로필 이미지 공유</span><span class="my-menu-arrow">›</span></div>
+      <div class="my-menu-item" onclick="resetAllData()" style="border-color:rgba(240,100,100,.15)"><span class="my-menu-icon">🗑</span><span class="my-menu-text" style="color:rgba(240,100,100,.7)">데이터 초기화 (테스트)</span><span class="my-menu-arrow">›</span></div>
+      <!-- 로그인/로그아웃 -->
+      <div id="loginArea" style="margin-top:8px">
+        <div class="my-menu-item" onclick="showLoginModal()" style="border-color:rgba(166,124,239,.2)"><span class="my-menu-icon">🔑</span><span class="my-menu-text" style="color:var(--purple-bright)">로그인 / 회원가입</span><span class="my-menu-arrow">›</span></div>
+      </div>
+      <div id="logoutBtn" style="display:none;margin-top:8px">
+        <div class="my-menu-item" onclick="logout()" style="border-color:rgba(255,255,255,.08)"><span class="my-menu-icon">🚪</span><span class="my-menu-text" style="color:var(--text-muted)">로그아웃</span><span class="my-menu-arrow">›</span></div>
+      </div>
+      <!-- 푸터 -->
+      <div style="margin-top:20px;padding:20px 0 10px;border-top:1px solid rgba(255,255,255,.06);">
+        <div style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-bottom:12px;justify-content:center;">
+          <a href="store/terms-of-service.html" target="_blank" style="font-size:10px;color:var(--text-muted);text-decoration:none">이용약관</a>
+          <a href="store/privacy-policy.html" target="_blank" style="font-size:10px;color:var(--text-muted);text-decoration:none">개인정보처리방침</a>
+          <a href="mailto:monggeul.app@gmail.com" style="font-size:10px;color:var(--text-muted);text-decoration:none">고객센터</a>
+          <a href="mailto:monggeul.ad@gmail.com" style="font-size:10px;color:var(--text-muted);text-decoration:none">광고/제휴</a>
+        </div>
+        <div style="font-size:9px;color:rgba(255,255,255,.2);line-height:1.8;text-align:center;">
+          <div>몽글몽글 | 대표: 배민규</div>
+          <div>본 서비스는 오락 및 자기 성찰 목적이며 의학적 진단을 제공하지 않습니다.</div>
+          <div style="margin-top:4px;color:rgba(255,255,255,.12)">© 2026 몽글몽글. All rights reserved.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- page-room 제거됨 -->
+
+    <!-- ══ 달이 탭 ══ -->
+    <div class="page chat-pg" id="page-chat">
+      <div class="chat-hd">
+        <div class="chat-nr">
+          <div class="chat-fc">🐱</div>
+          <div>
+            <div class="chat-nm">달이 <span class="dali-role-tag" id="daliRoleTag"></span></div>
+            <div class="chat-st"><span id="daliStatus">꿈 얘기해주면 바로 해몽해줄게요</span></div>
+          </div>
+          <button onclick="toggleDaliInsight()" style="display:flex;align-items:center;gap:4px;background:rgba(166,124,239,.1);border:1px solid rgba(166,124,239,.2);border-radius:16px;padding:4px 10px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;margin-left:auto" id="daliInsightBtn" title="내 꿈 인사이트"><span style="font-size:13px">📊</span><span style="font-size:10px;color:var(--purple-bright);font-weight:600">인사이트</span></button>
+          <button onclick="clearChat()" style="display:flex;align-items:center;gap:3px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:4px 8px;cursor:pointer;font-family:'Noto Sans KR',sans-serif" title="대화 초기화"><span style="font-size:12px">🗑</span><span style="font-size:10px;color:var(--text-muted)">초기화</span></button>
+        </div>
+        <!-- 인사이트 패널 (토글) -->
+        <div class="dali-insight-panel" id="daliInsightPanel" style="display:none">
+          <div class="dali-insight-grid" id="daliInsightGrid"></div>
+        </div>
+      </div>
+      <div class="chat-msgs" id="chatMsgs"></div>
+      <div class="chat-bot">
+        <div class="dali-followup" id="daliFollowup" style="display:none"></div>
+        <div class="chat-qks" id="daliChips"></div>
+        <div class="chat-ir">
+          <input type="text" class="chat-in" id="chatIn" placeholder="달이한테 말해줘요..." onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="chat-sb" onclick="sendChat()">전송</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 꿈 사례 모음 (커뮤니티) ══ -->
+    <div class="page" id="page-community">
+
+      <!-- 인기 사례 배너 -->
+      <div class="hook-banner" onclick="openDetail(9)">
+        <div class="hook-banner-title">🏆 인기 꿈 사례</div>
+        <div class="hook-banner-body">돼지 세 마리가 집에 들어오는 꿈 — <span>162명</span>이 공감</div>
+        <div class="hook-banner-footer"><span>🐷 정말 재물운이 왔다는 후기가...</span><span style="color:var(--amber)">바로 보기 →</span></div>
+      </div>
+      <div class="hook-banner" onclick="openDetail(11)" style="margin-bottom:14px;">
+        <div class="hook-banner-title">😰 많이 꾸는 꿈</div>
+        <div class="hook-banner-body">누군가에게 쫓기는 꿈 — <span>189명</span>이 "나도 이런 꿈 꿨어요"</div>
+        <div class="hook-banner-footer"><span>🏃 다리가 안 움직이는데...</span><span style="color:var(--pink)">바로 보기 →</span></div>
+      </div>
+
+      <!-- 글쓰기 버튼 -->
+      <div class="write-area">
+        <div class="write-prompt" onclick="openWriteSheet()">
+          <span class="write-avatar">🐱</span>
+          <span class="write-placeholder">오늘 꾼 꿈을 별들과 나눠보세요...</span>
+          <span class="write-icon">✏️</span>
+        </div>
+        <div class="write-quick-btns">
+          <button class="wqbtn" onclick="openWriteSheet('꿈기록')">🌙 꿈 기록</button>
+          <button class="wqbtn" onclick="openWriteSheet('질문')">🔮 해몽 질문</button>
+          <button class="wqbtn" onclick="openWriteSheet('일상')">💭 일상 공유</button>
+        </div>
+      </div>
+
+      <!-- 오늘 핫한 키워드 (시간 기반 동적) -->
+      <div class="hot-row">
+        <span class="hot-lbl">🔥 지금 핫한</span>
+        <div class="hot-tags" id="hotTagsDynamic"></div>
+      </div>
+      <script>
+      (function(){
+        const tags=[
+          {e:'🐍',n:'뱀꿈',f:'뱀 꿈'},{e:'💩',n:'똥꿈',f:'재물 꿈'},{e:'🦷',n:'이빨꿈',f:'이빨 꿈'},
+          {e:'😰',n:'추락꿈',f:'추락 꿈'},{e:'🏃',n:'쫓기는꿈',f:'쫓기는 꿈'},{e:'💔',n:'이별꿈',f:'이별 꿈'},
+          {e:'🌊',n:'물꿈',f:'물 꿈'},{e:'🐷',n:'돼지꿈',f:'재물 꿈'},{e:'👻',n:'귀신꿈',f:'귀신 꿈'},
+          {e:'💀',n:'죽는꿈',f:'귀신 꿈'},{e:'🍼',n:'태몽',f:'태몽'},{e:'📝',n:'시험꿈',f:'시험 꿈'},
+        ];
+        const h=new Date().getHours();
+        const seed=(new Date().getDate()*7+h)%tags.length;
+        const pick=[];for(let i=0;i<4;i++)pick.push(tags[(seed+i*3)%tags.length]);
+        const el=document.getElementById('hotTagsDynamic');
+        if(el)el.innerHTML=pick.map(t=>{
+          const cnt=Math.floor(50+Math.random()*150+h*3);
+          return '<span class="hot-tag" onclick="setCommunityFilter(\''+t.f+'\')">'+t.e+' '+t.n+' '+cnt+'명</span>';
+        }).join('');
+      })();
+      </script>
+      <div class="hot-row" style="display:none">
+        <div class="hot-tags">
+          <span class="hot-tag" onclick="setCommunityFilter('전체')">💰 돈꿈 61명</span>
+          <span class="hot-tag" onclick="setCommunityFilter('전체')">💕 연애 58명</span>
+        </div>
+      </div>
+
+      <!-- 카테고리 필터 탭 -->
+      <div class="feed-filter" id="communityFilterRow">
+        <button class="ftab on" onclick="setCommunityFilter('전체')">✨ 전체</button>
+        <button class="ftab" onclick="setCommunityFilter('인기')">🔥 인기</button>
+        <button class="ftab" onclick="setCommunityFilter('뱀 꿈')">🐍 뱀</button>
+        <button class="ftab" onclick="setCommunityFilter('추락 꿈')">😰 추락</button>
+        <button class="ftab" onclick="setCommunityFilter('이별 꿈')">💔 이별</button>
+        <button class="ftab" onclick="setCommunityFilter('물 꿈')">🌊 물</button>
+        <button class="ftab" onclick="setCommunityFilter('재물 꿈')">🐷 재물</button>
+        <button class="ftab" onclick="setCommunityFilter('쫓기는 꿈')">🏃 쫓기는</button>
+        <button class="ftab" onclick="setCommunityFilter('이빨 꿈')">🦷 이빨</button>
+        <button class="ftab" onclick="setCommunityFilter('하늘 꿈')">☁️ 하늘</button>
+        <button class="ftab" onclick="setCommunityFilter('귀신 꿈')">👻 귀신</button>
+        <button class="ftab" onclick="setCommunityFilter('시험 꿈')">📝 시험</button>
+        <button class="ftab" onclick="setCommunityFilter('태몽')">🍼 태몽</button>
+      </div>
+
+      <!-- 광고 배너 슬롯 (커뮤니티) -->
+      <div class="ad-banner-slot" style="display:none;"></div>
+      <!-- 피드 -->
+      <div id="similarDreamsSection" style="display:none;margin-bottom:14px"></div>
+      <div id="feedList"></div>
+
+    </div>
+
+  </div><!-- /pages -->
+
+  <!-- 탭바: 별들의이야기|달이|🔮해몽(메인)|드림룸|꿈가루 -->
+  <div class="tabbar" style="grid-template-columns:repeat(4,1fr)">
+    <button class="tb main-tab active" role="tab" id="tb-dream" onclick="switchTab('dream')" aria-label="해몽 탭"><span class="ti">🔮</span><span class="tl">해몽</span><span class="td"></span></button>
+    <button class="tb" role="tab" id="tb-chat" onclick="switchTab('chat')" aria-label="달이 대화 탭"><span class="ti">🐱</span><span class="tl">달이</span><span class="td"></span></button>
+    <button class="tb" role="tab" id="tb-community" onclick="switchTab('community')" aria-label="꿈 사례모음 탭"><span class="ti">💬</span><span class="tl">사례모음</span><span class="td"></span></button>
+    <button class="tb" role="tab" id="tb-log" onclick="switchTab('log')" aria-label="내 정보 탭"><span class="ti">👤</span><span class="tl">MY</span><span class="td"></span></button>
+  </div>
+
+
+<!-- 커뮤니티 상세 뷰 — 전체 페이지 전환 -->
+<div class="detail-page" id="detailPage">
+  <div class="detail-nav">
+    <button class="detail-back" onclick="closeDetail()">‹</button>
+    <span class="detail-nav-title">꿈 상세</span>
+  </div>
+  <div class="detail-content">
+    <div class="detail-author-row">
+      <div class="detail-author-av fc-av a1" id="dAv">🌙</div>
+      <div class="detail-author-info">
+        <div class="detail-author-nm" id="dNick"></div>
+        <div class="detail-author-tm" id="dTime"></div>
+      </div>
+      <div class="detail-badges" id="dBadges"></div>
+    </div>
+    <div class="detail-title" id="dTitle"></div>
+    <div class="detail-full-txt" id="dBody"></div>
+    <div class="detail-section-title">꿈 에너지 분석</div>
+    <div class="detail-radar-wrap">
+      <svg id="detailRadar" width="130" height="130" viewBox="0 0 160 160" style="flex-shrink:0"></svg>
+      <div class="sl" id="detailStatLegend"></div>
+    </div>
+    <button class="similar-btn" onclick="clickSimilar()">🔍 나도 비슷한 꿈 꿨어요!</button>
+    <div class="detail-actions">
+      <button class="detail-like-btn" id="dLikeBtn" onclick="toggleDetailLike()">🌟 공감 <span id="dLikeCount"></span></button>
+      <button class="detail-share-btn" onclick="showToast('링크 복사됐어요! 🔗')">🔗 공유</button>
+    </div>
+    <div class="likes-row">
+      <div class="likes-avatars">
+        <div class="likes-av">🌙</div><div class="likes-av">☀️</div><div class="likes-av">⭐</div>
+      </div>
+      <span class="likes-count" id="dLikesText"></span>
+    </div>
+    <div class="detail-divider"></div>
+    <div class="comments-label">댓글 <span id="dCommentCount" style="color:var(--purple-bright)"></span></div>
+    <div class="comment-input-row">
+      <input type="text" class="comment-input" id="commentInput" placeholder="따뜻한 댓글을 남겨요 🌙" onkeydown="if(event.key==='Enter')postComment()">
+      <button class="comment-send" onclick="postComment()">등록</button>
+    </div>
+    <div id="commentList"></div>
+  </div>
+</div>
+
+<!-- ══ 주간 꿈 리포트 페이지 ══ -->
+<div class="report-page" id="reportPage">
+  <div class="report-nav">
+    <button class="report-back" onclick="closeReportPage()">‹</button>
+    <span class="report-nav-title">📊 주간 꿈 리포트</span>
+  </div>
+  <div class="report-content">
+    <div class="report-week-selector">
+      <button class="rws-arrow" onclick="changeReportWeek(-1)">‹</button>
+      <span class="rws-label" id="rwsLabel">이번 주 리포트</span>
+      <button class="rws-arrow" onclick="changeReportWeek(1)">›</button>
+    </div>
+    <!-- 히어로 카드 -->
+    <div class="report-hero">
+      <span class="report-hero-emoji" id="reportHeroEmoji">🌙</span>
+      <div class="report-hero-title" id="reportHeroTitle">이번 주 꿈 총평</div>
+      <div class="report-hero-sub" id="reportHeroSub">꿈을 기록할수록 더 정확한 리포트를 받을 수 있어요</div>
+    </div>
+    <!-- 통계 3개 -->
+    <div class="report-stats-row">
+      <div class="rst-card"><div class="rst-num" id="rStatDays">0</div><div class="rst-lbl">기록한 날</div></div>
+      <div class="rst-card"><div class="rst-num" id="rStatDreams">0</div><div class="rst-lbl">꿈 개수</div></div>
+      <div class="rst-card"><div class="rst-num" id="rStatLuck">-</div><div class="rst-lbl">행운 지수</div></div>
+    </div>
+    <!-- 감정 분포 -->
+    <div class="report-section">
+      <div class="report-section-title">이번 주 감정 분포</div>
+      <div id="reportEmoBars"></div>
+    </div>
+    <!-- 자주 등장한 상징 -->
+    <div class="report-section">
+      <div class="report-section-title">자주 등장한 상징 TOP 3</div>
+      <div id="reportSymbolRank"></div>
+    </div>
+    <!-- 운세 4분면 -->
+    <div class="report-section">
+      <div class="report-section-title">이번 주 운세 분석</div>
+      <div class="report-luck-grid" id="reportLuckGrid"></div>
+    </div>
+    <!-- 달이 총평 -->
+    <div class="report-section">
+      <div class="report-section-title">🐱 달이의 주간 분석</div>
+      <div class="report-ai-box" style="border-color:rgba(255,153,68,.2);background:rgba(255,153,68,.04)">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><span style="font-size:16px">🐱</span><span style="font-size:11px;font-weight:700;color:var(--amber)">달이가 읽어주는 이번 주 꿈</span></div>
+        <div class="report-ai-text" id="reportAiText" style="line-height:1.7">꿈 기록이 쌓이면 달이가 당신만의 꿈 이야기를 들려줘요 🌙</div>
+        <button onclick="switchTab('chat')" style="margin-top:8px;background:rgba(255,153,68,.12);border:1px solid rgba(255,153,68,.25);border-radius:12px;padding:4px 12px;font-size:10px;color:var(--amber);cursor:pointer;font-family:'Noto Sans KR',sans-serif">달이에게 더 물어보기 ›</button>
+      </div>
+    </div>
+    <!-- 더 상세한 리포트 프리미엄 배너 -->
+    <div class="report-lock-banner">
+      <div class="rlb-icon">💎</div>
+      <div class="rlb-title">더 깊은 분석은 프리미엄에서</div>
+      <div class="rlb-sub">심리 분석 · 꿈 연결고리 · 다음 주 예측까지</div>
+      <button class="btn-main" onclick="showPremiumModal()">구독 플랜 보기 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 꿈 흐름 보기 페이지 ══ -->
+<div class="flow-page" id="flowPage" role="dialog" aria-label="꿈 흐름 분석">
+  <div class="flow-nav">
+    <button class="flow-back" onclick="closeFlowPage()">‹</button>
+    <span style="font-size:15px;font-weight:700">🌊 꿈 흐름 보기</span>
+  </div>
+  <div class="flow-content">
+    <div class="flow-period-tabs">
+      <button class="fp-tab on" onclick="setFlowPeriod('7',this)">7일</button>
+      <button class="fp-tab" onclick="setFlowPeriod('14',this)">2주</button>
+      <button class="fp-tab" onclick="setFlowPeriod('30',this)">1개월</button>
+    </div>
+    <!-- 감정 흐름 그래프 -->
+    <div class="flow-chart-card">
+      <div class="flow-chart-title">감정 에너지 흐름</div>
+      <div class="flow-svg-wrap">
+        <svg id="flowEmotionSvg" width="100%" height="120" viewBox="0 0 320 120" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <div class="flow-legend">
+        <div class="fl-item"><div class="fl-dot" style="background:var(--teal)"></div>길몽</div>
+        <div class="fl-item"><div class="fl-dot" style="background:var(--pink)"></div>흉몽</div>
+        <div class="fl-item"><div class="fl-dot" style="background:var(--amber)"></div>중립</div>
+      </div>
+    </div>
+    <!-- 수면 체크인 -->
+    <div id="sleepCheckinWrap" class="flow-chart-card" style="display:none"></div>
+    <!-- 5상태 감정 흐름 그래프 (Phase 2) -->
+    <div class="flow-chart-card">
+      <div class="flow-chart-title">감정 흐름 분석</div>
+      <div id="emotionFlowChart" style="padding:4px 0"></div>
+    </div>
+    <!-- 꿈 타임라인 -->
+    <div class="flow-chart-card">
+      <div class="flow-chart-title">꿈 타임라인</div>
+      <div class="flow-timeline" id="flowTimeline"></div>
+    </div>
+    <!-- 수면-꿈 상관관계 -->
+    <div id="sleepCorrelationWrap" class="flow-chart-card" style="display:none"></div>
+    <!-- 상징 변화 추적 -->
+    <div id="symbolEvolutionWrap" class="flow-chart-card" style="display:none"></div>
+    <!-- 반복꿈 타임라인 -->
+    <div class="flow-chart-card">
+      <div class="flow-chart-title">수면 체크인</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <button onclick="showSleepCheckin()" style="flex:1;padding:10px;background:rgba(166,124,239,.08);border:1px solid rgba(166,124,239,.15);border-radius:12px;color:var(--purple-bright);font-size:11px;font-weight:700;cursor:pointer">🌙 수면 기록</button>
+        <button onclick="showMorningCheckin()" style="flex:1;padding:10px;background:rgba(248,201,76,.08);border:1px solid rgba(248,201,76,.15);border-radius:12px;color:var(--amber);font-size:11px;font-weight:700;cursor:pointer">☀️ 아침 기록</button>
+      </div>
+      <div id="sleepCorrelationChart"></div>
+    </div>
+    <div id="symbolTrackerWrap" class="flow-chart-card" style="display:none"></div>
+    <div id="recurringTimelineWrap" class="flow-chart-card" style="display:none"></div>
+    <!-- 상징 클라우드 -->
+    <div class="flow-chart-card">
+      <div class="flow-chart-title">자주 등장한 상징</div>
+      <div id="flowSymbolCloud" style="display:flex;flex-wrap:wrap;gap:7px;padding:4px 0;"></div>
+    </div>
+    <!-- 꿈 기록 없을 때 -->
+    <div id="flowEmpty" style="display:none;text-align:center;padding:40px 20px;">
+      <div style="font-size:48px;margin-bottom:10px;opacity:.5">🌊</div>
+      <div style="font-size:13px;color:var(--text-secondary);line-height:1.7">아직 꿈 기록이 없어요.<br>해몽 후 저장하면 흐름이 쌓여요!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 꿈 상징 사전 페이지 ══ -->
+<div class="dict-page" id="dictPage">
+  <div class="dict-nav">
+    <button class="dict-back" onclick="closeDictPage()">‹</button>
+    <span style="font-size:15px;font-weight:700">📖 꿈 상징 사전</span>
+  </div>
+  <div class="dict-search-wrap">
+    <input class="dict-search-input" id="dictSearchInput" type="text" placeholder="상징을 검색해보세요 (예: 뱀, 물, 하늘...)" oninput="filterDict()">
+    <div class="dict-category-tabs" id="dictCategoryTabs">
+      <button class="dct-tab on" onclick="setDictCategory('전체',this)">✨ 전체</button>
+      <button class="dct-tab" onclick="setDictCategory('동물',this)">🐾 동물</button>
+      <button class="dct-tab" onclick="setDictCategory('자연',this)">🌿 자연</button>
+      <button class="dct-tab" onclick="setDictCategory('사람',this)">👥 사람</button>
+      <button class="dct-tab" onclick="setDictCategory('신체',this)">🦷 신체</button>
+      <button class="dct-tab" onclick="setDictCategory('물건',this)">🔮 물건</button>
+      <button class="dct-tab" onclick="setDictCategory('장소',this)">🏠 장소</button>
+      <button class="dct-tab" onclick="setDictCategory('행동',this)">✈️ 행동</button>
+      <button class="dct-tab" onclick="setDictCategory('음식',this)">🍚 음식</button>
+      <button class="dct-tab" onclick="setDictCategory('초자연',this)">👻 초자연</button>
+      <button class="dct-tab" onclick="setDictCategory('기타',this)">💩 기타</button>
+      <button class="dct-tab" onclick="setDictCategory('흉몽',this)">😱 흉몽</button>
+    </div>
+  </div>
+  <div class="dict-content" id="dictContent"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 온보딩 튜토리얼 -->
+<div id="onboardingOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#1a1535;border-radius:24px;padding:28px 22px;max-width:360px;width:100%;text-align:center;">
+    <div id="onbStep1" class="onb-step">
+      <div style="font-size:52px;margin-bottom:12px">🌙</div>
+      <div style="font-size:20px;font-weight:700;color:var(--moon);font-family:'Gowun Dodum',serif;margin-bottom:8px">몽글몽글에 오신 걸 환영해요!</div>
+      <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:20px">
+        꿈을 적으면 달이가 해석해주고,<br>달이와 꿈 이야기를 나눌 수 있어요
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <div style="flex:1;background:rgba(248,201,76,.1);border:1px solid rgba(248,201,76,.2);border-radius:12px;padding:10px 6px;text-align:center">
+          <div style="font-size:20px">🔮</div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">꿈 해몽</div>
+        </div>
+        <div style="flex:1;background:rgba(166,124,239,.1);border:1px solid rgba(166,124,239,.2);border-radius:12px;padding:10px 6px;text-align:center">
+          <div style="font-size:20px">🐱</div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">달이 챗봇</div>
+        </div>
+        <div style="flex:1;background:rgba(125,232,216,.1);border:1px solid rgba(125,232,216,.2);border-radius:12px;padding:10px 6px;text-align:center">
+          <div style="font-size:20px">💬</div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">커뮤니티</div>
+        </div>
+      </div>
+      <button class="btn-main" onclick="nextOnbStep(2)">다음 →</button>
+    </div>
+    <div id="onbStep2" class="onb-step" style="display:none">
+      <div style="font-size:52px;margin-bottom:12px">✨</div>
+      <div style="font-size:18px;font-weight:700;color:var(--moon);font-family:'Gowun Dodum',serif;margin-bottom:8px">환영 선물이에요!</div>
+      <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:16px">
+        지금 바로 사용할 수 있는<br>스타터 패키지를 드릴게요
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;text-align:left">
+        <div style="display:flex;align-items:center;gap:10px;background:rgba(166,124,239,.08);border-radius:10px;padding:10px 12px">
+          <span style="font-size:20px">🔮</span>
+          <div><div style="font-size:13px;font-weight:700;color:var(--purple-bright)">상세 해몽 5회 무료</div><div style="font-size:11px;color:var(--text-muted)">전통·심리·현실 3분기 해석</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;background:rgba(248,201,76,.08);border-radius:10px;padding:10px 12px">
+          <span style="font-size:20px">🌙</span>
+          <div><div style="font-size:13px;font-weight:700;color:var(--amber)">오늘의 꿈 운세</div><div style="font-size:11px;color:var(--text-muted)">매일 바뀌는 운세 카드</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;background:rgba(125,232,216,.08);border-radius:10px;padding:10px 12px">
+          <span style="font-size:20px">🐱</span>
+          <div><div style="font-size:13px;font-weight:700;color:var(--teal)">달이 꿈 친구</div><div style="font-size:11px;color:var(--text-muted)">꿈 이야기를 나눠보세요</div></div>
+        </div>
+      </div>
+      <button class="btn-main" onclick="claimOnboarding()" style="background:linear-gradient(135deg,#f8c94c,#ffaa33);color:#1a1200;">🎁 선물 받기!</button>
+    </div>
+  </div>
+</div>
+
+<!-- 프리미엄 해석 모달 (단건 결제) -->
+<div class="modal-overlay" id="premiumModal" onclick="closePremiumModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div style="font-size:36px;text-align:center;margin-bottom:8px">📜</div>
+    <div class="modal-title">프리미엄 꿈 해석</div>
+    <div class="modal-sub">이 꿈이 진짜 말하려는 게 뭔지 알아보세요</div>
+    <div style="background:rgba(255,255,255,.03);border-radius:12px;padding:14px;margin:14px 0;text-align:left">
+      <div style="font-size:12px;color:var(--text-secondary);line-height:1.8">
+        🌙 옛 해몽책이 이 꿈을 어떻게 봤는지<br>
+        💜 지금 내 마음이랑 어떻게 이어지는지<br>
+        ✨ 이 꿈 꾼 뒤 해보면 좋을 것 3가지<br>
+        🔮 꿈 속 상징 하나하나 깊게 풀어드려요<br>
+        📖 에세이처럼 읽히는 1000자+ 해석
+      </div>
+    </div>
+    <!-- 단건 -->
+    <button class="modal-plan-btn" onclick="closePremiumModalDirect();buyPremium('single')" style="background:linear-gradient(135deg,#f8c94c,#ffaa33);color:#1a1200;margin-bottom:8px">📜 단건 해석 · ₩500</button>
+    <!-- 팩 -->
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button onclick="closePremiumModalDirect();buyPremium('pack5')" style="flex:1;background:rgba(166,124,239,.1);border:1px solid rgba(166,124,239,.2);border-radius:10px;padding:10px 8px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;text-align:center">
+        <div style="font-size:12px;font-weight:700;color:var(--purple-bright)">5회팩</div>
+        <div style="font-size:16px;font-weight:700;color:var(--moon)">₩1,900</div>
+        <div style="font-size:9px;color:var(--teal)">회당 ₩380</div>
+      </button>
+      <button onclick="closePremiumModalDirect();buyPremium('pack10')" style="flex:1;background:rgba(166,124,239,.1);border:1px solid rgba(166,124,239,.2);border-radius:10px;padding:10px 8px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;text-align:center;position:relative">
+        <div style="position:absolute;top:-6px;right:6px;background:linear-gradient(135deg,#f8c94c,#ffaa33);border-radius:8px;padding:1px 6px;font-size:8px;font-weight:700;color:#1a1200">최저가</div>
+        <div style="font-size:12px;font-weight:700;color:var(--purple-bright)">10회팩</div>
+        <div style="font-size:16px;font-weight:700;color:var(--moon)">₩3,500</div>
+        <div style="font-size:9px;color:var(--teal)">회당 ₩350</div>
+      </button>
+    </div>
+    <button class="modal-close" onclick="closePremiumModalDirect()">1차 해석만 볼게요</button>
+  </div>
+</div>
+
+<!-- 글쓰기 시트 -->
+<div class="write-sheet" id="writeSheet">
+  <div class="write-sheet-nav">
+    <button class="write-cancel" onclick="closeWriteSheet()">취소</button>
+    <span class="write-sheet-title" id="writeSheetTitle">꿈 기록</span>
+    <button class="write-submit" onclick="submitPost()">공유</button>
+  </div>
+  <div class="write-sheet-body">
+    <div class="write-type-row">
+      <button class="wtype-btn on" onclick="setWriteType('꿈기록',this)">🌙 꿈 기록</button>
+      <button class="wtype-btn" onclick="setWriteType('질문',this)">🔮 해몽 질문</button>
+      <button class="wtype-btn" onclick="setWriteType('일상',this)">💭 일상</button>
+    </div>
+    <!-- 모든 글은 익명 -->
+    <div style="font-size:10px;color:var(--text-muted);text-align:center;margin-bottom:10px">모든 글은 익명으로 공유돼요 🌙</div>
+    <div id="recentDreamImport" style="display:none;margin-bottom:12px;">
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">최근 해몽 가져오기</div>
+      <div id="recentDreamCard" style="background:rgba(124,92,191,.1);border:1px solid rgba(166,124,239,.2);border-radius:12px;padding:12px;cursor:pointer;" onclick="importRecentDream()">
+        <div style="font-size:13px;color:var(--purple-bright);" id="recentDreamTitle">해몽 결과가 없어요</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:3px;" id="recentDreamSub">먼저 해몽하고 오면 바로 가져올 수 있어요</div>
+      </div>
+    </div>
+    <textarea class="write-ta" id="writeInput" placeholder="오늘 꾼 꿈을 자유롭게 적어보세요...&#10;&#10;꿈 속 장면, 느낌, 인상적인 부분 모두 괜찮아요"></textarea>
+    <div class="write-tag-label">감정 태그 (선택)</div>
+    <div class="write-tags">
+      <span class="write-tag" onclick="toggleWriteTag(this)">😱 무서움</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">😰 불안</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">😊 기쁨</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">😲 당황</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">🥺 그리움</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">😌 해방감</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">😔 슬픔</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">😡 분노</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">😳 혼란</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">🥰 설렘</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">😶 공허함</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">🤯 충격</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">🫠 무력감</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">✨ 경이로움</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">😤 억울함</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">🫣 부끄러움</span>
+    </div>
+    <div class="write-tag-label">꿈 카테고리 (선택)</div>
+    <div class="write-tags">
+      <span class="write-tag" onclick="toggleWriteTag(this)">💰 재물운</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">💕 연애</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">👻 귀신</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">🐍 동물</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">💀 죽음</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">🔄 반복꿈</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">🤰 태몽</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">😰 악몽</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">🌊 물/바다</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">🦷 이빨</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">🏃 쫓기는</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">☁️ 하늘/비행</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">📝 시험/학교</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">🏠 집/가족</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">🚗 탈것</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">🌈 자각몽</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">🔥 불/재난</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">👶 아기</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">💍 결혼</span>
+      <span class="write-tag" onclick="toggleWriteTag(this)">🏃‍♂️ 전쟁/싸움</span>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+
+<script type="module" src="./src/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+# 환경/비밀
+config.js
+.env
+.env.local
+supabase/.env.local
+
+# 빌드 산출물
+node_modules/
+
+# Android
+android/app/build/
+android/.gradle/
+*.keystore
+*.jks
+local.properties
+
+# iOS
+ios/App/Pods/
+ios/App/Podfile.lock
+ios/App/build/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+PENDING.md
+
+# Claude Code runtime residue
+.claude/parallel.json
+.claude/logs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Runtime
+*.log
+*.tmp
+tmp/
+temp/
+cache/
+runtime_cache/
+runtime_logs/
+
+# Secrets
+.env
+.env.local
+secrets.env
+
+# MONGGEUL specific
+dist/
+output/
+android/app/build/
+ios/App/Pods/
+
+# Runtime generated data (L1/L7/L2 standard)
+data/state_card.json
+data/decisions_scratchpad.json
+data/lane_reports/
+data/lane_reports/archive/
+data/lane_commands/
+data/lane_feedback/
+data/lane_prompts/
+data/backups/
+data/backup_log.json
+data/checkpoint_*.json
+data/session_memory.json
+data/session_context.json
+data/lane_status.json
+data/loop_breaker_state.json
+data/loop_breaker_state.json.tmp
+data/.session_start_hash
+data/.session_lock
+data/active_session.json
+data/snapshots.json
+
+# Shared secrets (Mother sync)
+.env.shared

@@ -1,0 +1,15 @@
+{
+  "project": "MONGGEUL",
+  "version": 1,
+  "updated": "2026-03-31",
+  "skills": [
+    {"name":"dream_interpretation","category":"analytics","owner_clevel":"CKO","department":"Content Design","purpose":"AI 기반 꿈 해석 및 의미 분석","input_conditions":"꿈 기록 텍스트","output_format":"해석 결과 + 상징 분석","linked_stages":["Build"],"linked_cells":["monggeul-cell-01"],"status":"active","notes":"src/services/interpretation"},
+    {"name":"dream_pattern_clustering","category":"analytics","owner_clevel":"CKO","department":"Knowledge Ops","purpose":"반복 꿈 패턴 군집 분석","input_conditions":"꿈 기록 시계열","output_format":"패턴 군집 + 빈도","linked_stages":["Research","Build"],"linked_cells":[],"status":"experimental","notes":""},
+    {"name":"journaling_prompt_generation","category":"content_creation","owner_clevel":"CKO","department":"Content Design","purpose":"꿈 기록을 돕는 질문/프롬프트 생성","input_conditions":"이전 기록 컨텍스트","output_format":"맞춤 질문 목록","linked_stages":["Build"],"linked_cells":["monggeul-cell-01"],"status":"active","notes":""},
+    {"name":"emotional_archive","category":"data_pipeline","owner_clevel":"CKO","department":"Knowledge Ops","purpose":"감정 태깅 및 감정 아카이브 관리","input_conditions":"꿈 기록 + 감정 입력","output_format":"감정 태그 시계열","linked_stages":["Build"],"linked_cells":[],"status":"active","notes":"src/store/"},
+    {"name":"literary_rewrite","category":"content_creation","owner_clevel":"CKO","department":"Content Design","purpose":"꿈 기록을 시/산문/동화로 변환","input_conditions":"꿈 원문","output_format":"문학적 텍스트","linked_stages":["Build"],"linked_cells":[],"status":"experimental","notes":"ONGLE literary_generator 재사용 가능"},
+    {"name":"memory_threading","category":"data_pipeline","owner_clevel":"CTO","department":"Infra","purpose":"꿈 기록 간 연결고리 자동 생성","input_conditions":"복수 꿈 기록","output_format":"연결 그래프","linked_stages":["Build"],"linked_cells":[],"status":"planned","notes":""},
+    {"name":"reflection_summary","category":"reporting","owner_clevel":"CKO","department":"Content Design","purpose":"주간/월간 꿈 회고 요약 생성","input_conditions":"기간 내 기록","output_format":"회고 리포트","linked_stages":["Measure"],"linked_cells":[],"status":"active","notes":""},
+    {"name":"mood_signal_detection","category":"analytics","owner_clevel":"CKO","department":"Analytics Support","purpose":"꿈 기록에서 감정 변화 신호 탐지","input_conditions":"감정 시계열","output_format":"변화 신호 + 트렌드","linked_stages":["Research"],"linked_cells":[],"status":"experimental","notes":""}
+  ]
+}

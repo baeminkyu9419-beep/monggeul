@@ -1,0 +1,49 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Add config.js to dist
+        run: |
+          cat > dist/config.js << EOCONFIG
+          window.SUPABASE_URL='${{ secrets.SUPABASE_URL }}';
+          window.SUPABASE_ANON_KEY='${{ secrets.SUPABASE_ANON_KEY }}';
+          window.GA_ID='${{ secrets.GA_ID }}';
+          window.VAPID_PUBLIC_KEY='${{ secrets.VAPID_PUBLIC_KEY }}';
+          window.ADSENSE_CLIENT='${{ secrets.ADSENSE_CLIENT }}';
+          window.ADSENSE_SLOT='${{ secrets.ADSENSE_SLOT }}';
+          EOCONFIG
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
