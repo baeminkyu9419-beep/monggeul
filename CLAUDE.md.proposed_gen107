@@ -1,0 +1,328 @@
+# MONGGEUL (몽글몽글) — 꿈 해몽 + 달이(AI 동반자) + 꿈 기록 PWA
+
+> **Gen107 Proposed Draft** — 2026-04-17 야간 자율 작성
+> **상태**: 제안서. 원본 `CLAUDE.md`는 덮어쓰지 않았습니다.
+> **승인 필요**: 민규님 승인 후에만 원본 `CLAUDE.md`로 반영합니다.
+> **이전 원본**: "반려동물 관리 하이브리드 앱" (stale, 2026-04-15 mtime) — 실제 코드와 불일치.
+
+---
+
+## 0. 정체성 재확정 (Gen107 실측 근거)
+
+**몽글몽글 = 꿈 기록/해몽 + 달이(AI 동반자) + 기록(MY) PWA. 반려동물 관리 앱이 아닙니다.**
+
+### 실측 증거 (이 세션 검증)
+
+| 근거 | 경로 | 확정/추정 |
+|------|------|----------|
+| 하네스 테스트 `TestDreamInterpretation` / `TestEmotionAnalysis` / `TestSymbolDictionary` | `tests/harness/test_dream_harness.py` | 확정 (파일 존재 + 10 클래스 구조) |
+| 3대 축 탭 파일 | `src/tabs/dream.js`, `src/tabs/dali.js`, `src/tabs/my.js` | 확정 (파일 존재) |
+| 꿈 해석 서비스 모듈 | `src/services/dream-context.js`, `src/services/dream-pattern.js`, `src/services/api.js` | 확정 (파일 존재) |
+| 꿈 데이터 + 상징 사전 + 감정 유틸 | `src/utils/dream-data.js`, `src/utils/symbols.js`, `src/utils/emotion.js` | 확정 (파일 존재) |
+| EVOLUTION.md Charter | "꿈 기록과 AI 해석을 통해 자기 이해를 돕는 꿈 동반자 서비스" | 확정 (문서 인용) |
+| RPG/반려동물 기능 코드 | 없음 (`TestNoRpgRemnants`가 `spawnCat/levelUp/catCollection` 검출 차단) | 확정 (harness가 적극 금지) |
+| "고양이" 등장 위치 | 꿈 상징 사전의 동물 기호 + 커뮤니티 봇 닉네임 후보만 | 확정 (grep 결과로 확인, 반려동물 관리 기능 아님) |
+
+### 이전 원본 `CLAUDE.md` (stale) 정정 대상
+
+| 원본 (stale) | 수정안 (Gen107) |
+|---|---|
+| "반려동물 관리 하이브리드 앱" | "꿈 기록/해몽 + 달이(AI 동반자) + 기록(MY) PWA" |
+| "Phase 0 Archive (97.8%)" | 유지 (HANDOFF.md Gen98 기준, 이 세션 미재검증) |
+| (원본에 없던) 정체성 3대 축 | 명시: **해몽 / 달이 / 기록** |
+| (원본에 없던) 정신건강 경계 원칙 | 명시: 진단 단정 금지 + 공포 마케팅 금지 등 6항 |
+| (원본에 없던) 기능 추가 금지 규칙 | 명시 (harness가 강제) |
+
+---
+
+## 1. 제품 정의 (확정)
+
+### 1.1 프로젝트 차터 (EVOLUTION.md:34-42 인용)
+
+- **앱 이름**: 몽글몽글 (MONGGEUL)
+- **미션**: 꿈 기록과 AI 해석을 통해 자기 이해를 돕는 꿈 동반자 서비스
+- **3대 제품 축 (pillars)**: **꿈 해몽 / 달이(AI 동반자) / 꿈 기록(MY)**
+- **아키텍처**: Vite + modular JS (20+ modules) / Supabase (Auth, Postgres, Edge Functions) / GitHub Pages PWA
+- **배포**: GitHub Actions → Vite build → GitHub Pages
+- **GitHub**: baeminkyu9419-beep/monggeul (private)
+- **Commits**: 137+ (EVOLUTION.md 보고, 이 세션 미재검증)
+
+### 1.2 정신건강 경계 원칙 (절대 규칙, 영구)
+
+이 서비스는 **자기 이해 도구**이지 의료/심리 진단 도구가 아닙니다.
+
+1. **진단 단정 금지** — "우울증입니다", "트라우마가 있습니다" 류 절대 불가
+2. **공포 마케팅 금지** — "이 꿈을 무시하면 위험합니다" 류의 불안 유발 금지
+3. **탐색적 어조만** — 모든 해몽은 "~일 수 있어요", "~를 살펴볼 수 있어요"
+4. **위기 감지 시 전문 상담 안내 우선** — 자해/자살/심각한 불안 키워드 감지 시
+5. **데이터 프레이밍** — 패턴 분석 결과를 "경향"으로 표현 (진단 아님)
+6. **달이(AI)의 역할** — 따뜻한 동반자이지 치료사가 아님. 조언은 하되 처방은 하지 않음
+
+### 1.3 기능 추가 금지 규칙 (harness 강제)
+
+- **지시 없는 새 기능 추가 금지** (`test_claude_md_exists`, `test_no_new_features_rule`가 확인)
+- 3대 축 밖으로 이탈 금지
+- RPG 잔재 재도입 금지 (`TestNoRpgRemnants`)
+- 변경 시 harness 전량 실행 후 통과 확인
+
+---
+
+## 2. 현재 상태 (Gen107, 실측 + 이전 세대 보고)
+
+### 2.1 Phase + 핵심 수치
+
+| 항목 | 값 | Reality label |
+|------|---|---------------|
+| Phase | Phase 0 Archive 97.8% (138/141) | 보고됨 [Gen98 HANDOFF.md 기반, 이 세션 미재검증] |
+| dist/ 빌드 | 존재 (4.5MB, 127 파일, 2026-04-14 mtime) | 보고됨 [미재검증] |
+| node_modules | 설치됨, 38 JS 모듈 | 보고됨 [미재검증] |
+| Edge Functions | 15개 작성됨 (배포 대기) | 확정 (`supabase/functions/` 실측 15개) |
+| Phase 1 기능 | 꿈 입력 / 해몽 / 상징 사전 / 달리 메모리 | 보고됨 [미재검증] |
+| Android/iOS | 네이티브 스캐폴딩 존재 | 확정 (디렉토리 존재) |
+| 실측 수익 | 0원 (출시 전) | 확정 |
+
+### 2.2 Edge Functions 15개 (실측 목록)
+
+```
+billing-apple-notifications/    billing-apple-verify/
+billing-google-rtdn/            billing-google-verify/
+create-checkout/                openai-proxy/
+push-scheduler/                 push-subscribe/
+stripe-webhook/                 toss-checkout/
+toss-confirm/                   toss-payment-confirm/
+toss-payment-ready/             toss-payment-webhook/
+toss-webhook/
+```
+
+### 2.3 소스 코드 실제 구성 (확정)
+
+```
+src/
+├── app.js                            # 메인 진입점
+├── components/
+│   ├── dream-export.js               # 꿈 내보내기
+│   ├── emotion-chart.js              # 감정 차트
+│   ├── paywall.js                    # 페이월
+│   ├── radar.js                      # 레이더 차트
+│   ├── sleep-checkin.js              # 수면 체크인
+│   ├── symbol-tracker.js             # 상징 추적기
+│   └── toast.js
+├── services/ (18개)
+│   ├── api.js / auth.js              # 기본
+│   ├── dream-context.js              # 해몽 컨텍스트
+│   ├── dream-pattern.js              # 꿈 패턴 (Markov)
+│   ├── ads.js / ab-test.js / analytics.js
+│   ├── community-bot.js / community-storage.js
+│   ├── checkout.js / iap.js / payment.js / subscription.js
+│   ├── pg-stripe.js / pg-toss.js     # 결제 게이트웨이
+│   ├── growth.js / notification-scheduler.js / web-push.js
+├── tabs/
+│   ├── dream.js                      # 꿈 해몽 탭 (축 1)
+│   ├── dali.js                       # 달이 탭 (축 2)
+│   ├── my.js                         # 기록 탭 (축 3)
+│   └── community.js                  # 커뮤니티
+├── utils/
+│   ├── dream-data.js / symbols.js / emotion.js
+│   ├── dali-premium-prompts.js
+│   ├── funnel.js / helpers.js / sanitize.js
+└── styles/                           # CSS
+```
+
+---
+
+## 3. 기술 스택 (확정)
+
+### 3.1 Core
+
+- **JavaScript (ESM)** + **Vite 6**
+- **Capacitor 8** — Android + iOS 하이브리드
+- **Supabase** (Auth, Postgres, Edge Functions) via `@supabase/supabase-js ^2.49.0`
+- **PWA** — manifest.json + `public/sw.js`
+- **GitHub Pages** 배포 (GitHub Actions → Vite build)
+
+### 3.2 의존성 (package.json 실측)
+
+| 카테고리 | 패키지 |
+|---------|-------|
+| Capacitor | `@capacitor/android ^8.2.0`, `@capacitor/ios ^8.2.0`, `@capacitor/app`, `@capacitor/haptics`, `@capacitor/keyboard`, `@capacitor/splash-screen`, `@capacitor/status-bar` |
+| 광고 | `@capacitor-community/admob ^8.0.0` |
+| DB / 인증 | `@supabase/supabase-js ^2.49.0` |
+| 유틸 | `html5-qrcode ^2.3.8`, `jspdf ^4.2.1`, `qrcode ^1.5.4` |
+| 테스트 / 이미지 | `puppeteer ^24.40.0`, `sharp ^0.34.5` |
+| 빌드 | `vite ^6.0.0` |
+
+**주의 (stale 정정)**: 이전 `AGENTS.md`가 "React/Next.js style + pnpm"으로 기술되어 있었으나 **실제는 Vanilla JS + Vite + npm**입니다. `AGENTS.md`도 동기화 필요.
+
+### 3.3 7-Lane Architecture (EVOLUTION.md:57-67)
+
+| Lane | 역할 | 모듈 |
+|------|-----|------|
+| Main | 앱 오케스트레이션, 라우팅, 설정 | app.js, store.js, config |
+| Input | 꿈 입력, 음성, 멀티모달, 초안 저장 | tabs/dream.js, services/web-push.js |
+| Logic | 해몽 AI, 패턴 분석, 감정 엔진, 상징 사전 | services/dream-pattern.js, services/dream-context.js, utils/ |
+| Output | 해몽 결과 표시, 리포트, 공유 카드, 갤러리 | components/ (radar, symbol-tracker, emotion-chart) |
+| Extend | 달이 대화, 커뮤니티, 퀴즈, 운세 | tabs/dali.js, tabs/community.js, services/community-bot.js |
+| Verify | 인증, 결제, 구독, 권한, 분석 | services/auth.js, payment.js, subscription.js, iap.js, analytics.js |
+| Inspector | 품질, 보안, 성능, 접근성, SEO | Edge Functions, SW, CSP, sitemap |
+
+---
+
+## 4. 구조
+
+```
+projects/MONGGEUL/
+├── CLAUDE.md                           # 본 파일
+├── HANDOFF.md                          # 세대 진입점
+├── CURRENT_TASK.md / ROLLBACK.md / EVIDENCE.md
+├── CHANGELOG.md / DEPLOY_GUIDE.md / AGENTS.md
+├── EVOLUTION.md                        # 프로젝트 차터 + Phase 추적
+├── ai_consultation_log.md              # AI 상담 이력
+├── 몽글몽글_상용화_로드맵_통합본.md      # Gen107 복원 자산 (W1~W3 상용화 로드맵)
+│
+├── contracts/ssot/project_manifest.yaml
+├── src/                                # Vite 모듈 (§2.3)
+├── supabase/                           # 스키마 + Edge Functions 15개
+│   ├── config.toml
+│   └── functions/                      # (§2.2 목록)
+├── android/ + ios/                     # Capacitor 네이티브
+├── public/                             # PWA 자산 (sw.js 포함)
+├── dist/                               # 빌드 산출물 (4.5MB)
+├── scripts/                            # SEO 생성 등
+├── tests/harness/test_dream_harness.py # 구조/규칙 검증 (10 클래스)
+├── bots/                               # 커뮤니티 봇
+├── assets/ + resources/ + screenshots/
+├── index.html / landing.html / releases.html
+├── manifest.json + capacitor.config.json + vite.config.js
+└── config.js
+```
+
+---
+
+## 5. 실행 명령어 (package.json 실측)
+
+```bash
+# 웹 개발 서버
+cd projects/MONGGEUL && npm run dev
+
+# 빌드 (SEO 자동 생성 + Vite build)
+npm run build
+
+# 미리보기
+npm run preview
+
+# SEO 전용
+npm run generate:seo
+npm run generate:blog
+
+# Capacitor 동기화
+npm run cap:sync
+
+# Android (빌드 + sync + 열기)
+npm run cap:android
+
+# iOS (빌드 + sync + 열기)
+npm run cap:ios
+
+# 하네스 테스트 (Python, 네트워크/빌드 불필요)
+pytest tests/harness/test_dream_harness.py -v
+```
+
+**주의 (stale 정정)**: `AGENTS.md`의 `pnpm install` / `pnpm dev`는 **stale**. 실제는 `npm`입니다.
+
+---
+
+## 6. BM (상용화 로드맵 통합본 확정)
+
+| 플랜 | 기능 | 가격(추정) | 현실성 |
+|------|------|-----------|--------|
+| **Free** | 해몽 2회/일 + 기본 꿈 기록 + 커뮤니티 열람 + 달이 기본 대화 | 무료 + AdMob 광고 | HIGH |
+| **Plus** | 해몽 사실상 무제한 + 달이 대화 확장 + 주간 리포트 + 광고/잠금 제거 | 월 구독 | HIGH |
+| **Premium** | 반복꿈 패턴 분석 + 감정 변화 추적 + 장기 아카이브 + 고급 운세/꿈 사전/심볼 리포트 | 월 구독 (Plus보다 높음) | MEDIUM |
+
+**원칙**: 정서적 루틴 앱 → 3~4단 금지, **2단(Plus/Premium)만 + Free 광고**. v1은 연간/가족/쿠폰 전부 제외.
+
+---
+
+## 7. Blocker (Gen107 현 시점)
+
+### 7.1 자율 진전 가능 (민규님 승인 불필요)
+
+- M1: 구독 SKU 확정 (Plus / Premium 2단) + entitlement 스키마
+- M2: Supabase 빌링 스키마 SQL 작성 (`user_entitlements` + `billing_transactions` + `billing_events`)
+- M7: 앱 IAP UI 연결 (paywall + 구매 + 복원, 코드 기반)
+- M8: Capacitor Android 빌드 재검증
+- Phase 0 나머지 2.2% 완료 (138 → 141)
+- `AGENTS.md` 동기화 (React/Next + pnpm → Vanilla JS + Vite + npm)
+
+### 7.2 외부 차단 (민규님 액션 필요)
+
+| Blocker | 필요 자원 | 민규님 액션 |
+|---------|----------|------------|
+| Toss Business Console | 사업자등록증 + 결제 심사 | Merchant ID + API 키 발급 (수일~주) |
+| Apple Developer 계정 | $99/년 + 본인 인증 | 신청 + 1~2일 승인 |
+| Google Play Console | $25 1회 결제 | 신청 + 즉시 |
+| OAuth 앱 등록 (Google/Kakao/Naver) | 각 콘솔 | 계정 생성 + 키 발급 |
+| Stripe 계정 (해외 결제) | 결제 계정 심사 | 가입 + 사업자 심사 |
+| 앱 아이콘 디자인 (1024x1024) | PNG 원본 | 디자이너 or AI 생성 |
+| 스토어 스크린샷 | iPhone 6.7" + Android | 자동 도구 or 수동 |
+
+---
+
+## 8. 다음 행동 (Gen108 제안)
+
+### P0 — 즉시 자체 가능
+
+1. **본 CLAUDE.md draft 민규님 승인** → 원본 `CLAUDE.md` 덮어쓰기
+2. **`AGENTS.md` 동기화** (도메인 노트 "Fortune/reading product" → "Dream journaling/interpretation", Setup 명령 수정)
+3. M1: 구독 SKU 확정 (`docs/pricing/sku_spec.md`)
+4. M2: Supabase 빌링 스키마 SQL 초안 (`supabase/migrations/YYYYMMDD_billing.sql`)
+5. Phase 0 나머지 2.2% 완료 (3건)
+
+### P1 — 디자인 에셋 준비 후
+
+6. M3: 앱 아이콘 + 스플래시 생성
+7. M8: Capacitor Android 빌드 재검증
+
+### P2 — 계정 + 키 확보 후
+
+8. M4~M6: 개발자 계정 + 스토어 등록 + 서버 검증 엔드포인트
+9. M7: 앱 IAP UI 연결
+10. M9~M12: 에셋 + sandbox + TestFlight + 스토어 심사
+
+상세: `ROADMAP/MONGGEUL.md` 참조.
+
+---
+
+## 9. 민규님 승인 체크리스트 (본 draft 반영 전)
+
+- [ ] **정체성 변경 확인**: "반려동물 관리 앱" → "꿈 해몽 + 달이 + 기록 PWA"로 CLAUDE.md 재정의를 승인합니다.
+- [ ] **3대 축 확정**: 해몽 / 달이 / 기록 3축만 허용, 추가 축 금지에 동의합니다.
+- [ ] **정신건강 경계 6항 영구 규약**화에 동의합니다.
+- [ ] **기능 추가 금지 규칙** (harness 강제)을 영구 규약으로 유지합니다.
+- [ ] **AGENTS.md 동기화**: React/Next + pnpm → Vanilla JS + Vite + npm + Dream 도메인으로 수정을 허용합니다.
+- [ ] **본 draft를 원본 `CLAUDE.md`로 반영**할지 최종 승인합니다.
+
+승인 방법:
+- 완전 승인: "MONGGEUL CLAUDE.md 반영해"
+- 부분 수정: 수정 사항 직접 지시
+- 보류: "보류해" — 원본은 stale 상태로 유지되지만 내부 모순(HANDOFF=꿈해몽 vs CLAUDE=반려동물) 계속됨
+
+---
+
+## 10. 증거
+
+| 증거 | 경로 |
+|------|------|
+| 하네스 테스트 (구조 강제) | `projects/MONGGEUL/tests/harness/test_dream_harness.py` |
+| EVOLUTION.md Charter (꿈 동반자) | `projects/MONGGEUL/EVOLUTION.md:34-67` |
+| Edge Functions 15개 실측 | `projects/MONGGEUL/supabase/functions/` |
+| package.json (Vite + Capacitor + Supabase) | `projects/MONGGEUL/package.json` |
+| ROADMAP (M1~M12 상용화) | `ROADMAP/MONGGEUL.md` |
+| 상용화 로드맵 통합본 | `projects/MONGGEUL/몽글몽글_상용화_로드맵_통합본.md` |
+| HANDOFF proposed draft | `projects/MONGGEUL/HANDOFF.md.proposed_gen107` |
+| EVIDENCE proposed draft | `projects/MONGGEUL/EVIDENCE.md.proposed_gen107` |
+| 정체성 불일치 리뷰 | `DECISIONS/20260417_proposed_gen107_review.md` §7 |
+
+---
+
+## 1원칙: 서로를 실망시키지 않습니다.

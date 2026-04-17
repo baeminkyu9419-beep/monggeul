@@ -1,0 +1,85 @@
+# MONGGEUL — Evidence Log
+
+> **Gen107 Draft** — 2026-04-17 야간 자율 작성 (proposed, 원본 EVIDENCE.md 미덮어씀)
+> 목적: Gen107 세션에서 재검증된 실증거만 기록. 이전 세대 보고 수치는 [미재검증] 표시.
+
+## 증거 원칙
+- 완료 선언 = 증거 필수
+- Reality label: **확정** (이 세션 실측) / **보고됨 [미재검증]** (이전 세대) / **[간접 증빙]** / **[검증 미완]**
+- 거짓 기록 금지. 근거 없는 수치 기록 금지.
+
+---
+
+## Evidence (Gen107 실측 기반)
+
+| 날짜 | 항목 | 결과 | 증거 파일 경로 | Reality label |
+|------|------|------|---------------|--------------|
+| 2026-04-17 | ROADMAP/MONGGEUL.md 생성 | 140줄, 상용화 로드맵 기반 M1~M12 마일스톤 + Free/Plus/Premium 플랜 + 외부 blocker 7건 | `ROADMAP/MONGGEUL.md` | 확정 (이 세션 작성) |
+| 2026-04-17 | ANALYSIS 산출 | DEV_MONGGEUL_.claude 파일 diff | `ANALYSIS/diff_recovered_vs_current.md` (section 5) | 확정 (이 세션 작성) |
+| 2026-04-17 | ANALYSIS 산출 | MONGGEUL 14 파일 현재 상태 감사 | `ANALYSIS/all_projects_docs.md` (section 3) | 확정 (이 세션 작성) |
+| 2026-04-17 | 상용화 로드맵 통합본 발견 | `몽글몽글_상용화_로드맵_통합본.md` — W1/W2/W3 주차 단위 + 플랜 SKU 2단 + 서버 검증 엔드포인트 4개 | `projects/MONGGEUL/몽글몽글_상용화_로드맵_통합본.md` | 확정 (파일 존재 실측, 내용 인용 [미재검증]) |
+| 2026-04-17 | DEV_MONGGEUL_.claude 실측 | 88 KB, 13 파일 (recovered) / 10 파일 (current). 동일 7 / recovered 전용 3 (`.pyc`) — MERGE_RECOVERED / 내용 차이 3 (`hooks/stop.sh`, `parallel.json`, `settings.local.json`) — REVIEW_BY_USER | `RECOVERED/Dev2/DEV_MONGGEUL_.claude/` + `ANALYSIS/diff_recovered_vs_current.md:206-233` | 확정 (이 세션 실측) |
+| 2026-04-17 | 프로젝트 자산 실측 | AGENTS.md / CHANGELOG.md / DEPLOY_GUIDE.md / ROLLBACK.md / ai_consultation_log.md / android/ + ios/ + capacitor.config.json / supabase/ + landing.html / releases.html / dist/ / node_modules/ / bots/ + tests/ | `projects/MONGGEUL/` 루트 | 확정 (파일/디렉토리 존재 실측) |
+| 2026-04-17 | 7 프로젝트 중 상용화 로드맵 최고 구체성 확인 | 주차 단위 (W1/W2/W3) | `ROADMAP/MONGGEUL.md:45` | 확정 (이 세션 비교 분석) |
+
+---
+
+## Evidence (이전 세대 보고, Gen107 미재검증)
+
+| 날짜 | 항목 | 결과 | 증거 파일 경로 | Reality label |
+|------|------|------|---------------|--------------|
+| Gen98 | Phase | Phase 0 Archive **97.8% (138/141)** | HANDOFF.md Gen98 | 보고됨 [미재검증] |
+| Gen98 | dist/ 빌드 | 존재 (**4.5MB, 127 파일**, 2026-04-14) | HANDOFF.md | 보고됨 [미재검증] |
+| - | node_modules | 설치됨, 38 JS 모듈 | HANDOFF.md | 보고됨 [미재검증] |
+| Gen98 | Edge Functions | **15개 작성됨 (배포 대기)** | HANDOFF.md | 보고됨 [미재검증] |
+| - | Phase 1 기능 | 꿈 입력/해몽/상징 사전/달리 메모리 코드 완성 | HANDOFF.md | 보고됨 [미재검증] |
+| - | Stack | JavaScript + Vite 6 + Capacitor 8 (Android + iOS) | CLAUDE.md | 보고됨 [미재검증] |
+| - | 주요 패키지 | @capacitor-community/admob, @supabase/supabase-js, html5-qrcode, jspdf, qrcode, Puppeteer, Sharp | CLAUDE.md | 보고됨 [미재검증] |
+| - | Android/iOS | 네이티브 스캐폴딩 존재 | HANDOFF.md | 확정 (디렉토리 존재 실측) |
+| - | Commits | 137+ | EVOLUTION.md | 보고됨 [미재검증] |
+| - | GitHub | baeminkyu9419-beep/monggeul (private) | EVOLUTION.md | 보고됨 [미재검증] |
+| - | Deploy | GitHub Actions → Vite build → GitHub Pages (PWA 운영 중) | EVOLUTION.md | 보고됨 [미재검증] |
+| - | Phase 0~2 | Done | EVOLUTION.md | 보고됨 [미재검증] |
+| - | Phase 3 | Planned (서비스화 + BM) | EVOLUTION.md | 확정 (계획) |
+
+---
+
+## 정신건강 경계 원칙 (확정 규약, 영구)
+
+| 원칙 | 상태 |
+|------|------|
+| 진단 단정 금지 ("우울증입니다" 등 절대 불가) | 확정 |
+| 공포 마케팅 금지 | 확정 |
+| 탐색적 어조만 ("~일 수 있어요") | 확정 |
+| 위기 감지 시 전문 상담 안내 우선 | 확정 |
+| 달이(AI)는 동반자, 치료사 아님 | 확정 |
+
+---
+
+## 실측 수익 및 BM 상태
+
+| 플랜 | 상태 | Reality label |
+|------|------|--------------|
+| 실측 수익 | **0원** (출시 전) | 확정 |
+| **Free** (해몽 2회/일 + 광고) | 계획 | 확정 (문서화) / 미출시 |
+| **Plus** (해몽 무제한 + 주간 리포트) | 계획 | 확정 (문서화) / 미출시 |
+| **Premium** (반복꿈 패턴 + 감정 추적) | 계획 | 확정 (문서화) / 미출시 |
+| AdMob 광고 (Free 플랜) | 패키지 설치됨 (`@capacitor-community/admob`) | 보고됨 [미재검증] |
+
+---
+
+## Blocker 현황
+
+| Blocker | 필요 자원 | 상태 |
+|---------|----------|------|
+| Toss Business Console | Merchant ID + API 키 | 미발급 |
+| Apple Developer 계정 | $99/년 + 본인 인증 | 미신청 |
+| Google Play Console | $25 1회 결제 | 미신청 |
+| OAuth 앱 등록 (Google/Kakao/Naver) | 각 콘솔 키 | 미등록 |
+| Stripe 계정 (해외 결제용) | 결제 계정 심사 | 미가입 |
+| 앱 아이콘 디자인 | 1024x1024 PNG | 미생성 |
+| 스토어 스크린샷 | iPhone 6.7" + Android | 미생성 |
+
+---
+
+## 1원칙: 서로를 실망시키지 않는다.
