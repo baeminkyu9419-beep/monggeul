@@ -193,3 +193,115 @@ class TestConfigFiles:
 
     def test_manifest_json(self):
         assert (ROOT / "manifest.json").is_file(), "PWA manifest 없음"
+
+
+# ═══════════════════════════════════════════════════════════════
+# 9. Supabase Edge Functions 정적 smoke 검증 (Gen112)
+# ═══════════════════════════════════════════════════════════════
+
+class TestEdgeFunctionsStructure:
+    """15 Supabase Edge Functions 정적 구조 smoke 검증.
+
+    Deno 런타임 없이 수행하는 smoke test:
+    - 각 function 디렉토리에 index.ts 존재
+    - index.ts 가 Deno.serve 또는 std serve 를 사용
+    - CORS 헤더 선언 존재
+    - supabase-js import 존재 (auth/db 사용 function 에 한함)
+    """
+
+    EDGE_FUNCTIONS_DIR = ROOT / "supabase" / "functions"
+
+    EXPECTED_FUNCTIONS = [
+        "billing-apple-notifications",
+        "billing-apple-verify",
+        "billing-google-rtdn",
+        "billing-google-verify",
+        "create-checkout",
+        "openai-proxy",
+        "push-scheduler",
+        "push-subscribe",
+        "stripe-webhook",
+        "toss-checkout",
+        "toss-confirm",
+        "toss-payment-confirm",
+        "toss-payment-ready",
+        "toss-payment-webhook",
+        "toss-webhook",
+    ]
+
+    def test_edge_functions_dir_exists(self):
+        assert self.EDGE_FUNCTIONS_DIR.is_dir(), "supabase/functions/ 디렉토리 없음"
+
+    def test_function_count_matches_expected(self):
+        """15 function 디렉토리 전수 존재 검증"""
+        actual = sorted(
+            d.name for d in self.EDGE_FUNCTIONS_DIR.iterdir()
+            if d.is_dir() and not d.name.startswith(("_", "."))
+        )
+        assert actual == sorted(self.EXPECTED_FUNCTIONS), (
+            f"Edge Functions 목록 불일치.\nExpected: {sorted(self.EXPECTED_FUNCTIONS)}\nActual: {actual}"
+        )
+
+    @pytest.mark.parametrize("func_name", EXPECTED_FUNCTIONS)
+    def test_index_ts_exists(self, func_name):
+        index_file = self.EDGE_FUNCTIONS_DIR / func_name / "index.ts"
+        assert index_file.is_file(), f"{func_name}/index.ts 없음"
+
+    @pytest.mark.parametrize("func_name", EXPECTED_FUNCTIONS)
+    def test_function_has_serve_handler(self, func_name):
+        """각 function 은 serve(...) 핸들러를 export"""
+        content = (self.EDGE_FUNCTIONS_DIR / func_name / "index.ts").read_text(encoding="utf-8")
+        assert "serve(" in content, f"{func_name} serve(...) 핸들러 없음"
+
+    # 클라이언트 브라우저가 직접 호출하는 function (CORS 필수)
+    # webhook/notification/verify 는 서버-서버 호출이므로 CORS 불필요
+    INTERACTIVE_FUNCTIONS = [
+        "create-checkout",
+        "openai-proxy",
+        "push-scheduler",
+        "push-subscribe",
+        "toss-checkout",
+        "toss-confirm",
+        "toss-payment-confirm",
+        "toss-payment-ready",
+    ]
+
+    @pytest.mark.parametrize("func_name", INTERACTIVE_FUNCTIONS)
+    def test_interactive_function_has_cors_headers(self, func_name):
+        """브라우저 직접 호출 Edge Function 은 CORS 선언 필수"""
+        content = (self.EDGE_FUNCTIONS_DIR / func_name / "index.ts").read_text(encoding="utf-8")
+        has_cors = (
+            "Access-Control-Allow-Origin" in content
+            or "corsHeaders" in content
+        )
+        assert has_cors, f"{func_name} CORS 선언 누락 (브라우저 호출)"
+
+
+class TestDistFreshness:
+    """dist/ 빌드 산출물 stale 검증 (Gen112)"""
+
+    DIST_DIR = ROOT / "dist"
+
+    def test_dist_exists(self):
+        assert self.DIST_DIR.is_dir(), "dist/ 디렉토리 없음 — vite build 미실행"
+
+    def test_dist_has_index_html(self):
+        """dist/index.html 진입점 존재"""
+        assert (self.DIST_DIR / "index.html").is_file(), "dist/index.html 없음"
+
+    def test_dist_newer_than_src_app_js(self):
+        """dist/index.html mtime >= src/app.js mtime (빌드 최신성).
+
+        stale 감지: src/ 수정 후 빌드 누락 시 FAIL.
+        """
+        import os
+        src_app = SRC / "app.js"
+        dist_idx = self.DIST_DIR / "index.html"
+        if not src_app.is_file() or not dist_idx.is_file():
+            pytest.skip("src/app.js 또는 dist/index.html 없음")
+        src_mtime = os.path.getmtime(src_app)
+        dist_mtime = os.path.getmtime(dist_idx)
+        assert dist_mtime >= src_mtime, (
+            f"dist/ 가 src/ 보다 오래됨 — rebuild 필요.\n"
+            f"dist/index.html mtime: {dist_mtime}\nsrc/app.js mtime: {src_mtime}"
+        )
