@@ -148,23 +148,54 @@ export function updateCreditInfo() {
   }
 }
 
-// ── 티어 판정 (구독 + 크레딧 통합) ──
+// ── 티어 판정 (구독 + 크레딧 통합, Gen113 SKU 통일) ──
+// 'pro' 는 레거시 별칭 (= 'plus' 동의어). 신규 UI 는 'plus' / 'premium' 직접 사용 권장.
+var _cachedEntitlement = 'free';
+
+function normalizeEntitlement(key) {
+  if (!key) return 'free';
+  if (key === 'pro' || key === 'pro_active' || key === 'plus_active') return 'plus';
+  if (key === 'premium_active') return 'premium';
+  return key; // free / plus / premium / grace_or_hold 등
+}
+
 export async function getUserTier() {
-  if (_cachedSubscription) return 'pro';
+  if (_cachedSubscription) return _cachedEntitlement || 'plus';
   if (store.supabase && store.currentUser) {
     try {
+      // 1) RPC check_entitlement (기존 경로)
       const { data } = await store.supabase.rpc('check_entitlement', {
         p_user_id: store.currentUser.id,
       });
       if (data?.has_subscription) {
         _cachedSubscription = true;
-        return 'pro';
+        _cachedEntitlement = normalizeEntitlement(data.entitlement_key || data.tier || 'plus');
+        return _cachedEntitlement;
+      }
+    } catch (e) {}
+    try {
+      // 2) user_entitlements 직접 조회 (Edge Function 이 갱신하는 테이블)
+      const { data } = await store.supabase
+        .from('user_entitlements')
+        .select('entitlement_key, status')
+        .eq('user_id', store.currentUser.id)
+        .single();
+      if (data && (data.status === 'active' || data.status === 'grace')) {
+        const tier = normalizeEntitlement(data.entitlement_key);
+        if (tier === 'plus' || tier === 'premium') {
+          _cachedSubscription = true;
+          _cachedEntitlement = tier;
+          return tier;
+        }
       }
     } catch (e) {}
   }
   return 'free';
 }
-export function getCachedTier() { return _cachedSubscription ? 'pro' : 'free'; }
+export function getCachedTier() {
+  if (!_cachedSubscription) return 'free';
+  return _cachedEntitlement || 'plus';
+}
 // ── 일일 해몽 제한 ──
 const DAILY_FREE_LIMIT = 2;
 

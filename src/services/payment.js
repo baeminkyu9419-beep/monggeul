@@ -13,13 +13,28 @@ export function generateOrderId() {
 }
 
 // ── 상품 목록 (DB products 테이블과 동기) ──
+// 구독 SKU 규칙 (Gen113 통일):
+//  - 레거시 `pro_monthly` = Plus 와 동의어 (DB/웹/레거시 클라이언트 호환)
+//  - 신규 `plus_monthly` = Plus (엣지 함수 매핑: com.monggeul.plus.monthly / monggeul_plus)
+//  - 신규 `premium_monthly` = Premium (엣지 함수 매핑: com.monggeul.premium.monthly / monggeul_premium)
 export const PRODUCT_CATALOG = {
   pack_1:              { id: 'pack_1',   name: '상세 해몽 1회',   type: 'pack', price: 1900,  count: 1 },
   pack_5:              { id: 'pack_5',   name: '상세 해몽 5회 팩', type: 'pack', price: 7900,  count: 5 },
   pack_15:             { id: 'pack_15',  name: '상세 해몽 15회 팩', type: 'pack', price: 19900, count: 15 },
   unconscious_profile: { id: 'unconscious_profile', name: '무의식 프로파일', type: 'one_time', price: 2900 },
-  pro_monthly:         { id: 'pro_monthly', name: '프로 월간 구독', type: 'subscription', price: 9900 },
+  pro_monthly:         { id: 'pro_monthly', name: '프로 월간 구독', type: 'subscription', price: 9900, alias_of: 'plus_monthly' },
+  plus_monthly:        { id: 'plus_monthly', name: 'Plus 월간 구독', type: 'subscription', price: 3900, entitlement: 'plus' },
+  premium_monthly:     { id: 'premium_monthly', name: 'Premium 월간 구독', type: 'subscription', price: 19900, entitlement: 'premium' },
 };
+
+// 레거시 키 → 정본 키 매핑 (Gen113 SKU 통일)
+export const SKU_ALIAS = {
+  pro_monthly: 'plus_monthly',   // pro_monthly = plus_monthly (레거시 하위호환)
+};
+
+export function resolveCanonicalSku(productId) {
+  return SKU_ALIAS[productId] || productId;
+}
 
 // ── 결제수단 → PG 매핑 ──
 const METHOD_PG_MAP = {

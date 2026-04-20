@@ -14,9 +14,26 @@ export function currentPlatform() {
   return Capacitor.getPlatform(); // 'ios' | 'android'
 }
 
-// ── 상품 ID ──
-const IOS_PRODUCTS = ['com.monggeul.pro.monthly', 'com.monggeul.single', 'com.monggeul.pack5', 'com.monggeul.pack15', 'com.monggeul.profile'];
-const ANDROID_PRODUCTS = ['monggeul_pro_monthly', 'monggeul_single', 'monggeul_pack5', 'monggeul_pack15', 'monggeul_profile'];
+// ── 상품 ID (Gen113 SKU 통일: Plus/Premium 2단 구독 + pro_monthly 레거시 하위호환) ──
+// iOS bundle prefix com.monggeul.*, Android package com.monggeul.app
+const IOS_PRODUCTS = [
+  'com.monggeul.plus.monthly',
+  'com.monggeul.premium.monthly',
+  'com.monggeul.pro.monthly',  // 레거시 = plus 동의어
+  'com.monggeul.single',
+  'com.monggeul.pack5',
+  'com.monggeul.pack15',
+  'com.monggeul.profile',
+];
+const ANDROID_PRODUCTS = [
+  'monggeul_plus',
+  'monggeul_premium',
+  'monggeul_pro_monthly',      // 레거시 = plus 동의어
+  'monggeul_single',
+  'monggeul_pack5',
+  'monggeul_pack15',
+  'monggeul_profile',
+];
 
 // ── 구매 ──
 export async function purchase(productKey) {
@@ -27,7 +44,18 @@ export async function purchase(productKey) {
   if (platform === 'web') {
     // 웹: payment.js 통합 결제 (카드 기본)
     const { startPayment } = await import('./payment.js');
-    const keyMap = { single: 'pack_1', pack5: 'pack_5', pack15: 'pack_15', profile: 'unconscious_profile', plus: 'pro_monthly', premium: 'pro_monthly' };
+    // 구독 key 맵: plus/premium 은 엣지 함수 엔티틀먼트 매핑 정본 사용
+    const keyMap = {
+      single: 'pack_1',
+      pack5: 'pack_5',
+      pack15: 'pack_15',
+      profile: 'unconscious_profile',
+      plus: 'plus_monthly',
+      premium: 'premium_monthly',
+      plus_monthly: 'plus_monthly',
+      premium_monthly: 'premium_monthly',
+      pro_monthly: 'plus_monthly',   // 레거시 별칭 → 정본 plus
+    };
     startPayment({ productId: keyMap[productKey] || productKey, method: 'card' });
     return;
   }
@@ -55,12 +83,14 @@ export async function purchase(productKey) {
 
     if (platform === 'android') {
       // Google Play BillingClient
-      const result = await Capacitor.Plugins.MonggeulStore?.purchase({ productId: productKey });
+      // 키 정규화: plus/premium → monggeul_plus / monggeul_premium
+      const androidId = getAndroidProductId(productKey);
+      const result = await Capacitor.Plugins.MonggeulStore?.purchase({ productId: androidId });
       if (!result?.purchaseToken) { showToast('구매가 취소되었어요'); return; }
 
       const userId = store.currentUser?.id;
       const res = await store.supabase.functions.invoke('billing-google-verify', {
-        body: { purchaseToken: result.purchaseToken, subscriptionId: productKey, userId },
+        body: { purchaseToken: result.purchaseToken, subscriptionId: androidId, userId },
       });
 
       if (res.data?.entitlement) {
@@ -131,8 +161,22 @@ export async function getEntitlement() {
 
 // ── 헬퍼 ──
 function getIosProductId(key) {
-  if (key === 'plus') return 'com.monggeul.plus.monthly';
-  if (key === 'premium') return 'com.monggeul.premium.monthly';
+  if (key === 'plus' || key === 'plus_monthly' || key === 'pro_monthly') return 'com.monggeul.plus.monthly';
+  if (key === 'premium' || key === 'premium_monthly') return 'com.monggeul.premium.monthly';
+  if (key === 'single') return 'com.monggeul.single';
+  if (key === 'pack5') return 'com.monggeul.pack5';
+  if (key === 'pack15') return 'com.monggeul.pack15';
+  if (key === 'profile') return 'com.monggeul.profile';
+  return key;
+}
+
+function getAndroidProductId(key) {
+  if (key === 'plus' || key === 'plus_monthly' || key === 'pro_monthly') return 'monggeul_plus';
+  if (key === 'premium' || key === 'premium_monthly') return 'monggeul_premium';
+  if (key === 'single') return 'monggeul_single';
+  if (key === 'pack5') return 'monggeul_pack5';
+  if (key === 'pack15') return 'monggeul_pack15';
+  if (key === 'profile') return 'monggeul_profile';
   return key;
 }
 

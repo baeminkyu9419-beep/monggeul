@@ -1,0 +1,5 @@
+# 몽글몽글 app-ads.txt — AdMob 승인 후 pub-id 로 교체
+# 포맷은 ads.txt 와 동일. 모바일 앱 내 광고 중개에 사용됨.
+# 참고: https://support.google.com/admob/answer/9363762
+# 예시 (민규님 AdMob pub-id 교체 후 활성화):
+# google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0

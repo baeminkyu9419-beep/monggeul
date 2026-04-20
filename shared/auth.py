@@ -48,8 +48,12 @@ async def get_current_user(request: Request) -> dict:
                     options={"verify_aud": False}
                 )
             else:
+                # Gen113 iter#9.5 VULN_AUDIT Phase B-3-3 패치 [role-guard-bypass]
+                # dev 폴백은 DEV_MODE_JWT_BYPASS=1 명시 시에만 허용
                 if is_prod:
                     raise HTTPException(status_code=401, detail="JWT secret not configured")
+                if os.environ.get("DEV_MODE_JWT_BYPASS", "") != "1":
+                    raise HTTPException(status_code=401, detail="JWT secret not configured (set DEV_MODE_JWT_BYPASS=1 for dev)")
                 payload = pyjwt.decode(token, options={"verify_signature": False})
 
             user_id = payload.get("sub", "")
