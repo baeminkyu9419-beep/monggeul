@@ -123,3 +123,7 @@ npm run cap:ios
 
 ## 1원칙
 서로를 실망시키지 않는다.
+
+
+## Gen118 표준화
+상세: template 반영.
