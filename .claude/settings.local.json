@@ -47,7 +47,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/stop.sh",
+            "command": "bash C:/JARVIS_NEW/projects/MONGGEUL/.claude/hooks/stop.sh",
             "timeout": 15,
             "statusMessage": "MONGGEUL: 자동 커밋+백업+세션기록..."
           },
@@ -101,13 +101,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "py -3 .claude/hooks/loop_breaker.py",
+            "command": "pythonw C:/JARVIS_NEW/projects/MONGGEUL/.claude/hooks/loop_breaker.py",
             "timeout": 3,
             "statusMessage": "루프 브레이커 체크..."
           },
           {
             "type": "command",
-            "command": "py -3 C:/JARVIS_NEW/hooks/track_activity.py",
+            "command": "pythonw C:/JARVIS_NEW/runtime/hooks/track_activity.py",
             "timeout": 2,
             "statusMessage": "활동 추적..."
           }
