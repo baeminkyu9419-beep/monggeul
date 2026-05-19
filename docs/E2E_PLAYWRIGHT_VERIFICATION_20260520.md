@@ -71,6 +71,27 @@
 ## §7 작동하는 것 정확 표
 - 해몽 (9 키워드 매칭) / 4 TAB 전환 / XP / 별가루 / 출석 / 환영 모달 / 음성 입력 (Web Speech API 의존) / 공유 (Web Share API) / 캘린더 / 사전 / Flow / 감정 차트 / 수면 체크인 — **localStorage 만으로 작동하는 거의 모든 기능**
 
+## §9 4 TAB 전수 E2E (본 세션 추가 검증 2회차)
+
+| TAB | 실 입력/액션 | 결과 |
+|-----|------------|------|
+| dream | "뱀이 나를 물었어요" | "🐍 재물이 온다" + 길몽/재물운 + 6 stats + 양식 매칭 ✓ |
+| **chat (dali)** | "어제 무서운 꿈을 꿨어" | **fallback 응답: "어떤 꿈이었어요? 해몽 탭에서 같이 풀어볼 수도 있어요 🔮"** + typing animation ✓ |
+| community | (자동) | `.empty` placeholder visible ✓ (Supabase 다운 graceful degradation) |
+| log (my) | (자동) | **Lv 1 꿈 초보자** / progress 60% / XP 30 / 별가루 6 / levelCard ✓ |
+
+### Element ID 정정 (직전 가정 오류 정정)
+- chatInput → 실 ID = **`chatIn`** (placeholder "달이한테 말해줘요...")
+- sendChat 함수 = window 글로벌 노출됨 ✓
+- 출석/체크인 버튼 = checkinBtn 부재 (다른 trigger 또는 별도 UI flow)
+
+### dali graceful fallback 확증
+OpenAI API key 부재 상태에서도 dali chat = **정적 fallback 응답 작동** ("어떤 꿈이었어요? 해몽 탭에서..."). 사용자 경험 critical 영향 없음.
+
+## §10 MONGGEUL 진짜 마스터 종결 (자비스 자율 영역)
+4 TAB 모두 실 사용자 input → 출력 확증. localStorage + fallback 기반 거의 모든 기능 작동.
+민규 P0 8건 깬 후 = community Supabase 복귀 + dream gpt-4o 활성화 + dali GPT 응답 활성화 + LIVE 외부 접속.
+
 ## §8 작동 안 하는 것 (Supabase + OpenAI 의존)
 - 실 gpt-4o 해몽 (현재 demoResult fallback)
 - DALL-E 3 꿈 이미지
