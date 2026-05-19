@@ -324,6 +324,11 @@ export function showResult(data,inp){
   }
   document.getElementById('detailLock').style.display='block';
   document.getElementById('detailFull').style.display='none';
+  // Premium / Plus / dev unlock 시 자동 잠금 해제
+  const _tier = getCachedTier();
+  if (_tier === 'premium' || _tier === 'plus') {
+    try { unlockDetail(); } catch(e) {}
+  }
   generateResultThumbnail(inp);
   // CRM: 맞춤형 질문 표시
   try{ showContextQuestions(data); }catch(e){}
