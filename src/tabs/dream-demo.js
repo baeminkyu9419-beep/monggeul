@@ -159,21 +159,71 @@ export function demoResult(i){
   return _defaultResponse();
 }
 
-// EXTENDED_DICT 동적 매칭 — 196 entry 중 입력 키워드 첫 매칭 → 응답 생성
+// EXTENDED_DICT 동적 매칭 — 196 entry 중 입력 키워드 매칭 list 수집 → 합성 응답
 // demoResult 의 hardcoded 15 카테고리 미매칭 시 폴백 (default 응답 직전)
 function _matchExtendedDict(k){
   if (!EXTENDED_DICT || !Array.isArray(EXTENDED_DICT)) return null;
+  const matches = [];
   for (const dict of EXTENDED_DICT) {
-    // n 이 "전 애인/옛 연인" 같이 / 로 구분된 동의어일 수 있음
     const names = (dict.n || '').split('/').map(s => s.trim()).filter(Boolean);
     for (const name of names) {
       if (name.length >= 2 && k.includes(name)) {
-        // 첫 매칭 = 응답 생성
-        return _buildResponseFromDict(dict, name);
+        matches.push({ dict, name });
+        break;  // 한 entry 당 1회만
       }
     }
+    if (matches.length >= 5) break;  // 최대 5 entry 까지
   }
-  return null;
+  if (matches.length === 0) return null;
+  if (matches.length === 1) return _buildResponseFromDict(matches[0].dict, matches[0].name);
+  return _buildCompositeResponse(matches);
+}
+
+// 다중 매칭 합성 — 2~5 entry 통합 응답
+function _buildCompositeResponse(matches) {
+  // tags union (중복 제거)
+  const allTags = [...new Set(matches.flatMap(m => m.dict.tags || []))];
+  const badges = allTags.slice(0, 3);
+  // 길몽/대길/흉몽 점수
+  let baseStat = 60;
+  if (allTags.includes('대길') || allTags.includes('길몽')) baseStat = 80;
+  else if (allTags.includes('흉몽')) baseStat = 35;
+
+  // title = 매칭 이모지 + "여러 상징의 만남"
+  const emojis = matches.map(m => m.dict.e || '🌙').slice(0, 3).join('');
+  const nameList = matches.map(m => m.name).join(' · ');
+  const title = `${emojis} ${matches.length} 상징의 만남`;
+
+  // preview = 첫 매칭 의미 + 매칭 키워드 다수 강조
+  const firstMeaning = (matches[0].dict.meaning || '').substring(0, 60);
+  const preview = `<strong>${nameList}</strong> 이 함께 나타난 풍부한 꿈이에요. ${firstMeaning}...`;
+
+  // fullInterpretation = 각 매칭 상징 별 설명 + 통합 메시지
+  const sections = matches.map(m => {
+    const mn = m.dict.meaning || '';
+    const ctx = (m.dict.contexts || []).slice(0, 2).map(c => '· ' + (c.t || '').replace(/<\/?strong>/g, '')).join('\n');
+    return `【${m.dict.e || '🌙'} ${m.name}】\n${mn}${ctx ? '\n' + ctx : ''}`;
+  }).join('\n\n');
+
+  const integratedMsg = matches.length >= 3
+    ? `${matches.length}개의 상징이 함께 등장하는 꿈 = 무의식이 여러 측면을 동시에 처리하는 중이에요. 각 상징을 분리해서 보기보다, 전체 흐름과 연결성에 주목해주세요.`
+    : `두 상징의 만남은 의식과 무의식, 또는 두 다른 영역이 서로 영향을 주고받고 있다는 신호예요.`;
+
+  return {
+    title,
+    badges: badges.length ? badges : ['중립'],
+    stats: {
+      길흉: baseStat,
+      연애운: allTags.includes('연애운') ? 80 : 60,
+      재물운: allTags.includes('재물운') ? 80 : 55,
+      건강운: allTags.includes('건강운') ? 75 : 65,
+      활력: 70,
+      직관: 80,
+    },
+    emotions: ['🌀 다층성', '🔍 통찰', '🌙 깊이'],
+    preview,
+    fullInterpretation: `【꿈의 핵심 — 다중 상징】\n${sections}\n\n【통합 메시지】\n${integratedMsg}\n\n【앞으로의 흐름】\n각 상징이 가리키는 영역을 며칠 동안 관찰해보세요. 어떤 상징이 가장 마음에 남는지가 핵심 단서가 될 수 있어요.\n\n【달이의 한마디】\n풍부한 꿈을 꾸셨네요. 무의식이 많은 이야기를 한 번에 전했어요 🌙`,
+  };
 }
 
 function _buildResponseFromDict(dict, matchedName) {
