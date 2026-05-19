@@ -11,7 +11,7 @@ import { trackFunnelStep } from '../utils/funnel.js';
 import { esc, sanitize, validateDreamResult } from '../utils/sanitize.js';
 import { addXP, ALL_DICT_REF } from './my.js';
 import { getContextForPrompt, getLifeStagePrompt, showContextQuestions } from '../services/dream-context.js';
-import { demoResult } from './dream-demo.js';
+import { demoResult, _evaluateRichness } from './dream-demo.js';
 import { isNonsenseInput } from '../utils/dream-validator.js';
 import { shareResult, generateShareCard, generateDreamThumbnail, generateResultThumbnail } from './dream-share.js';
 import { stopVoiceInput, startVoiceInput } from './dream-voice.js';
@@ -188,9 +188,16 @@ export async function analyzeDream(){
   }catch(e){
     await new Promise(r=>setTimeout(r,2000));
     showResult(demoResult(inp),inp);
-    // 오프라인/API 실패 시 안내
+    // 오프라인/API 실패 시 안내 + 입력 풍부도 평가
     setTimeout(()=>{
-      showToast(!navigator.onLine?'오프라인 상태예요. 기본 해석을 보여드려요 🌙':'기본 해석을 보여드려요. 나중에 다시 시도해 주세요 🌙');
+      const richness = _evaluateRichness ? _evaluateRichness(inp) : null;
+      if (richness && richness.level === 'very_rich') {
+        showToast('이 꿈은 매우 풍부해요. 더 정확한 해석은 gpt-4o 키 입력 후 가능해요 🔮');
+      } else if (richness && richness.level === 'rich') {
+        showToast('풍부한 꿈이네요. 기본 해석을 보여드려요 🌙');
+      } else {
+        showToast(!navigator.onLine?'오프라인 상태예요. 기본 해석을 보여드려요 🌙':'기본 해석을 보여드려요. 나중에 다시 시도해 주세요 🌙');
+      }
     },500);
   }
   finally{clearInterval(iv);stopLoadingSteps();ld.classList.remove('on');await incDreamCount();
