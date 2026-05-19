@@ -89,6 +89,11 @@ export function demoResult(i){
     preview:'직장·책임·회피가 얽힌 꿈이에요. <strong>의무와 자유 사이의 긴장</strong>이 강하게 드러나요...',
     fullInterpretation:`【꿈의 핵심 상징】\n음식물쓰레기 / 지각 / 회사 / 그만두기 같은 요소는 무의식이 "처리해야 하는 일과 회피하고 싶은 마음" 사이의 충돌을 표현해요. 사과 후 분노로 이어지는 흐름은 억눌렀던 감정이 임계점에 도달했다는 신호예요.\n\n【무의식의 메시지】\n현실에서 책임에 짓눌리고 있거나, 자유롭게 행동하고 싶은 욕구가 강해지고 있어요. 릴스 같은 짧은 자극을 통해 도피하려는 패턴이 있다면 의미 있는 메시지예요.\n\n【운세 분석】\n건강운: 스트레스 누적 시기. 충분한 휴식 필수. 재물운: 단기 결정보다 장기 안정 우선. 연애운: 감정 폭발 위험이 있으니 가까운 사람에게 톤 조절 권고.\n\n【앞으로의 흐름】\n현재 일/책임 환경을 정직하게 점검할 시기예요. 즉흥적 그만두기보다 단계적 정리 또는 휴식 계획이 도움이 될 수 있어요.\n\n【달이의 한마디】\n다 짊어지지 않아도 괜찮아요. 잠시 멈춰서 본인 페이스로 돌아오는 것도 용기예요 🐱🌙`
   };
+  // EXTENDED_DICT 다중 매칭 우선 (2+ symbol 풍부 입력 시 합성 응답)
+  // 단일/0 매칭 = 9 기존 카테고리 진입 (더 깊은 hardcoded 응답)
+  const _dictMatches = _collectExtendedMatches(k);
+  if (_dictMatches.length >= 2) return _buildCompositeResponse(_dictMatches);
+
   if(_match(k, ['뱀']))return{
     title:'🐍 재물이 온다',badges:['길몽','재물운'],
     stats:{길흉:82,연애운:45,재물운:91,건강운:60,활력:74,직관:88},
@@ -159,21 +164,26 @@ export function demoResult(i){
   return _defaultResponse();
 }
 
-// EXTENDED_DICT 동적 매칭 — 196 entry 중 입력 키워드 매칭 list 수집 → 합성 응답
-// demoResult 의 hardcoded 15 카테고리 미매칭 시 폴백 (default 응답 직전)
-function _matchExtendedDict(k){
-  if (!EXTENDED_DICT || !Array.isArray(EXTENDED_DICT)) return null;
+// EXTENDED_DICT 매칭 수집 — 196 entry 중 입력 키워드 매칭 list (max 5)
+function _collectExtendedMatches(k){
+  if (!EXTENDED_DICT || !Array.isArray(EXTENDED_DICT)) return [];
   const matches = [];
   for (const dict of EXTENDED_DICT) {
     const names = (dict.n || '').split('/').map(s => s.trim()).filter(Boolean);
     for (const name of names) {
       if (name.length >= 2 && k.includes(name)) {
         matches.push({ dict, name });
-        break;  // 한 entry 당 1회만
+        break;
       }
     }
-    if (matches.length >= 5) break;  // 최대 5 entry 까지
+    if (matches.length >= 5) break;
   }
+  return matches;
+}
+
+// EXTENDED_DICT 단일 매칭 응답 (9 기존 카테고리 모두 미매칭 후 호출)
+function _matchExtendedDict(k){
+  const matches = _collectExtendedMatches(k);
   if (matches.length === 0) return null;
   if (matches.length === 1) return _buildResponseFromDict(matches[0].dict, matches[0].name);
   return _buildCompositeResponse(matches);
