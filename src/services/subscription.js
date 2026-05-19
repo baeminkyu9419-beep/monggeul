@@ -160,6 +160,14 @@ function normalizeEntitlement(key) {
 }
 
 export async function getUserTier() {
+  // Dev unlock: 클라이언트 강제 unlock (개발/오너 사용, 서버 entitlement 무관)
+  // 사용: localStorage.setItem('mg_dev_unlock', 'premium') 후 reload
+  const devUnlock = (typeof localStorage !== 'undefined') ? localStorage.getItem('mg_dev_unlock') : null;
+  if (devUnlock === 'premium' || devUnlock === 'plus') {
+    _cachedSubscription = true;
+    _cachedEntitlement = devUnlock;
+    return devUnlock;
+  }
   if (_cachedSubscription) return _cachedEntitlement || 'plus';
   if (store.supabase && store.currentUser) {
     try {
@@ -193,6 +201,9 @@ export async function getUserTier() {
   return 'free';
 }
 export function getCachedTier() {
+  // Dev unlock 우선 (getUserTier 호출 전이라도 즉시 적용)
+  const devUnlock = (typeof localStorage !== 'undefined') ? localStorage.getItem('mg_dev_unlock') : null;
+  if (devUnlock === 'premium' || devUnlock === 'plus') return devUnlock;
   if (!_cachedSubscription) return 'free';
   return _cachedEntitlement || 'plus';
 }
@@ -231,6 +242,12 @@ export async function getDreamCountAsync() {
 }
 
 export async function canUseDream() {
+  // Dev unlock: 비로그인이라도 mg_dev_unlock 시 무제한 (오너/개발자용)
+  const devUnlock = (typeof localStorage !== 'undefined') ? localStorage.getItem('mg_dev_unlock') : null;
+  if (devUnlock === 'premium' || devUnlock === 'plus') {
+    return { allowed: true, remaining: Infinity };
+  }
+
   // 비로그인: 1회 체험
   if (!store.currentUser) {
     const guestUsed = localStorage.getItem('mg_guest_dream_used');
@@ -241,9 +258,11 @@ export async function canUseDream() {
     };
   }
 
-  // 프로 구독: 무제한
+  // 구독: 무제한 (plus/premium/pro 모두 — pro 는 plus 레거시 별칭)
   const tier = await getUserTier();
-  if (tier === 'pro') return { allowed: true, remaining: Infinity };
+  if (tier === 'plus' || tier === 'premium' || tier === 'pro') {
+    return { allowed: true, remaining: Infinity };
+  }
 
   // 무료(로그인): 2회/일
   const count = await getDreamCountAsync();
