@@ -133,7 +133,7 @@ export function renderFeed() {
     return `
     <div class="feed-card" onclick="openDetail('${postId}')">
       <div class="fc-top">
-        <div class="fc-av ${av}">${icon}</div>
+        <div class="fc-av ${av}">${esc(icon)}</div>
         <div><div class="fc-nm">${esc(nick)}</div><div class="fc-tm">${esc(time)}</div></div>
         <div class="fc-badges">${badges.map(b => `<span class="badge ${bm[b] || 'bl'}" style="font-size:10px;padding:2px 8px">${esc(b)}</span>`).join('')}</div>
       </div>

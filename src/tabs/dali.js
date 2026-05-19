@@ -833,8 +833,8 @@ async function generateDreamImage(dreamText,dreamTitle,containerId){
     const prompt=`Dreamy, ethereal digital illustration of a dream: "${dreamText.substring(0,200)}". Style: soft watercolor, magical night sky with stars, gentle purple and blue tones, whimsical and calming atmosphere. No text, no words.`;
     const data=await callOpenAI('image',{model:'dall-e-3',prompt,n:1,size:'1024x1024',quality:'standard'});
     if(data.data&&data.data[0]&&data.data[0].url){
-      el.innerHTML=`<img src="${data.data[0].url}" alt="${dreamTitle}" class="dali-dream-img-result" onclick="window.open(this.src)">
-        <div class="dali-img-caption">🎨 달이가 그린 "${dreamTitle}"</div>`;
+      el.innerHTML=`<img src="${data.data[0].url}" alt="${esc(dreamTitle)}" class="dali-dream-img-result" onclick="window.open(this.src)">
+        <div class="dali-img-caption">🎨 달이가 그린 "${esc(dreamTitle)}"</div>`;
       logEvent('dream_image_completed',{title:dreamTitle});
     }else{
       el.innerHTML='<div class="dali-img-caption" style="color:var(--text-muted)">🎨 그림을 그리지 못했어요</div>';
@@ -904,7 +904,7 @@ export function runBreathCycle(){
           setTimeout(()=>{
             const d=document.createElement('div');
             d.className='cbbl ny';
-            d.innerHTML=`오늘 밤 꿈 의도: "<b>${intention}</b>"<br>내일 아침에 기억나는지 확인해볼게요 🐱`;
+            d.innerHTML=`오늘 밤 꿈 의도: "<b>${esc(intention)}</b>"<br>내일 아침에 기억나는지 확인해볼게요 🐱`;
             document.getElementById('chatMsgs').appendChild(d);
             document.getElementById('chatMsgs').scrollTop=99999;
           },1500);
