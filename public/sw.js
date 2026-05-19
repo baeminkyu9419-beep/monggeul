@@ -1,9 +1,10 @@
 // 몽글몽글 Service Worker — 오프라인 캐싱 + 빠른 재방문
-const CACHE_NAME = 'monggeul-v4';
+const CACHE_NAME = 'monggeul-v5';
 const STATIC_ASSETS = [
   '/monggeul/',
   '/monggeul/manifest.json',
   '/monggeul/assets/cat_normal.png',
+  '/monggeul/dreams/index.html',
 ];
 
 // SEO 꿈 해몽 페이지 — 오프라인 캐시 대상
