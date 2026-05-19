@@ -56,7 +56,9 @@
 |-------------------------------------------|------------|--------|
 | 외부 접속 LIVE | **권한 외** (GitHub repo public + Pages 활성화 또는 Cloudflare/Vercel 이전) | hosting plan 박제만 |
 | 코드 작동 | ✅ 자비스 직접 검증 (vite build PASS) | **100%** |
-| 보안 / sanitize | ✅ XSS critical 0 + LOW 영역 정정 | **99%** (잔여 1% = AI 응답 영역) |
+| 보안 / sanitize | ✅ XSS critical 0 + LOW 영역 정정 (dali + community 추가 esc 3 라인) | **99.5%** |
+| **Supabase 인스턴스 작동** | ❌ **ECONNREFUSED** (paused/삭제, 본 세션 실측) | **0%** (민규 unpause 1 click) |
+| **OpenAI 실 해몽** | ❌ **API key 부재** (`config.js` 비어 있음) | **fallback 만** (demoResult 9 키워드) |
 | 빌드 시스템 | ✅ chunk 분리 + warning 해소 | **100%** |
 | 큰 파일 분리 | ✅ dream/my -37% | **100%** (본 세션 목표 영역) |
 | 정합성 박제 | ✅ Edge Functions / dream / 보안 / hosting plan | **100%** |
@@ -67,11 +69,13 @@
 
 ### 출시 장벽
 1. **GitHub repo public 전환** 또는 **Cloudflare Pages 이전** = LIVE 복귀의 진짜 trigger (옵션 plan 박제 완료)
-2. **SKU 가격 결정** = paywall.js ₩9,900 레거시 → 정본 Plus ₩3,900 (자비스 정정 시 비즈니스 임팩트, 민규 승인 후 자율 가능)
-3. **AdSense pub-id** 발급 → `config.js` 주입
-4. **Google Play $25** 개발자 등록 + AAB 제출
-5. **Apple p8 / Google service account JSON** = IAP 운영
-6. **토스 v1 deprecate** 결정 = 클라이언트 호출 패턴 확정 후 자율 가능
+2. **Supabase 인스턴스 unpause** (1 click, 무료) 또는 새 프로젝트 + migration 재실행 — **본 세션 ECONNREFUSED 실측**
+3. **OpenAI API key** `config.js` 입력 (또는 Supabase Vault + openai-proxy Edge Function 권장) = 실 gpt-4o 해몽 활성화
+4. **SKU 가격 결정** = paywall.js ₩9,900 레거시 → 정본 Plus ₩3,900 (자비스 정정 시 비즈니스 임팩트, 민규 승인 후 자율 가능)
+5. **AdSense pub-id** 발급 → `config.js` 주입
+6. **Google Play $25** 개발자 등록 + AAB 제출
+7. **Apple p8 / Google service account JSON** = IAP 운영
+8. **토스 v1 deprecate** 결정 = 클라이언트 호출 패턴 확정 후 자율 가능
 
 ## §4 본 세션 30 commits 분류
 
