@@ -3,6 +3,18 @@
 > **Gen107 Recovery Gen** — 2026-04-17 야간 자율 작성
 > 세대 교체 시 덮어쓴다. 이전 갱신: Gen98 (2026-04-16 21:33).
 
+## §0.1 본 세션 진입 (2026-05-19) — 15.3d 정체 끊음
+
+- **정체 측정**: 마지막 MONGGEUL commit `7fe3b499f` (2026-05-04 12:51) 이후 **15.3d**. 본 세션 진입 (2026-05-19 20:25 KST).
+- **SKU 불일치 발견 (민규 결정 P0)**:
+  - `CLAUDE.md` 정본: Plus ₩3,900/월 / Premium ₩19,900/월 (계획) / pro_monthly ₩9,900 레거시 하위호환.
+  - `src/components/paywall.js` L40/41/46/47/148/149/200/201: **레거시 ₩9,900 + pro_monthly action 만 노출**. 정본 Plus ₩3,900 미반영.
+  - `src/services/growth.js` L240/260/261/331: 동일 ₩9,900 레거시만 표시.
+  - `src/services/ads.js` L198 + `src/services/iap.js` L53~57: 정본 ₩3,900 + Plus/Premium 매핑 OK.
+  - **불일치 의미**: paywall UI 가 실 사용자에게 레거시 가격만 노출. 정본 SKU 가격 변경은 실 비즈니스 임팩트 = 민규 결정 영역.
+- **자율 가능 다음 step**: SKU 정정 commit 은 민규 승인 후. 그 전 자율 = 빌드 검증 / Edge Functions 정합성 / 보안 점검.
+- **잔여 P0 (민규)**: AdSense pub-id / Google Play $25 / Apple p8 / Google service account JSON / SKU 가격 정정 승인.
+
 ---
 
 ## 한 줄
