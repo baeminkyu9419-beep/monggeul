@@ -46,6 +46,32 @@ base: '/',
 
 GitHub Pages 복귀 시 = 변경 불요 (`/monggeul/` 유지).
 
+## §5.1 index.html stale URL 4건 (본 세션 발견)
+
+현재 `index.html` 모든 SEO/OG 메타가 **HTTP 404 stale URL** 노출:
+
+| line | 항목 | 현재 값 |
+|------|------|---------|
+| L8 | `<link rel="canonical">` | `https://baeminkyu9419-beep.github.io/monggeul/` (404) |
+| L11 | `<meta property="og:image">` | `https://baeminkyu9419-beep.github.io/monggeul/og-image.png` |
+| L12 | `<meta property="og:url">` | `https://baeminkyu9419-beep.github.io/monggeul/` (404) |
+| L18 | JSON-LD `url` | `https://baeminkyu9419-beep.github.io/monggeul/` (404) |
+
+영향:
+- 소셜 미디어 공유 카드 깨짐 (Facebook/Twitter OG)
+- 구글 SEO 색인 시 canonical URL 404 → 색인 페널티 가능성
+- 검색엔진에 stale URL 노출
+
+### Hosting 결정 후 정정 (자비스 자율 가능)
+- 옵션 A (GitHub repo public 복귀): URL 유지, 정정 불요
+- 옵션 B (Cloudflare): 4건 모두 `https://monggeul.pages.dev/` 로 정정 (또는 custom domain)
+- 옵션 C (Vercel): `https://monggeul.vercel.app/` 등
+- 옵션 D (Netlify): 동
+
+또는 **build-time 변수화**: `vite-plugin-html` + env `VITE_PUBLIC_URL` 으로 build 시 자동 치환 (큰 변경, 별도 plan).
+
+`manifest.json` `start_url`/`scope` 도 동일 영역 (§5 와 함께 정정).
+
 ## §6 자비스 권고
 - **옵션 B (Cloudflare Pages)** = 보안 + 비용 + 성능 균형 최선.
 - private repo 유지하면서도 외부 사용자 접속 가능 = 결제 키 발급 + SKU 정정 결정 전까지 stage 환경으로 활용 가능.
