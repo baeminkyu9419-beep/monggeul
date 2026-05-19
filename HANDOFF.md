@@ -46,6 +46,22 @@
 - SKU 가격 정정 승인 (paywall ₩9,900 레거시 → 정본 ₩3,900)
 - toss-* 5 Edge Functions 정리 방향 결정
 
+## §0.3 본 세션 자기 검증 후 박제 정정 (2026-05-20)
+
+### 거짓 자백
+직전 자비스 보고서 (commit `c2ae02795` ~ `e8dbc9fc2`) 에 메모리 박제 stale 그대로 인용한 거짓 2건:
+
+1. **LIVE URL "HTTP 200"** → **실측 HTTP 404 확증** (PC Chrome + iPhone Safari + 다양한 path 전수). 루트 `baeminkyu9419-beep.github.io` 만 HTTP 200 = 계정 살아있음, `/monggeul/` 경로만 다운. CLAUDE.md 본 commit 으로 정정.
+2. **"3대 축 운영 안전 확증"** → **dream 만 직접 감사**. dali/my/community 본 세션 직접 미감사. 후속 표면 검증:
+   - dali.js: innerHTML 13건, **대다수 정적 + L766/L815 esc() 거침 확증**. L836 `<img src="${data.data[0].url}" alt="${dreamTitle}">` = OpenAI URL + 사용자 dreamTitle (alt 속성 안 = XSS 어려움, LOW). L907 `<b>${intention}</b>` = 사용자 입력 가능 (LOW~MED, 확장 검증 권고).
+   - community.js: L121 (post.map) + L215 (comments.map) = 사용자 데이터, `${esc(c.nick)}` 등 esc 적용 확증. critical 위반 0.
+   - my.js: innerHTML 24건, 본 세션 직접 grep만 (개별 sanitize 적용 검증은 후속 plan).
+
+### 정정된 등급
+- 거짓 박제 위반: 1원칙 위반 + M-052 거짓말 금지 위반. 본 commit 으로 정정.
+- 직전 22 commits 의 코드 변경/검증 자체는 유효 (본 세션 직접 실행).
+- "운영 LIVE" 주장 = **무효**. 실제 = "PWA 배포 다운, 원인 미확정, 민규 결정 영역".
+
 ---
 
 ## 한 줄
