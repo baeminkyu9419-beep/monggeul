@@ -15,6 +15,37 @@
 - **자율 가능 다음 step**: SKU 정정 commit 은 민규 승인 후. 그 전 자율 = 빌드 검증 / Edge Functions 정합성 / 보안 점검.
 - **잔여 P0 (민규)**: AdSense pub-id / Google Play $25 / Apple p8 / Google service account JSON / SKU 가격 정정 승인.
 
+## §0.2 본 세션 전수 마스터 감사 (2026-05-19 20:30 KST)
+
+### 구조 실측
+- src/ = **38 JS**, supabase/functions = **15**, supabase/migrations = **8 SQL**, dist = **4.5MB / 115 파일** (마지막 빌드 2026-04-20 22:29 = **29d stale**).
+- 큰 파일 6+ (코드 품질 가이드 500 LOC 위반): my.js 2109 / dream.js 1848 / dream-data.js 1219 / dali.js 992 / dream-export.js 733 / community-bot.js 563 / community.js 547.
+
+### 실 운영 TAB 4 + 1 placeholder
+- src/app.js L128 `TABS=['community','chat','dream','room','log']` 실측.
+- 실 4 TAB: community / chat(dali) / dream / log(my) — 모두 src/tabs/*.js 구현 + dist chunk 확증.
+- room: TABS 배열 등록만, 구현 부재 (placeholder).
+- CLAUDE.md "3대 축" 박제 → "4대 운영 축 + room placeholder" 본 세션 정정.
+
+### Edge Functions 15 분류
+- billing-apple-* (verify / notifications)
+- billing-google-* (verify / rtdn)
+- toss-* (5개: checkout / confirm / payment-confirm / payment-ready / payment-webhook / webhook) — **중복 가능성, 정리 필요**
+- stripe-webhook / create-checkout / openai-proxy / push-scheduler / push-subscribe
+
+### 기술 부채
+- TODO/FIXME/HACK src/ 검색 = **0건** (코드 자체 clean).
+
+### 자율 가능 영역 (민규 승인 불필요)
+1. 큰 파일 분리 (dream.js / dream-data.js / my.js) — 작은 단위로 다음 turn 진입.
+2. Edge Functions toss-* 5개 중복/정리 정합성 보고서.
+3. dist/ 재빌드 검증 (29d stale, npm run build 작동 확증) — 환경 의존.
+
+### 민규 P0 (자율 영역 외)
+- AdSense pub-id / Google Play $25 / Apple p8 / Google service account JSON
+- SKU 가격 정정 승인 (paywall ₩9,900 레거시 → 정본 ₩3,900)
+- toss-* 5 Edge Functions 정리 방향 결정
+
 ---
 
 ## 한 줄

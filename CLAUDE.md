@@ -107,12 +107,18 @@ npm run cap:ios
 ### 기능 추가 금지
 지시하지 않은 새 기능은 절대 추가하지 않는다. 민규님이 요청하지 않은 신규 기능/UI/화면/탭/버튼/메뉴/API 엔드포인트를 자율적으로 추가하지 않는다. 버그 수정, 보안 패치, 문서 정정, SKU 통일 같은 유지보수성 작업은 허용된다.
 
-### 3대 축 고정
-- **해몽**: `src/tabs/dream.js` — 꿈 입력 → 달이 해석 → 결과
-- **달이**: `src/tabs/dali.js` — 꿈 동반자 AI 대화
-- **기록(MY)**: `src/tabs/my.js` — 꿈 일기 / 패턴 리포트
+### 실 운영 TAB (2026-05-19 실측 정정 — 3대 축 stale)
 
-이 3대 축 밖의 신기능은 금지한다.
+`src/app.js:128` `TABS=['community','chat','dream','room','log']` 실측 기준.
+
+- **해몽**: `src/tabs/dream.js` — 꿈 입력 → 달이 해석 → 결과 (1848 LOC)
+- **달이(chat)**: `src/tabs/dali.js` — 꿈 동반자 AI 대화 (992 LOC)
+- **기록(log/MY)**: `src/tabs/my.js` — 꿈 일기 / 패턴 리포트 (2109 LOC)
+- **커뮤니티(community)**: `src/tabs/community.js` — Supabase Realtime 피드 + 봇 (547 LOC). dist/ chunk `tab-community-*.js` 빌드 확증.
+- **room**: `src/app.js:128` TABS 배열 등록만, `src/tabs/room.js` 부재 (placeholder/미완).
+
+위 4대 운영 축 (해몽/달이/기록/커뮤니티) 밖의 신기능은 금지한다.
+room placeholder 는 구현 진입 전까지 보류 (자율 추가 금지).
 
 ### 정신건강 경계 (절대 규칙)
 - 진단 단정 금지 ("우울증입니다" 등 절대 불가)
