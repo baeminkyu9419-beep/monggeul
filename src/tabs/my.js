@@ -67,9 +67,9 @@ export function searchDreamLog(){
   const filtered=logs.filter(l=>(l.text&&l.text.toLowerCase().includes(q))||(l.title&&l.title.toLowerCase().includes(q)));
   const el=document.getElementById('logList');
   if(!el)return;
-  if(!filtered.length){el.innerHTML='<div class="empty"><div class="empty-icon">🔍</div><div class="empty-txt">"'+q+'" 관련 꿈이 없어요</div></div>';return;}
+  if(!filtered.length){el.innerHTML='<div class="empty"><div class="empty-icon">🔍</div><div class="empty-txt">"'+esc(q)+'" 관련 꿈이 없어요</div></div>';return;}
   const bm={길몽:'bl',태몽:'bl',재물운:'bl',흉몽:'bb',연애운:'bv',건강운:'bv'};
-  el.innerHTML=filtered.map(l=>'<div class="log-item"><div class="log-hd"><span class="log-dt">'+l.date+'</span><div class="log-bgs">'+(l.badges||[]).map(b=>'<span class="badge '+(bm[b]||'bl')+'" style="font-size:10px;padding:2px 7px">'+b+'</span>').join('')+'</div></div><div class="log-txt">'+l.text+'</div><div class="log-ttl">✦ '+l.title+'</div></div>').join('');
+  el.innerHTML=filtered.map(l=>'<div class="log-item"><div class="log-hd"><span class="log-dt">'+esc(l.date||'')+'</span><div class="log-bgs">'+(l.badges||[]).map(b=>'<span class="badge '+(bm[b]||'bl')+'" style="font-size:10px;padding:2px 7px">'+esc(b)+'</span>').join('')+'</div></div><div class="log-txt">'+esc(l.text||'')+'</div><div class="log-ttl">✦ '+esc(l.title||'')+'</div></div>').join('');
 }
 
 export function resetAllData(){
@@ -615,7 +615,7 @@ export function detectRepeatDreams(){
   const bodyEl=document.getElementById('repeatDreamBody');
   if(repeated.length>0&&alertEl&&bodyEl){
     alertEl.style.display='flex';
-    bodyEl.innerHTML=repeated.map(([k,v])=>`<strong>${k}</strong> 관련 꿈 <strong>${v}회</strong>`).join(' · ')+'<br><span style="font-size:11px;color:var(--text-muted)">최근 14일 기준</span>';
+    bodyEl.innerHTML=repeated.map(([k,v])=>`<strong>${esc(k)}</strong> 관련 꿈 <strong>${v}회</strong>`).join(' · ')+'<br><span style="font-size:11px;color:var(--text-muted)">최근 14일 기준</span>';
   }
 }
 
