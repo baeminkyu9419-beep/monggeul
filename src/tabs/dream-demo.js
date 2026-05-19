@@ -158,3 +158,23 @@ export function demoResult(i){
     fullInterpretation:`【꿈의 핵심 상징】\n이 꿈에 등장한 요소들은 당신의 무의식이 현재 상황을 어떻게 인식하고 있는지 보여줘요. 꿈 속의 장소, 인물, 감정이 모두 중요한 상징을 담고 있어요.\n\n【무의식의 메시지】\n꿈은 낮에 처리하지 못한 감정과 생각을 밤에 정리하는 과정이에요. 이 꿈을 꿨다는 건 내면에서 중요한 변화가 일어나고 있다는 신호예요.\n\n【운세 분석】\n전반적으로 안정된 운세예요. 연애운이 조금 높게 나왔으니 좋아하는 사람이 있다면 조심스럽게 다가가볼 만해요. 재물운은 큰 변동 없이 안정적이에요.\n\n【이 꿈이 특별한 이유】\n꿈에서 느낀 감정이 중요해요. 기분 좋은 꿈이었다면 좋은 일의 전조, 불안한 꿈이었다면 현실의 스트레스가 반영된 거예요.\n\n【앞으로의 흐름】\n앞으로 일주일은 큰 결정보다는 현재에 집중하는 게 좋아요. 작은 일상의 행복을 챙기면서 에너지를 충전하세요.\n\n【달이의 한마디】\n꿈을 기억하고 기록하는 것만으로도 자기 자신을 더 잘 이해하게 돼요. 오늘도 좋은 하루 보내세요 🌙`
   };
 }
+
+// 입력의 풍부도 (length + 감정 키워드 + 인물/장소/시간) 점수
+// dream.js fallback 호출 전 사전 평가 — 매우 풍부한 입력 = default 응답 부족 = LLM 권고 신호
+export function _evaluateRichness(text) {
+  if (!text) return { score: 0, level: 'empty' };
+  const k = text.toLowerCase();
+  const wordCount = text.replace(/\s+/g, ' ').trim().split(' ').length;
+  const emotionWords = ['무서','두려','슬프','기뻐','놀라','화나','빡','분노','설레','싫','좋아','외로','불안','떨려','짜증','후회','억울'].filter(w => k.includes(w)).length;
+  const peopleWords = ['엄마','아빠','친구','형','누나','동생','선생','상사','연인','남친','여친','사람','가족'].filter(w => k.includes(w)).length;
+  const placeWords = ['집','학교','회사','길','산','바다','강','도로','방','부산','서울','병원','지하철','버스'].filter(w => k.includes(w)).length;
+  const actionWords = ['갔','왔','했','봤','만났','떨어','뛰었','달렸','울었','웃었','잤','일어났','죽었'].filter(w => k.includes(w)).length;
+  const timeWords = ['아침','점심','저녁','밤','새벽','어제','오늘','내일','과거','미래'].filter(w => k.includes(w)).length;
+
+  const score = wordCount + emotionWords * 3 + peopleWords * 2 + placeWords * 2 + actionWords * 2 + timeWords;
+  let level = 'simple';
+  if (score >= 50) level = 'very_rich';
+  else if (score >= 25) level = 'rich';
+  else if (score >= 10) level = 'moderate';
+  return { score, level, wordCount, emotionWords, peopleWords, placeWords, actionWords, timeWords };
+}
