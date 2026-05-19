@@ -3,7 +3,8 @@
 ## 정체성 (정정 Gen113 iter#9 [role-guard-bypass])
 - **실체**: 꿈 해몽 & 꿈 기록 앱 (manifest.json name="몽글몽글 - 꿈 해몽 & 꿈 기록" 근거)
 - **기존 오기**: "반려동물 관리 하이브리드 앱" (Gen107 이전 문서 혼선, 실 코드/manifest 와 괴리)
-- **LIVE URL**: ~~https://baeminkyu9419-beep.github.io/monggeul/~~ **다운 (2026-05-20 실측 HTTP 404)**. 루트 `baeminkyu9419-beep.github.io` 자체는 HTTP 200 = 계정 정상, `/monggeul/` 경로만 부재. PC Chrome + iPhone Safari + 다양한 path 모두 404 확증. 원인 후보: GitHub Pages 비활성화 / 저장소 private 전환 (보안 사고 후속) / 경로 변경. 민규 결정 영역.
+- **LIVE URL**: ~~https://baeminkyu9419-beep.github.io/monggeul/~~ **다운 (2026-05-20 실측 HTTP 404)**. 루트 `baeminkyu9419-beep.github.io` 자체는 HTTP 200 = 계정 정상, `/monggeul/` 경로만 부재. PC Chrome + iPhone Safari + 다양한 path 모두 404 확증.
+- **원인 확정 (2026-05-20 본 세션 추가 grep)**: GitHub repo `baeminkyu9419-beep/monggeul` **자체가 HTTP 404** (raw README 도 404). = **저장소 private 전환 또는 삭제**. Gen113 iter#9.5 보안 사고 후속 "4 Public repo→Private" 박제 (MEMORY.md) 와 부합. private repo + GitHub Free 계정 = Pages 작동 안 함 → /monggeul/ 404 의 진짜 원인. 민규 결정 = repo public 전환 + Pages 재배포 또는 다른 hosting 이전.
 - **캐릭터**: 달이 (AI 꿈 해몽 동반자)
 - **사용자 타겟**: 꿈 기록 / 해몽 / 심리 탐색 루틴을 원하는 사람
 - **정신건강 경계**: 진단 단정 금지, 탐색적 어조만, 위기 감지 시 전문 상담 안내 우선

@@ -52,13 +52,39 @@ result = result.replace(re, '<span class="symbol-link" data-symbol="' + name + '
 
 | 영역 | 결과 |
 |------|------|
-| XSS critical | 0 |
+| XSS critical | 0 (~~원래 박제~~ → **§7 정정**: my.js MED 1 발견) |
 | secrets 노출 | 0 (ANON key 만, 의도된 public) |
-| sanitize 적용 | dream 전수 확증 |
+| sanitize 적용 | **dream 전수 확증, my/community 부분 누락** |
 | inline onclick | 107 LOW |
-| innerHTML | 101 LOW (sanitize 거침) |
+| innerHTML | 101 — **dream 안전 / my MED 잠재 / community LOW** |
 
-**보안 운영 상태**: 안전. 다음 자율 가치 = addEventListener 마이그레이션 (큰 작업, 우선순위 LOW).
+## §7 정정 (2026-05-20 후속 자기 검증)
+
+직전 §5 "XSS critical 0" 박제는 **dream 만 직접 검증** 후 stale 으로 확장 인용. 후속 grep 결과 my.js 에 escape 없는 사용자 데이터 innerHTML 삽입 발견.
+
+### my.js 위험 라인 (escape 없이 사용자 입력 innerHTML)
+- **L72** (searchDreamLog 검색 결과 렌더):
+  ```javascript
+  el.innerHTML=filtered.map(l=>'...<div class="log-txt">'+l.text+'</div><div class="log-ttl">✦ '+l.title+'</div>...').join('');
+  ```
+  `l.text` (사용자 꿈 입력) + `l.title` (AI 응답, validateDreamResult length cap 만, escape X) 를 **escape 없이 innerHTML 삽입**.
+- **L239** (renderLog): 동일 패턴 추정 (logs.map((l,idx)=>...)) — 직접 검증 권고.
+- **L478/L516/L599/L618/L656/L664**: 변수 값 직접 삽입, source 확증 권고.
+
+### 위험도 평가
+- **현재 영향**: localStorage 기반 self-XSS 만 가능 (사용자 본인이 자기 데이터 입력). 외부 stored XSS 아님.
+- **장래 위험**: community 탭 + 친구 공유 + import 기능 (예: `showQRReceive`, `importFileInput`) 시 외부 데이터 흘러들어 stored XSS 가능.
+- **권고**: my.js L72 + L239 + 기타 사용자 입력 innerHTML 라인 = **esc() 또는 sanitize() 적용**. 작은 정정 작업.
+
+### dali.js / community.js
+- dali.js: L766/L815 esc() 거침 확증, L836 img alt + L907 intention LOW.
+- community.js: L121/L215 esc(c.nick) 등 esc 적용 확증 (다만 다른 field source 확장 검증 권고).
+
+### 정정된 종합 등급
+- **dream 탭**: 안전 (XSS critical 0).
+- **dali/community 탭**: 안전 (esc 적용 다수, 잠재 LOW 영역 있음).
+- **my 탭**: **MED 잠재** (L72 등 사용자 입력 escape 없이 innerHTML 삽입). 자율 정정 권고.
+- secrets / Edge Functions: 안전 유지.
 
 ## §6 출처
 
