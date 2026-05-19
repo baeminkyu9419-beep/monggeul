@@ -2,6 +2,8 @@
 // dream.js 의 OpenAI 호출 실패 / 오프라인 / JSON.parse 실패 시 키워드 매칭 정적 응답.
 // dream.js L1848 → 분리 (가독성/유지보수).
 
+import { EXTENDED_DICT } from '../utils/dream-data.js';
+
 // 키워드 정밀 매칭 — substring 충돌 회피 (예: "음식물쓰레기" 의 '물' false-positive 차단)
 // stoplist = 매칭 차단 단어들. 한국어 합성어 substring 충돌 보호.
 const STOP = {
@@ -150,7 +152,60 @@ export function demoResult(i){
     preview:'이빨 빠지는 꿈은 <strong>불안과 변화</strong>의 신호예요. 지금 마음속에서 놓고 싶지 않은 무언가가 있는 것 같아요...',
     fullInterpretation:`【꿈의 핵심 상징】\n이빨은 자신감과 사회적 이미지를 상징해요. 빠진다는 것은 그것에 대한 두려움이나 상실감을 나타내요. 많이 빠질수록 현재 느끼는 압박감이 크다는 의미예요.\n\n【무의식의 메시지】\n이 꿈을 꿨다면 최근 중요한 결정이나 변화 앞에서 두려움을 느끼고 있을 가능성이 높아요. 또는 소중한 관계나 기회를 잃을까봐 걱정하는 마음이 반영된 거예요.\n\n【운세 분석】\n건강운: 몸이 보내는 신호에 귀 기울여야 해요. 특히 구강 건강뿐 아니라 전반적인 피로도를 확인해보세요. 재물운: 지금은 큰 투자나 새로운 사업보다는 안정을 유지하는 게 좋아요. 연애운: 오해가 생기기 쉬운 시기예요. 소통에 더 신경 써주세요.\n\n【이 꿈이 특별한 이유】\n이빨이 저절로 빠졌는지, 누가 뽑았는지에 따라 해석이 달라져요. 저절로 빠졌다면 자연스러운 변화, 누군가가 뽑았다면 외부적인 압박이나 인간관계의 갈등을 나타내요.\n\n【앞으로의 흐름】\n앞으로 일주일은 중요한 결정을 미루는 게 좋아요. 충분히 쉬고 나서 다시 판단해보세요. 가까운 사람들과 솔직하게 대화를 나눠보는 것도 도움이 될 거예요.\n\n【달이의 한마디】\n이런 꿈을 꾼다는 건 지금 많이 힘드다는 신호일 수 있어요. 달이한테 고민을 털어놓아봐요. 혼자 감당하지 않아도 돼요 🌙`
   };
-  return{
+  // EXTENDED_DICT 196 entry 매칭 시도 (hardcoded 15 카테고리 미매칭 시)
+  const dictMatch = _matchExtendedDict(k);
+  if (dictMatch) return dictMatch;
+  // 최종 fallback
+  return _defaultResponse();
+}
+
+// EXTENDED_DICT 동적 매칭 — 196 entry 중 입력 키워드 첫 매칭 → 응답 생성
+// demoResult 의 hardcoded 15 카테고리 미매칭 시 폴백 (default 응답 직전)
+function _matchExtendedDict(k){
+  if (!EXTENDED_DICT || !Array.isArray(EXTENDED_DICT)) return null;
+  for (const dict of EXTENDED_DICT) {
+    // n 이 "전 애인/옛 연인" 같이 / 로 구분된 동의어일 수 있음
+    const names = (dict.n || '').split('/').map(s => s.trim()).filter(Boolean);
+    for (const name of names) {
+      if (name.length >= 2 && k.includes(name)) {
+        // 첫 매칭 = 응답 생성
+        return _buildResponseFromDict(dict, name);
+      }
+    }
+  }
+  return null;
+}
+
+function _buildResponseFromDict(dict, matchedName) {
+  const tags = Array.isArray(dict.tags) ? dict.tags : [];
+  // 길몽/대길 -> 길흉 80+, 흉몽/주의 -> 25-40
+  let baseStat = 60;
+  if (tags.includes('대길') || tags.includes('길몽')) baseStat = 80;
+  else if (tags.includes('흉몽')) baseStat = 30;
+  else if (tags.includes('주의')) baseStat = 40;
+
+  const ctxLines = (dict.contexts || []).slice(0, 4).map(c => (c.t || '').replace(/<\/?strong>/g, '')).filter(Boolean);
+  const ctxBlock = ctxLines.length ? `\n\n【상황별 해석】\n${ctxLines.map(l => '· ' + l).join('\n')}` : '';
+
+  return {
+    title: `${dict.e || '🌙'} ${matchedName}의 메시지`,
+    badges: tags.length ? tags.slice(0, 3) : ['중립'],
+    stats: {
+      길흉: baseStat,
+      연애운: tags.includes('연애운') ? Math.max(70, baseStat) : 60,
+      재물운: tags.includes('재물운') ? Math.max(75, baseStat) : 55,
+      건강운: tags.includes('건강운') ? Math.max(70, baseStat) : 65,
+      활력: 65,
+      직관: 75,
+    },
+    emotions: ['🌀 발견', '🤔 호기심', '🌙 깊이'],
+    preview: `${dict.e || '🌙'} <strong>${matchedName}</strong>이(가) 등장한 꿈은 ${(dict.meaning || '내면의 메시지').substring(0, 60)}...`,
+    fullInterpretation: `【꿈의 핵심 상징】\n${dict.meaning || '이 꿈에 등장한 ' + matchedName + '은 무의식의 중요한 메시지를 담고 있어요.'}${ctxBlock}\n\n【앞으로의 흐름】\n이 상징이 가리키는 방향에 마음을 열어두세요. 작은 일상의 변화도 의미 있는 신호일 수 있어요.\n\n【달이의 한마디】\n꿈은 무의식이 보내는 편지예요. ${matchedName}이(가) 전한 메시지를 따뜻하게 받아주세요 🌙`,
+  };
+}
+
+function _defaultResponse() {
+  return {
     title:'🌙 신비로운 꿈',badges:['길몽'],
     stats:{길흉:65,연애운:70,재물운:60,건강운:72,활력:68,직관:75},
     emotions:['🌀 신비로움','😌 편안함','🤔 궁금함'],
