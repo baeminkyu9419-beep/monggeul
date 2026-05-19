@@ -277,7 +277,7 @@ export function deleteDreamLog(idx){
 export function submitReview(idx,val,btn){
   const logs=JSON.parse(localStorage.getItem('mg_logs')||'[]');
   if(logs[idx]){logs[idx].review=val;localStorage.setItem('mg_logs',JSON.stringify(logs));}
-  btn.closest('.review-check').innerHTML=`<div style="font-size:12px;color:var(--teal);text-align:center;padding:4px 0">후기 완료! ${val} · +5 XP ✨</div>`;
+  btn.closest('.review-check').innerHTML=`<div style="font-size:12px;color:var(--teal);text-align:center;padding:4px 0">후기 완료! ${esc(val)} · +5 XP ✨</div>`;
   addXP(5);
 }
 
@@ -324,7 +324,7 @@ export function renderPatternCard(){
     const pct=total>0?Math.round(cnt/total*100):0;
     return `<div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:11px;width:32px;color:var(--text-muted)">${stateEmoji[s]||''}</span>
-      <span style="font-size:10px;width:28px;color:var(--text-secondary)">${s}</span>
+      <span style="font-size:10px;width:28px;color:var(--text-secondary)">${esc(s)}</span>
       <div style="flex:1;height:6px;background:rgba(255,255,255,.04);border-radius:3px;overflow:hidden">
         <div style="height:100%;width:${pct}%;background:${stateColor[s]||'#a67cef'};border-radius:3px;transition:width .6s ease"></div>
       </div>
@@ -769,15 +769,15 @@ export function renderFlow(){
 
   document.getElementById('flowTimeline').innerHTML=data.map(d=>`
     <div class="ft-item">
-      <div class="ft-date-col"><span class="ft-date">${d.date}</span></div>
+      <div class="ft-date-col"><span class="ft-date">${esc(d.date)}</span></div>
       <div class="ft-line-col">
         <div class="ft-dot" style="background:${d.color}"></div>
         <div class="ft-vline"></div>
       </div>
       <div class="ft-body">
-        <div class="ft-dream-title">${d.title}</div>
+        <div class="ft-dream-title">${esc(d.title)}</div>
         <div class="ft-tags">
-          ${d.symbols.map(s=>`<span class="ft-tag ft-emo-${d.emo}">${s}</span>`).join('')}
+          ${d.symbols.map(s=>`<span class="ft-tag ft-emo-${d.emo}">${esc(s)}</span>`).join('')}
         </div>
       </div>
     </div>`).join('');
@@ -786,7 +786,7 @@ export function renderFlow(){
   data.forEach(d=>d.symbols.forEach(s=>{symCount[s]=(symCount[s]||0)+1;}));
   const sorted=Object.entries(symCount).sort((a,b)=>b[1]-a[1]);
   document.getElementById('flowSymbolCloud').innerHTML=sorted.map(([s,c])=>`
-    <span style="background:rgba(166,124,239,${0.1+c*0.08});border:1px solid rgba(166,124,239,${0.2+c*0.1});border-radius:20px;padding:${4+c*2}px ${8+c*3}px;font-size:${12+c*2}px;color:var(--star);cursor:pointer" onclick="showToast(this.dataset.tip)" data-tip="꿈 기록">${s} <span style="font-size:10px;color:var(--text-muted)">${c}회</span></span>`).join('');
+    <span style="background:rgba(166,124,239,${0.1+c*0.08});border:1px solid rgba(166,124,239,${0.2+c*0.1});border-radius:20px;padding:${4+c*2}px ${8+c*3}px;font-size:${12+c*2}px;color:var(--star);cursor:pointer" onclick="showToast(this.dataset.tip)" data-tip="꿈 기록">${esc(s)} <span style="font-size:10px;color:var(--text-muted)">${c}회</span></span>`).join('');
 }
 
 export function openDictPage(){
