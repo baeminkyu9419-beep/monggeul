@@ -46,6 +46,34 @@
 - SKU 가격 정정 승인 (paywall ₩9,900 레거시 → 정본 ₩3,900)
 - toss-* 5 Edge Functions 정리 방향 결정
 
+## §0.4 Supabase 인스턴스 다운 — 추가 거짓 박제 정정 (2026-05-20)
+
+직전 박제 (commit `6025e7e42`, `bc492905d`, `8280cf338`) 에서 "SUPABASE_URL/ANON_KEY 설정됨 ✅" 인용 = **stale**.
+
+본 세션 직접 실측:
+- `https://mskwqlqpcsfvgvhhilma.supabase.co` → **ECONNREFUSED** (curl exit 6 / WebFetch ECONNREFUSED)
+- 모든 REST API endpoint 호출 = 연결 거부
+- 의미: Supabase **무료 plan 7일 비활성 자동 pause** 또는 **프로젝트 삭제**
+
+영향 (MONGGEUL Supabase 의존 기능 모두 실 동작 안 함):
+- community posts/comments/reactions (community_posts 테이블)
+- billing/payments (user_entitlements / payments 테이블)
+- push_subscriptions
+- user 데이터 동기화
+
+로컬 fallback (localStorage) 기반 기능은 계속 작동:
+- 꿈 기록 (mg_logs)
+- XP/별가루 (mg_xp / mg_stardust)
+- 출석 streak
+- demoResult 해몽 (OpenAI 키 없을 때)
+
+자비스 자율 권한 외 (민규 결정):
+- Supabase Dashboard 접속 → 프로젝트 unpause (무료 plan 즉시 가능, 1 click)
+- 또는 새 프로젝트 생성 + migration 8 SQL 재 실행 → config.js SUPABASE_URL/KEY 정정
+- 또는 다른 hosting (Cloudflare D1 / Firebase / 자체 BaaS) 이전
+
+추가 정정 commits 누계 3 (LIVE URL + 3대축 + Supabase).
+
 ## §0.3 본 세션 자기 검증 후 박제 정정 (2026-05-20)
 
 ### 거짓 자백
