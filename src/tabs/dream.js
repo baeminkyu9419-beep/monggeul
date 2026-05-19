@@ -12,6 +12,7 @@ import { esc, sanitize, validateDreamResult } from '../utils/sanitize.js';
 import { addXP, ALL_DICT_REF } from './my.js';
 import { getContextForPrompt, getLifeStagePrompt, showContextQuestions } from '../services/dream-context.js';
 import { demoResult } from './dream-demo.js';
+import { isNonsenseInput } from '../utils/dream-validator.js';
 
 let loadStepTimer=null;
 const FEED_THUMBS={};
@@ -137,31 +138,6 @@ export function startLoadingSteps(){
 }
 
 export function stopLoadingSteps(){clearInterval(loadStepTimer);}
-
-function isNonsenseInput(text){
-  const stripped=text.replace(/\s/g,'').replace(/[^\w가-힣ㄱ-ㅎㅏ-ㅣ]/g,'');
-  // 1글자라도 한글이면 통과 (뱀, 꿈 등)
-  const korean=(text.match(/[가-힣]/g)||[]).length;
-  if(korean>=1&&stripped.length>=1)return false;
-  // 내용 없음
-  if(stripped.length<2)return true;
-  // 같은 문자 반복 (ㅋㅋㅋㅋㅋ, aaaaa 등)
-  if(/^(.)\1{4,}$/.test(stripped))return true;
-  // 순수 영어만 (dream 같은 단어가 아닌 랜덤 타이핑)
-  if(/^[a-zA-Z]+$/.test(stripped)){
-    // 모음이 거의 없으면 랜덤 타이핑 (asdfghjkl)
-    const vowels=(stripped.match(/[aeiouAEIOU]/g)||[]).length;
-    if(vowels/stripped.length<0.15)return true;
-    // 의미 있는 영어 단어 체크
-    const dreamWords=['dream','snake','fall','fly','teeth','water','fire','die','run','chase','baby','cat','dog','money'];
-    if(!dreamWords.some(w=>stripped.toLowerCase().includes(w)))return true;
-  }
-  // 순수 숫자만
-  if(/^\d+$/.test(stripped))return true;
-  // 특수문자/자음만 (ㅁㄴㅇㄹ)
-  if(korean===0&&!/[a-zA-Z]/.test(stripped)&&stripped.length>0)return true;
-  return false;
-}
 
 export async function analyzeDream(){
   const inp=document.getElementById('dreamInput').value.trim();
