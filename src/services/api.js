@@ -15,7 +15,7 @@ async function fetchWithTimeout(url, options, timeoutMs) {
   }
 }
 
-export async function callOpenAI(endpoint, payload) {
+export async function callOpenAI(endpoint, payload, mode) {
   if (!window.SUPABASE_URL) {
     throw new Error('해몽 기능을 준비 중이에요. 기본 해석을 보여드릴게요 🌙');
   }
@@ -26,7 +26,8 @@ export async function callOpenAI(endpoint, payload) {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer ' + (window.SUPABASE_ANON_KEY || ''),
     },
-    body: JSON.stringify({ endpoint, payload })
+    // mode 'consensus' = 멀티 LLM 교차검증(프리미엄). 미지정 = fallback 라우팅(무료).
+    body: JSON.stringify({ endpoint, payload, mode })
   };
 
   let lastError;

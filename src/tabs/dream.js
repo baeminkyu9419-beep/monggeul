@@ -165,6 +165,9 @@ export async function analyzeDream(){
   let mi=0;const iv=setInterval(()=>{mi=(mi+1)%LMSGS.length;document.getElementById('loadTxt').textContent=LMSGS[mi];},1800);
   try{
     const minLoadTime=new Promise(r=>setTimeout(r,2000));
+    // 프리미엄/플러스 = 멀티 LLM 교차검증(consensus), 무료 = fallback 라우팅
+    const _dreamTier=getCachedTier();
+    const dreamMode=(_dreamTier==='premium'||_dreamTier==='plus')?'consensus':undefined;
     // 1차 해석 (가벼운 호출 — 광고 시청 후 공개)
     const apiCall=callOpenAI('chat',{model:'gpt-4o',messages:[{role:'system',content:`너는 30년 경력 꿈 해석가야. 친구한테 얘기하듯 편하게 해석해줘.
 한국 할머니가 들려주는 해몽 이야기처럼 따뜻하고 자연스럽게 써줘.${toneMod}${lifeStagePrompt ? '\n' + lifeStagePrompt : ''}
@@ -181,7 +184,7 @@ export async function analyzeDream(){
   "psychology": "마음 이야기 300자+. 이 꿈이 지금 네 마음 상태랑 어떻게 연결되는지, 왜 이런 꿈을 꾸게 됐는지, 무의식이 뭘 말하려는 건지 친구한테 설명하듯 써줘. 전문 용어 쓰지 마.",
   "advice": "현실 조언 300자+. 이 꿈을 꾼 뒤 일주일 안에 해보면 좋을 것 3가지를 구체적이고 현실적으로 알려줘. 실천할 수 있는 것만.",
   "fullInterpretation": "깊은 해석 1000자+. 에세이처럼 자연스럽게 이어지는 글로 써줘. 꿈에 나온 것들이 각각 무슨 의미인지, 네 마음이 지금 어떤 상태인지, 이 꿈이 앞으로 어떤 힌트를 주는지, 비슷한 꿈을 또 꾸면 어떤 의미인지, 그리고 따뜻한 마무리 한마디까지. 목록이나 번호 매기지 마. 단락을 나눠서 읽기 쉽게만 해줘."
-}`},{role:'user',content:fullInput}],temperature:.85,max_tokens:2500});
+}`},{role:'user',content:fullInput}],temperature:.85,max_tokens:2500},dreamMode);
     const [data]=await Promise.all([apiCall,minLoadTime]);
     const raw=JSON.parse(data.choices[0].message.content.replace(/```json|```/g,'').trim());
     showResult(validateDreamResult(raw)||demoResult(inp),inp);

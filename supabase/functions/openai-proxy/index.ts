@@ -12,9 +12,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
-const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || ''
+
+// 멀티 LLM 프로바이더 — Fallback 라우팅(무료) + Consensus 교차검증(프리미엄).
+// 키가 설정된 provider 만 활성. 우선순위 = 배열 순서. compatible=true 는 OpenAI 호환 API.
+interface Provider { name: string; key: string | undefined; model: string; compatible: boolean; url: string }
+const PROVIDERS: Provider[] = [
+  { name: 'openai',   key: Deno.env.get('OPENAI_API_KEY'),   model: 'gpt-4o',           compatible: true,  url: 'https://api.openai.com/v1/chat/completions' },
+  { name: 'deepseek', key: Deno.env.get('DEEPSEEK_API_KEY'), model: 'deepseek-chat',    compatible: true,  url: 'https://api.deepseek.com/v1/chat/completions' },
+  { name: 'gemini',   key: Deno.env.get('GEMINI_API_KEY'),   model: 'gemini-1.5-flash', compatible: false, url: 'https://generativelanguage.googleapis.com/v1beta/models' },
+]
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')  // image(DALL-E) 전용
 
 // 허용된 CORS origin (프로덕션 GitHub Pages + 로컬 개발)
 const ALLOWED_ORIGINS = new Set<string>([
@@ -57,6 +66,68 @@ function _checkRateLimit(userId: string): boolean {
   fresh.push(now)
   _rateMap.set(userId, fresh)
   return true
+}
+
+// 단일 provider 호출 → OpenAI 형식 {choices:[{message:{content}}]} 으로 정규화.
+async function _callProvider(p: Provider, payload: any): Promise<any> {
+  if (p.compatible) {
+    // OpenAI 호환 (OpenAI / DeepSeek): model 만 provider 기본값으로 보정
+    const body = { ...payload, model: p.name === 'openai' ? (payload.model || p.model) : p.model }
+    const r = await fetch(p.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${p.key}` },
+      body: JSON.stringify(body),
+    })
+    const d = await r.json()
+    if (!r.ok) throw new Error(`${p.name} ${r.status}: ${JSON.stringify(d).slice(0, 120)}`)
+    d._provider = p.name
+    return d
+  }
+  // Gemini: messages → contents 변환, 응답을 OpenAI 형식으로 정규화
+  const msgs = payload.messages || []
+  const contents = msgs.filter((m: any) => m.role !== 'system').map((m: any) => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }],
+  }))
+  const sys = msgs.find((m: any) => m.role === 'system')
+  const reqBody: any = {
+    contents,
+    generationConfig: { temperature: payload.temperature ?? 0.85, maxOutputTokens: payload.max_tokens ?? 2048 },
+  }
+  if (sys) reqBody.systemInstruction = { parts: [{ text: sys.content }] }
+  const r = await fetch(`${p.url}/${p.model}:generateContent?key=${p.key}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(reqBody),
+  })
+  const d = await r.json()
+  if (!r.ok) throw new Error(`gemini ${r.status}: ${JSON.stringify(d).slice(0, 120)}`)
+  const text = (d?.candidates?.[0]?.content?.parts || []).map((x: any) => x.text).join('')
+  return { choices: [{ message: { role: 'assistant', content: text }, finish_reason: 'stop' }], _provider: 'gemini' }
+}
+
+// Fallback 라우팅: 우선순위대로 시도, 첫 성공 반환. 전부 실패 시 마지막 에러.
+async function _chatFallback(payload: any): Promise<any> {
+  const avail = PROVIDERS.filter((p) => p.key)
+  if (!avail.length) throw new Error('NO_LLM_KEY')
+  let lastErr: any
+  for (const p of avail) {
+    try { return await _callProvider(p, payload) }
+    catch (e) { lastErr = e }
+  }
+  throw lastErr || new Error('ALL_PROVIDERS_FAILED')
+}
+
+// Consensus 교차검증: 상위 2개 동시 호출 → 1번째를 기본, _consensus 에 전체.
+async function _chatConsensus(payload: any): Promise<any> {
+  const avail = PROVIDERS.filter((p) => p.key).slice(0, 2)
+  if (avail.length < 2) return _chatFallback(payload)  // 2개 미만이면 fallback
+  const settled = await Promise.allSettled(avail.map((p) => _callProvider(p, payload)))
+  const ok = settled.filter((s) => s.status === 'fulfilled').map((s: any) => s.value)
+  if (!ok.length) throw new Error('ALL_PROVIDERS_FAILED')
+  const primary = ok[0]
+  primary._consensus = ok.map((d: any) => ({ provider: d._provider, content: d?.choices?.[0]?.message?.content || '' }))
+  return primary
 }
 
 serve(async (req) => {
@@ -119,9 +190,10 @@ serve(async (req) => {
       })
     }
 
-    // 3. OpenAI 키 확인
-    if (!OPENAI_API_KEY) {
-      return new Response(JSON.stringify({ error: 'API key not configured' }), {
+    // 3. LLM 키 확인 (chat = provider 최소 1개, image = OpenAI 필요)
+    const hasAnyLLM = PROVIDERS.some((p) => p.key)
+    if (!hasAnyLLM && !OPENAI_API_KEY) {
+      return new Response(JSON.stringify({ error: 'No LLM key configured' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -135,7 +207,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
-    const { endpoint, payload } = JSON.parse(rawBody)
+    const { endpoint, payload, mode } = JSON.parse(rawBody)
 
     // 5. endpoint 화이트리스트
     if (!ALLOWED_ENDPOINTS.has(endpoint)) {
@@ -145,21 +217,28 @@ serve(async (req) => {
       })
     }
 
-    const url = endpoint === 'chat'
-      ? 'https://api.openai.com/v1/chat/completions'
-      : 'https://api.openai.com/v1/images/generations'
+    // 6. chat = 멀티 LLM (mode 'consensus' → 교차검증, 기본 → fallback 라우팅)
+    if (endpoint === 'chat') {
+      const data = mode === 'consensus' ? await _chatConsensus(payload) : await _chatFallback(payload)
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
+    }
 
-    const response = await fetch(url, {
+    // image = OpenAI DALL-E 전용
+    if (!OPENAI_API_KEY) {
+      return new Response(JSON.stringify({ error: 'Image generation requires OpenAI key' }), {
+        status: 503,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
       body: JSON.stringify(payload),
     })
-
     const data = await response.json()
-
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: response.status,
