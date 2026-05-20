@@ -1,7 +1,7 @@
 // 몽글몽글 — Supabase Auth (소셜 로그인: Google/Apple/Kakao/Naver)
 import { createClient } from '@supabase/supabase-js';
 import { store } from '../store.js';
-import { getUserTier, getDreamCountAsync, updateDreamCountInfo } from './subscription.js';
+import { getUserTier, getDreamCountAsync, updateDreamCountInfo, BETA_OPEN_ALL } from './subscription.js';
 import { logEvent } from './analytics.js';
 
 // ── 초기화 ──
@@ -20,8 +20,16 @@ export async function initSupabase() {
         await onLoginSuccess(user);
         updateLoginUI(user);
       }
+    } else if (BETA_OPEN_ALL) {
+      // 정식 오픈 전 — 세션 없으면 자동 익명 로그인 (로그인 화면 없이 바로 해몽 가능)
+      try {
+        await store.supabase.auth.signInAnonymously();
+        const { data: { user } } = await store.supabase.auth.getUser();
+        store.currentUser = user;
+        if (user) { await onLoginSuccess(user); updateLoginUI(user); }
+      } catch (e) {}
     }
-    // 세션 없으면 로그인 화면 표시 (자동 익명 로그인 안 함)
+    // (정식 오픈 시 BETA_OPEN_ALL=false → 세션 없으면 로그인 화면 표시)
 
     // Auth 상태 변경 리스너
     store.supabase.auth.onAuthStateChange(async (event, session) => {

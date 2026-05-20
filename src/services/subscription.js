@@ -27,6 +27,10 @@ export const SKU_MAP = {
   android: { single: 'monggeul_single',     pack5: 'monggeul_pack5',     pack15: 'monggeul_pack15',     profile: 'monggeul_profile',      pro: 'monggeul_pro_monthly' },
 };
 
+// 정식 오픈 전 — 모든 잠금/제한 해제 (상세해몽·프리미엄·무제한 전부 무료 공개).
+// 정식 오픈 시 false 로 되돌리면 결제/제한 로직 원복.
+export const BETA_OPEN_ALL = true;
+
 var _cachedCredits = null;
 var _cachedSubscription = false;
 
@@ -160,6 +164,7 @@ function normalizeEntitlement(key) {
 }
 
 export async function getUserTier() {
+  if (BETA_OPEN_ALL) return 'premium';
   // Dev unlock: 클라이언트 강제 unlock (개발/오너 사용, 서버 entitlement 무관)
   // 사용: localStorage.setItem('mg_dev_unlock', 'premium') 후 reload
   const devUnlock = (typeof localStorage !== 'undefined') ? localStorage.getItem('mg_dev_unlock') : null;
@@ -201,6 +206,7 @@ export async function getUserTier() {
   return 'free';
 }
 export function getCachedTier() {
+  if (BETA_OPEN_ALL) return 'premium';
   // Dev unlock 우선 (getUserTier 호출 전이라도 즉시 적용)
   const devUnlock = (typeof localStorage !== 'undefined') ? localStorage.getItem('mg_dev_unlock') : null;
   if (devUnlock === 'premium' || devUnlock === 'plus') return devUnlock;
@@ -242,6 +248,7 @@ export async function getDreamCountAsync() {
 }
 
 export async function canUseDream() {
+  if (BETA_OPEN_ALL) return { allowed: true, remaining: Infinity };
   // Dev unlock: 비로그인이라도 mg_dev_unlock 시 무제한 (오너/개발자용)
   const devUnlock = (typeof localStorage !== 'undefined') ? localStorage.getItem('mg_dev_unlock') : null;
   if (devUnlock === 'premium' || devUnlock === 'plus') {
