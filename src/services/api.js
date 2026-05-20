@@ -1,4 +1,5 @@
 // 몽글몽글 — OpenAI API 프록시 (Edge Function 전용)
+import { store } from '../store.js';
 
 const MAX_RETRIES = 2;
 const TIMEOUT_MS = 30000;
@@ -20,11 +21,19 @@ export async function callOpenAI(endpoint, payload, mode) {
     throw new Error('해몽 기능을 준비 중이에요. 기본 해석을 보여드릴게요 🌙');
   }
   const url = window.SUPABASE_URL + '/functions/v1/openai-proxy';
+  // openai-proxy 는 user JWT(auth.getUser) 필수 → 익명/로그인 세션의 access_token 우선, 없으면 anon key
+  let authToken = window.SUPABASE_ANON_KEY || '';
+  try {
+    if (store.supabase) {
+      const { data } = await store.supabase.auth.getSession();
+      if (data && data.session && data.session.access_token) authToken = data.session.access_token;
+    }
+  } catch (e) {}
   const options = {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + (window.SUPABASE_ANON_KEY || ''),
+      'Authorization': 'Bearer ' + authToken,
     },
     // mode 'consensus' = 멀티 LLM 교차검증(프리미엄). 미지정 = fallback 라우팅(무료).
     body: JSON.stringify({ endpoint, payload, mode })
