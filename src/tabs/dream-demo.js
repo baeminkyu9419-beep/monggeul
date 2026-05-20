@@ -160,8 +160,8 @@ export function demoResult(i){
   // EXTENDED_DICT 196 entry 매칭 시도 (hardcoded 15 카테고리 미매칭 시)
   const dictMatch = _matchExtendedDict(k);
   if (dictMatch) return dictMatch;
-  // 최종 fallback
-  return _defaultResponse();
+  // 최종 fallback — 입력 키워드 기반 동적
+  return _defaultResponse(i);
 }
 
 // EXTENDED_DICT 매칭 수집 — 196 entry 중 입력 키워드 매칭 list (max 5)
@@ -264,13 +264,48 @@ function _buildResponseFromDict(dict, matchedName) {
   };
 }
 
-function _defaultResponse() {
+function _defaultResponse(text) {
+  // 입력 텍스트 분석 — 키워드 추출 + 풍부도 평가
+  const k = (text || '').toLowerCase();
+  const r = text ? _evaluateRichness(text) : null;
+
+  // 감정 키워드 추출 (입력에 등장한 것만)
+  const emotionMap = {
+    '무서':'😱 두려움','두려':'😨 불안','슬프':'😢 슬픔','기뻐':'😊 기쁨',
+    '놀라':'😮 놀라움','화나':'😠 분노','빡':'😡 분노','분노':'😡 분노',
+    '설레':'💗 설렘','외로':'🥺 외로움','불안':'😰 불안','떨려':'💨 긴장',
+    '짜증':'😤 답답함','후회':'😔 후회','억울':'😞 억울함'
+  };
+  const detectedEmotions = Object.entries(emotionMap).filter(([k0]) => k.includes(k0)).map(([, v]) => v).slice(0, 3);
+  const emotions = detectedEmotions.length ? detectedEmotions : ['🌀 신비로움','😌 편안함','🤔 궁금함'];
+
+  // 풍부도 기반 stats / 톤 조정
+  const richLevel = r?.level || 'simple';
+  const isRich = richLevel === 'very_rich' || richLevel === 'rich';
+
+  // 동적 preview — 입력 키워드 살림
+  let preview = '<strong>내면의 에너지</strong>가 활발하게 움직이는 시기예요.';
+  if (isRich) {
+    preview = `<strong>풍부한 서사</strong>의 꿈이에요. 여러 요소가 얽혀있다는 건 무의식이 여러 측면을 한 번에 처리하고 있다는 신호예요...`;
+  } else if (text && text.length < 15) {
+    preview = `<strong>짧고 인상적인 꿈</strong>이에요. 핵심 메시지가 한 점에 집중되어 있어요...`;
+  }
+
+  // 동적 fullInterpretation — 입력 풍부도/감정 기반 조정
+  const richNote = isRich
+    ? `\n\n【풍부도 분석】\n입력 풍부도 ${r?.score || 0}점 (${richLevel}). gpt-4o 키 입력 시 더 정밀한 분석이 가능해요.`
+    : '';
+  const emotionNote = detectedEmotions.length
+    ? `\n\n【감지된 감정】\n${detectedEmotions.join(' · ')}. 이 감정들이 꿈의 핵심 톤을 형성하고 있어요.`
+    : '';
+
   return {
-    title:'🌙 신비로운 꿈',badges:['길몽'],
-    stats:{길흉:65,연애운:70,재물운:60,건강운:72,활력:68,직관:75},
-    emotions:['🌀 신비로움','😌 편안함','🤔 궁금함'],
-    preview:'<strong>내면의 에너지</strong>가 활발하게 움직이는 시기예요. 이 꿈 속에 숨겨진 메시지가 생각보다 깊어요...',
-    fullInterpretation:`【꿈의 핵심 상징】\n이 꿈에 등장한 요소들은 당신의 무의식이 현재 상황을 어떻게 인식하고 있는지 보여줘요. 꿈 속의 장소, 인물, 감정이 모두 중요한 상징을 담고 있어요.\n\n【무의식의 메시지】\n꿈은 낮에 처리하지 못한 감정과 생각을 밤에 정리하는 과정이에요. 이 꿈을 꿨다는 건 내면에서 중요한 변화가 일어나고 있다는 신호예요.\n\n【운세 분석】\n전반적으로 안정된 운세예요. 연애운이 조금 높게 나왔으니 좋아하는 사람이 있다면 조심스럽게 다가가볼 만해요. 재물운은 큰 변동 없이 안정적이에요.\n\n【이 꿈이 특별한 이유】\n꿈에서 느낀 감정이 중요해요. 기분 좋은 꿈이었다면 좋은 일의 전조, 불안한 꿈이었다면 현실의 스트레스가 반영된 거예요.\n\n【앞으로의 흐름】\n앞으로 일주일은 큰 결정보다는 현재에 집중하는 게 좋아요. 작은 일상의 행복을 챙기면서 에너지를 충전하세요.\n\n【달이의 한마디】\n꿈을 기억하고 기록하는 것만으로도 자기 자신을 더 잘 이해하게 돼요. 오늘도 좋은 하루 보내세요 🌙`
+    title: isRich ? '🌙 풍부한 꿈의 서사' : '🌙 신비로운 꿈',
+    badges: isRich ? ['길몽','중립'] : ['길몽'],
+    stats:{길흉: isRich ? 70 : 65, 연애운: 70, 재물운: 60, 건강운: 72, 활력: 68, 직관: isRich ? 85 : 75},
+    emotions,
+    preview,
+    fullInterpretation:`【꿈의 핵심 상징】\n이 꿈에 등장한 요소들은 당신의 무의식이 현재 상황을 어떻게 인식하고 있는지 보여줘요. 꿈 속의 장소, 인물, 감정이 모두 중요한 상징을 담고 있어요.${richNote}${emotionNote}\n\n【무의식의 메시지】\n꿈은 낮에 처리하지 못한 감정과 생각을 밤에 정리하는 과정이에요. 이 꿈을 꿨다는 건 내면에서 중요한 변화가 일어나고 있다는 신호예요.\n\n【운세 분석】\n전반적으로 안정된 운세예요. 연애운이 조금 높게 나왔으니 좋아하는 사람이 있다면 조심스럽게 다가가볼 만해요. 재물운은 큰 변동 없이 안정적이에요.\n\n【이 꿈이 특별한 이유】\n꿈에서 느낀 감정이 중요해요. 기분 좋은 꿈이었다면 좋은 일의 전조, 불안한 꿈이었다면 현실의 스트레스가 반영된 거예요.\n\n【앞으로의 흐름】\n앞으로 일주일은 큰 결정보다는 현재에 집중하는 게 좋아요. 작은 일상의 행복을 챙기면서 에너지를 충전하세요.\n\n【달이의 한마디】\n꿈을 기억하고 기록하는 것만으로도 자기 자신을 더 잘 이해하게 돼요. 오늘도 좋은 하루 보내세요 🌙`
   };
 }
 
