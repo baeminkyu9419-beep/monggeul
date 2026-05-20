@@ -21,7 +21,7 @@ interface Provider { name: string; key: string | undefined; model: string; compa
 const PROVIDERS: Provider[] = [
   { name: 'openai',   key: Deno.env.get('OPENAI_API_KEY'),   model: 'gpt-4o',           compatible: true,  url: 'https://api.openai.com/v1/chat/completions' },
   { name: 'deepseek', key: Deno.env.get('DEEPSEEK_API_KEY'), model: 'deepseek-chat',    compatible: true,  url: 'https://api.deepseek.com/v1/chat/completions' },
-  { name: 'gemini',   key: Deno.env.get('GEMINI_API_KEY'),   model: 'gemini-1.5-flash', compatible: false, url: 'https://generativelanguage.googleapis.com/v1beta/models' },
+  { name: 'gemini',   key: Deno.env.get('GEMINI_API_KEY'),   model: 'gemini-2.5-flash', compatible: false, url: 'https://generativelanguage.googleapis.com/v1beta/models' },
 ]
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')  // image(DALL-E) 전용
 
@@ -92,7 +92,12 @@ async function _callProvider(p: Provider, payload: any): Promise<any> {
   const sys = msgs.find((m: any) => m.role === 'system')
   const reqBody: any = {
     contents,
-    generationConfig: { temperature: payload.temperature ?? 0.85, maxOutputTokens: payload.max_tokens ?? 2048 },
+    // 한글 해몽 JSON(1000자+ fullInterpretation)이 잘리지 않도록 넉넉히 + 순수 JSON 강제
+    generationConfig: {
+      temperature: payload.temperature ?? 0.85,
+      maxOutputTokens: Math.max(payload.max_tokens ?? 2048, 8192),
+      responseMimeType: 'application/json',
+    },
   }
   if (sys) reqBody.systemInstruction = { parts: [{ text: sys.content }] }
   const r = await fetch(`${p.url}/${p.model}:generateContent?key=${p.key}`, {
