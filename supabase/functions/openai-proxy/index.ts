@@ -21,7 +21,7 @@ interface Provider { name: string; key: string | undefined; model: string; compa
 const PROVIDERS: Provider[] = [
   { name: 'openai',   key: Deno.env.get('OPENAI_API_KEY'),   model: 'gpt-4o',           compatible: true,  url: 'https://api.openai.com/v1/chat/completions' },
   { name: 'deepseek', key: Deno.env.get('DEEPSEEK_API_KEY'), model: 'deepseek-chat',    compatible: true,  url: 'https://api.deepseek.com/v1/chat/completions' },
-  { name: 'gemini',   key: Deno.env.get('GEMINI_API_KEY'),   model: 'gemini-2.5-flash', compatible: false, url: 'https://generativelanguage.googleapis.com/v1beta/models' },
+  { name: 'gemini',   key: Deno.env.get('GEMINI_API_KEY'),   model: 'gemini-2.5-flash-lite', compatible: false, url: 'https://generativelanguage.googleapis.com/v1beta/models' },
 ]
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')  // image(DALL-E) 전용
 
