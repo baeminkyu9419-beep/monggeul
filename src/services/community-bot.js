@@ -349,7 +349,7 @@ function composeDreamPost(tag, rng, usedCombos){
   // 제목 패턴 (8종 — 자연스러운 구어체)
   const titlePatterns=[
     ()=>`${getTagEmoji(tag)} ${josaIGa(symbol)} 나오는 ${feeling} 꿈`,
-    ()=>`${getTagEmoji(tag)} 꿈에서 ${josaIGa(symbol)} ${acted.slice(0,-1)}는데...`,
+    ()=>`${getTagEmoji(tag)} 꿈에서 ${josaIGa(symbol)} ${acted.replace(/[어아]요$/,'')}는데...`,
     ()=>`${getTagEmoji(tag)} ${symbol} 꿈 꿨는데 무슨 의미일까요`,
     ()=>`${getTagEmoji(tag)} ${feeling} 꿈이었어요`,
     ()=>`${getTagEmoji(tag)} 이 꿈 나만 꾸나요..?`,
