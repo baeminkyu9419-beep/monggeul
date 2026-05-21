@@ -96,7 +96,8 @@ async function _callProvider(p: Provider, payload: any): Promise<any> {
     generationConfig: {
       temperature: payload.temperature ?? 0.85,
       maxOutputTokens: Math.max(payload.max_tokens ?? 2048, 8192),
-      responseMimeType: 'application/json',
+      // JSON 강제는 response_format 요청 시만 (해몽=JSON 파싱 / 달이 채팅=일반 텍스트)
+      ...(payload.response_format && payload.response_format.type === 'json_object' ? { responseMimeType: 'application/json' } : {}),
     },
   }
   if (sys) reqBody.systemInstruction = { parts: [{ text: sys.content }] }

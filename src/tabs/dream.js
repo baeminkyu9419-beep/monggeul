@@ -180,7 +180,7 @@ export async function analyzeDream(){
   "stats": {"길흉":0~100,"연애운":0~100,"재물운":0~100,"건강운":0~100,"활력":0~100,"직관":0~100},
   "emotions": ["이모지 감정명" 3~5개. 복합감정 가능],
   "preview": "맛보기 해석 3~4문장. 핵심 상징 2개를 친근하게 짚어주고 '이 꿈엔 더 깊은 이야기가 숨어있어요...'로 마무리. <strong>강조</strong> 가능"
-}`},{role:'user',content:fullInput}],temperature:.85,max_tokens:700},dreamMode);
+}`},{role:'user',content:fullInput}],temperature:.85,max_tokens:700,response_format:{type:'json_object'}},dreamMode);
     const [data]=await Promise.all([apiCall,minLoadTime]);
     const raw=JSON.parse(data.choices[0].message.content.replace(/```json|```/g,'').trim());
     showResult(validateDreamResult(raw)||demoResult(inp),inp);
@@ -192,7 +192,7 @@ export async function analyzeDream(){
   "psychology": "마음 이야기 300자 이상. 이 꿈이 지금 마음 상태와 어떻게 연결되는지, 무의식이 뭘 말하는지 친구처럼.",
   "advice": "현실 조언 250자 이상. 일주일 안에 해보면 좋을 것 3가지 구체적·현실적으로.",
   "fullInterpretation": "깊은 해석 1000자 이상. 에세이처럼 자연스럽게. 꿈에 나온 것들 각각의 의미, 마음 상태, 앞으로의 힌트, 비슷한 꿈을 또 꾸면의 의미, 따뜻한 마무리까지. 목록·번호 금지, 단락만 나눠서."
-}`},{role:'user',content:fullInput}],temperature:.85,max_tokens:3500},dreamMode)
+}`},{role:'user',content:fullInput}],temperature:.85,max_tokens:3500,response_format:{type:'json_object'}},dreamMode)
       .then(d2=>{ const r2=JSON.parse(d2.choices[0].message.content.replace(/```json|```/g,'').trim()); if(window.showResultDetail)window.showResultDetail(r2); })
       .catch(()=>{ try{ if(window.showResultDetail)window.showResultDetail(demoResult(inp)); }catch(_){} });
   }catch(e){
