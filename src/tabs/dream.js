@@ -142,9 +142,11 @@ export function startLoadingSteps(){
 export function stopLoadingSteps(){clearInterval(loadStepTimer);}
 
 export async function analyzeDream(){
+  if(analyzeDream._busy)return; // 연속 클릭 중복 LLM 호출 방지
   const inp=document.getElementById('dreamInput').value.trim();
   if(!inp){showToast('꿈 내용을 입력해주세요 🌙');return;}
   if(isNonsenseInput(inp)){showToast('꿈 내용을 알아볼 수 있게 적어주세요 🌙');return;}
+  analyzeDream._busy=true;
   logEvent('dream_started',{length:inp.length,emotionTags:store.selectedEmotions});
   trackFunnelStep('dream_input_complete',{length:inp.length});trackFunnelStep('interpretation_loading');
   clearDreamDraft();
@@ -203,7 +205,7 @@ export async function analyzeDream(){
       }
     },500);
   }
-  finally{clearInterval(iv);stopLoadingSteps();ld.classList.remove('on');await incDreamCount();
+  finally{analyzeDream._busy=false;clearInterval(iv);stopLoadingSteps();ld.classList.remove('on');await incDreamCount();
     // 무료 사용자: 해몽 후 전면광고 (3회에 1번)
     if(typeof showInterstitialIfReady==='function')showInterstitialIfReady();
     if(typeof _bumpHeroCounter==='function')_bumpHeroCounter();
