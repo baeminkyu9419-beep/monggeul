@@ -67,6 +67,7 @@ export async function initCommunity() {
 
   // 초기 피드 로드
   await loadFeed();
+  renderFeed();
 }
 
 async function loadFeed() {
