@@ -144,13 +144,13 @@ html,body{height:100%;margin:0;background:#0e0c1a;color:#f0ecff;font-family:'Not
       <script>
       (function(){
         const h=new Date().getHours();
-        const base=h>=22||h<6?30:h>=6&&h<9?80:h>=9&&h<12?120:h>=12&&h<18?90:60;
-        const jitter=Math.floor(Math.random()*40);
+        const base=h>=22||h<6?240:h>=6&&h<9?640:h>=9&&h<12?960:h>=12&&h<18?720:480;
+        const jitter=Math.floor(Math.random()*150);
         const el=document.getElementById('liveCountText');
         if(el)el.textContent='지금 '+(base+jitter)+'명이 해몽 중';
         // 30초마다 약간씩 변동
         setInterval(()=>{
-          const n=base+Math.floor(Math.random()*40);
+          const n=base+Math.floor(Math.random()*150);
           if(el)el.textContent='지금 '+n+'명이 해몽 중';
         },30000);
       })();
