@@ -187,9 +187,13 @@ serve(async (req) => {
       })
     }
 
-    // 2. user_id 기반 rate-limit
-    if (!_checkRateLimit(user.id)) {
-      return new Response(JSON.stringify({ error: 'Rate limit exceeded (30 req / 60s)' }), {
+    // 2. DB 기반 rate-limit (serverless 인스턴스 간 공유 — in-memory _rateMap 은 인스턴스마다 별도라 무력했음)
+    const { data: rlOk, error: rlErr } = await supabase.rpc('check_rate_limit', { p_user_id: user.id, p_max: 30 })
+    if (rlErr) {
+      // RPC 에러는 조용히 삼키지 말고 로깅 (rate limit 우회 방지 디버깅용). 가용성 위해 통과는 유지.
+      console.error('check_rate_limit error:', rlErr.message)
+    } else if (rlOk === false) {
+      return new Response(JSON.stringify({ error: 'Rate limit exceeded (30/min)' }), {
         status: 429,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
