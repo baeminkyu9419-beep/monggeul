@@ -171,25 +171,30 @@ export async function analyzeDream(){
     const _dreamTier=getCachedTier();
     const dreamMode=(_dreamTier==='premium'||_dreamTier==='plus')?'consensus':undefined;
     // 1차 해석 (가벼운 호출 — 광고 시청 후 공개)
-    const apiCall=callOpenAI('chat',{model:'gpt-4o',messages:[{role:'system',content:`너는 30년 경력 꿈 해석가야. 친구한테 얘기하듯 편하게 해석해줘.
-한국 할머니가 들려주는 해몽 이야기처럼 따뜻하고 자연스럽게 써줘.${toneMod}${lifeStagePrompt ? '\n' + lifeStagePrompt : ''}
-학술 용어 쓰지 마. 영어 쓰지 마. 불릿포인트(■●✦) 쓰지 마. 그냥 자연스러운 글처럼 써.
-반드시 아래 JSON으로만 응답해.
-
+    // 2단계 1차: 빠른 응답 (제목/뱃지/점수/감정/미리보기만) — 즉시 표시 ~3초
+    const apiCall=callOpenAI('chat',{model:'gpt-4o',messages:[{role:'system',content:`너는 30년 경력 꿈 해석가야. 친구한테 얘기하듯 편하게.${toneMod}
+영어·학술용어·불릿(■●✦) 금지. 자연스러운 글. 반드시 JSON으로만 응답.
 {
   "title": "꿈 제목 (이모지+한글, 10자 이내)",
   "badges": ["길몽","흉몽","태몽","연애운","재물운","건강운" 중 1~3개],
   "stats": {"길흉":0~100,"연애운":0~100,"재물운":0~100,"건강운":0~100,"활력":0~100,"직관":0~100},
-  "emotions": ["이모지 감정명" 3~5개. 복합감정 가능: "😢→😌 슬프다가 편안해짐"],
-  "preview": "맛보기 해석 3~4문장. 핵심 상징 2개를 친근하게 짚어주고 '이 꿈엔 더 깊은 이야기가 숨어있어요...'로 마무리. <strong>강조</strong> 가능",
-  "traditional": "전통 해몽 이야기 200자 정도. 옛날 해몽책에서는 이걸 어떻게 봤는지, 우리 할머니가 이런 꿈 꾸면 뭐라고 했을지, 민간에서 전해오는 해석을 편하게 풀어서 써줘.",
-  "psychology": "마음 이야기 200자 정도. 이 꿈이 지금 네 마음 상태랑 어떻게 연결되는지, 왜 이런 꿈을 꾸게 됐는지, 무의식이 뭘 말하려는 건지 친구한테 설명하듯 써줘. 전문 용어 쓰지 마.",
-  "advice": "현실 조언 200자 정도. 이 꿈을 꾼 뒤 일주일 안에 해보면 좋을 것 3가지를 구체적이고 현실적으로 알려줘. 실천할 수 있는 것만.",
-  "fullInterpretation": "깊은 해석 500자 정도. 에세이처럼 자연스럽게 이어지는 글로 써줘. 꿈에 나온 것들이 무슨 의미인지, 네 마음 상태, 앞으로의 힌트, 따뜻한 마무리까지. 목록·번호 매기지 말고 단락만 나눠줘. 너무 길지 않게 핵심 위주로."
-}`},{role:'user',content:fullInput}],temperature:.85,max_tokens:2500},dreamMode);
+  "emotions": ["이모지 감정명" 3~5개. 복합감정 가능],
+  "preview": "맛보기 해석 3~4문장. 핵심 상징 2개를 친근하게 짚어주고 '이 꿈엔 더 깊은 이야기가 숨어있어요...'로 마무리. <strong>강조</strong> 가능"
+}`},{role:'user',content:fullInput}],temperature:.85,max_tokens:700},dreamMode);
     const [data]=await Promise.all([apiCall,minLoadTime]);
     const raw=JSON.parse(data.choices[0].message.content.replace(/```json|```/g,'').trim());
     showResult(validateDreamResult(raw)||demoResult(inp),inp);
+    // 2단계 2차: 상세 해석 백그라운드 (전통/심리/조언/깊은해석 — 길고 자세하게)
+    callOpenAI('chat',{model:'gpt-4o',messages:[{role:'system',content:`너는 30년 경력 꿈 해석가야. 한국 할머니가 들려주는 해몽처럼 따뜻하고 자세하게.${toneMod}${lifeStagePrompt ? '\n' + lifeStagePrompt : ''}
+영어·학술용어·불릿(■●✦) 금지. 반드시 JSON으로만 응답.
+{
+  "traditional": "전통 해몽 이야기 300자 이상. 옛날 해몽책·할머니 민간 해석을 편하게 풀어서.",
+  "psychology": "마음 이야기 300자 이상. 이 꿈이 지금 마음 상태와 어떻게 연결되는지, 무의식이 뭘 말하는지 친구처럼.",
+  "advice": "현실 조언 250자 이상. 일주일 안에 해보면 좋을 것 3가지 구체적·현실적으로.",
+  "fullInterpretation": "깊은 해석 1000자 이상. 에세이처럼 자연스럽게. 꿈에 나온 것들 각각의 의미, 마음 상태, 앞으로의 힌트, 비슷한 꿈을 또 꾸면의 의미, 따뜻한 마무리까지. 목록·번호 금지, 단락만 나눠서."
+}`},{role:'user',content:fullInput}],temperature:.85,max_tokens:3500},dreamMode)
+      .then(d2=>{ const r2=JSON.parse(d2.choices[0].message.content.replace(/```json|```/g,'').trim()); if(window.showResultDetail)window.showResultDetail(r2); })
+      .catch(()=>{ try{ if(window.showResultDetail)window.showResultDetail(demoResult(inp)); }catch(_){} });
   }catch(e){
     await new Promise(r=>setTimeout(r,2000));
     showResult(demoResult(inp),inp);
@@ -211,6 +216,29 @@ export async function analyzeDream(){
     if(typeof _bumpHeroCounter==='function')_bumpHeroCounter();
   }
 }
+
+// 2단계 응답의 2차: 상세 해석(전통/심리/조언/깊은해석)을 백그라운드로 받아 DOM 채움
+export function showResultDetail(data){
+  if(data.traditional||data.psychology||data.advice){
+    const w=document.getElementById('interp3Wrap');
+    if(w){
+      w.style.display='block';
+      document.getElementById('i3traditional').innerHTML=sanitize((data.traditional||'').replace(/\n/g,'<br>'));
+      document.getElementById('i3psychology').innerHTML=sanitize((data.psychology||'').replace(/\n/g,'<br>'));
+      document.getElementById('i3advice').innerHTML=sanitize((data.advice||'').replace(/\n/g,'<br>'));
+      document.querySelectorAll('.i3tab').forEach((b,i)=>{b.classList.toggle('active',i===0);});
+      document.querySelectorAll('.i3content').forEach((c,i)=>{c.style.display=i===0?'block':'none';});
+    }
+  }
+  const full=data.fullInterpretation||data.interpretation||'';
+  if(full){
+    document.getElementById('lockPreview').innerHTML=sanitize(full.substring(0,250).replace(/\n/g,'<br>'))+'...';
+    document.getElementById('interpFull').innerHTML=linkSymbols(sanitize(full.replace(/\n/g,'<br>')));
+    document.getElementById('detailLock').style.display='block';
+    document.getElementById('detailFull').style.display='none';
+  }
+}
+window.showResultDetail=showResultDetail;
 
 export function showResult(data,inp){
   logEvent('dream_completed',{title:data.title,badges:data.badges});
@@ -269,22 +297,24 @@ export function showResult(data,inp){
     const found=_symbolNames.filter(s=>inp.includes(s));
     kwEl.innerHTML=found.map(k=>{const d=DICT_DATA.find(x=>x.n===k);return '<span class="symbol-link" data-symbol="'+k+'" onclick="window._openSymbol(\''+k+'\')" style="font-size:10px;background:rgba(166,124,239,.12);border:1px solid rgba(166,124,239,.2);border-radius:12px;padding:2px 8px;color:var(--star);cursor:pointer">'+(d?d.e+' ':'')+k+'</span>';}).join('');
   }
-  if(data.traditional||data.psychology||data.advice){
+  // 2단계: 상세(전통/심리/조언/깊은해석)가 있으면 즉시 채우고, 없으면(1차 빠른응답) 백그라운드 로딩 표시
+  if(data.traditional||data.psychology||data.advice||data.fullInterpretation){
+    showResultDetail(data);
+  }else{
     const w=document.getElementById('interp3Wrap');
     if(w){
       w.style.display='block';
-      document.getElementById('i3traditional').innerHTML=sanitize((data.traditional||'').replace(/\n/g,'<br>'));
-      document.getElementById('i3psychology').innerHTML=sanitize((data.psychology||'').replace(/\n/g,'<br>'));
-      document.getElementById('i3advice').innerHTML=sanitize((data.advice||'').replace(/\n/g,'<br>'));
+      document.getElementById('i3traditional').innerHTML='<div style="text-align:center;color:var(--text-muted);padding:18px;font-size:12px">🐱 달이가 더 깊이 들여다보는 중...</div>';
+      document.getElementById('i3psychology').innerHTML='';
+      document.getElementById('i3advice').innerHTML='';
       document.querySelectorAll('.i3tab').forEach((b,i)=>{b.classList.toggle('active',i===0);});
       document.querySelectorAll('.i3content').forEach((c,i)=>{c.style.display=i===0?'block':'none';});
     }
+    document.getElementById('lockPreview').innerHTML='🌙 깊은 해석을 정리하고 있어요...';
+    document.getElementById('interpFull').innerHTML='<div style="text-align:center;color:var(--text-muted);padding:22px">🐱 달이가 깊은 해석을 쓰고 있어요...<br><span style="font-size:11px">잠시만요</span></div>';
+    document.getElementById('detailLock').style.display='block';
+    document.getElementById('detailFull').style.display='none';
   }
-  const full=data.fullInterpretation||data.interpretation||'';
-  document.getElementById('lockPreview').innerHTML=sanitize(full.substring(0,250).replace(/\n/g,'<br>'))+'...';
-  document.getElementById('interpFull').innerHTML=linkSymbols(sanitize(full.replace(/\n/g,'<br>')));
-  document.getElementById('detailLock').style.display='block';
-  document.getElementById('detailFull').style.display='none';
   // 레이더 차트: 이전 꿈 3개 이상이면 비교 모드 (현재 vs 평균 오버레이)
   if(logs.filter(l=>!l.noDream).length>=3){
     const prevLogs=logs.filter(l=>!l.noDream&&l.stats);
