@@ -144,7 +144,7 @@ html,body{height:100%;margin:0;background:#0e0c1a;color:#f0ecff;font-family:'Not
       <script>
       (function(){
         const h=new Date().getHours();
-        const base=h>=22||h<6?240:h>=6&&h<9?640:h>=9&&h<12?960:h>=12&&h<18?720:480;
+        const base=h>=22||h<6?340:h>=6&&h<9?880:h>=9&&h<12?1280:h>=12&&h<18?980:660;
         const jitter=Math.floor(Math.random()*150);
         const el=document.getElementById('liveCountText');
         if(el)el.textContent='지금 '+(base+jitter)+'명이 해몽 중';

@@ -591,7 +591,7 @@ export function initTodaySymbol(){
   if(el)el.textContent=s.symbol;
   if(desc)desc.textContent=s.desc;
   const hourBonus=new Date().getHours()*3+Math.floor(Math.random()*5);
-  if(cnt)cnt.innerHTML=`오늘 <strong>${s.count*9+hourBonus*6}명</strong>이<br>꿨어요`;
+  if(cnt)cnt.innerHTML=`오늘 <strong>${s.count*13+hourBonus*8}명</strong>이<br>꿨어요`;
   window._todayKeyword=s.keyword;
 }
 
@@ -740,7 +740,7 @@ export async function animateCounter(){
   const el=document.getElementById('heroCounter');if(!el)return;
   const {store}=await import('../store.js');
 
-  let cur=128431; // 기본값
+  let cur=256862; // 기본값
 
   // Supabase에서 실제 카운터 가져오기
   if(store.supabase){
@@ -750,11 +750,11 @@ export async function animateCounter(){
     }catch{
       // 테이블 없으면 시간 기반 폴백
       const launch=new Date('2026-03-21T00:00:00+09:00').getTime();
-      cur=128431+Math.floor(Math.max(0,Date.now()-launch)/(1000*60*4));
+      cur=256862+Math.floor(Math.max(0,Date.now()-launch)/(1000*60*4));
     }
   }else{
     const launch=new Date('2026-03-21T00:00:00+09:00').getTime();
-    cur=128431+Math.floor(Math.max(0,Date.now()-launch)/(1000*60*4));
+    cur=256862+Math.floor(Math.max(0,Date.now()-launch)/(1000*60*4));
   }
 
   // 카운트업 애니메이션
