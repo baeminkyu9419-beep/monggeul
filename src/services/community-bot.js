@@ -348,8 +348,8 @@ function composeDreamPost(tag, rng, usedCombos){
 
   // 제목 패턴 (8종 — 자연스러운 구어체)
   const titlePatterns=[
-    ()=>`${getTagEmoji(tag)} ${symbol}이 나오는 ${feeling} 꿈`,
-    ()=>`${getTagEmoji(tag)} 꿈에서 ${symbol}이 ${acted.slice(0,-1)}는데...`,
+    ()=>`${getTagEmoji(tag)} ${josaIGa(symbol)} 나오는 ${feeling} 꿈`,
+    ()=>`${getTagEmoji(tag)} 꿈에서 ${josaIGa(symbol)} ${acted.slice(0,-1)}는데...`,
     ()=>`${getTagEmoji(tag)} ${symbol} 꿈 꿨는데 무슨 의미일까요`,
     ()=>`${getTagEmoji(tag)} ${feeling} 꿈이었어요`,
     ()=>`${getTagEmoji(tag)} 이 꿈 나만 꾸나요..?`,
@@ -361,16 +361,16 @@ function composeDreamPost(tag, rng, usedCombos){
 
   // 본문 패턴 (10종 — 개인 상황 + 구체적 장면 + 후기)
   const bodyPatterns=[
-    ()=>`${situation} 꿈에서 ${symbol}이 나왔어요. ${acted} ${feeling} 느낌이었는데 깨고 나서도 그 기분이 계속 남아있었어요. ${afterthought}`,
-    ()=>`${situation} 진짜 생생한 꿈 꿨어요. ${symbol}이 ${acting} 장면이었는데 ${feeling} 느낌이랑 ${feeling2} 느낌이 동시에 들었어요. ${afterthought}`,
-    ()=>`꿈에서 ${symbol}이 나타났는데 ${acted} 처음엔 ${feeling}했는데 나중에는 오히려 ${feeling2}해졌어요. ${situation} 이런 꿈은 처음이에요. ${afterthought}`,
-    ()=>`${situation} 잠들자마자 바로 꿈을 꿨어요. ${symbol}이 있었고 주변 분위기가 되게 ${feeling}했어요. ${acted} 그 장면이 아직도 머릿속에 남아있어요. ${afterthought}`,
-    ()=>`완전 신기한 꿈 꿨어요. ${symbol}이 ${acting} 꿈이었는데 현실에서 느껴본 적 없는 ${feeling} 감정이 들었어요. ${afterthought}`,
+    ()=>`${situation} 꿈에서 ${josaIGa(symbol)} 나왔어요. ${acted} ${feeling} 느낌이었는데 깨고 나서도 그 기분이 계속 남아있었어요. ${afterthought}`,
+    ()=>`${situation} 진짜 생생한 꿈 꿨어요. ${josaIGa(symbol)} ${acting} 장면이었는데 ${feeling} 느낌이랑 ${feeling2} 느낌이 동시에 들었어요. ${afterthought}`,
+    ()=>`꿈에서 ${josaIGa(symbol)} 나타났는데 ${acted} 처음엔 ${feeling}했는데 나중에는 오히려 ${feeling2}해졌어요. ${situation} 이런 꿈은 처음이에요. ${afterthought}`,
+    ()=>`${situation} 잠들자마자 바로 꿈을 꿨어요. ${josaIGa(symbol)} 있었고 주변 분위기가 되게 ${feeling}했어요. ${acted} 그 장면이 아직도 머릿속에 남아있어요. ${afterthought}`,
+    ()=>`완전 신기한 꿈 꿨어요. ${josaIGa(symbol)} ${acting} 꿈이었는데 현실에서 느껴본 적 없는 ${feeling} 감정이 들었어요. ${afterthought}`,
     ()=>`${situation} ${symbol} 관련 꿈을 꿨어요. ${acted} 되게 ${feeling}한 분위기였는데 잠깐인데도 엄청 길게 느껴졌어요. 이거 혹시 ${meaning}이랑 관련 있나요? ${afterthought}`,
-    ()=>`오늘 새벽에 깼는데 심장이 쿵쿵거려요. ${symbol}이 ${acting} 꿈이었거든요. ${feeling} 기분이 아직도 남아있어요. ${afterthought}`,
-    ()=>`어젯밤 꿈이 너무 선명해서 적어봐요. ${symbol}이 나왔고 ${acted} 처음엔 ${feeling}했는데 어느 순간 ${feeling2}해지더라고요. ${afterthought}`,
-    ()=>`${situation} 꿈 내용이 진짜 생생해요. ${symbol}이 있었는데 ${acted} 분위기는 전체적으로 ${feeling}했어요. 깨자마자 여기 적어요. ${afterthought}`,
-    ()=>`이런 꿈 꾸는 사람 저 말고 또 있나요? ${symbol}이 ${acting} 꿈이었는데 ${feeling}면서도 ${feeling2}한 게 진짜 묘했어요. ${situation} 이런 꿈 꿨어요. ${afterthought}`,
+    ()=>`오늘 새벽에 깼는데 심장이 쿵쿵거려요. ${josaIGa(symbol)} ${acting} 꿈이었거든요. ${feeling} 기분이 아직도 남아있어요. ${afterthought}`,
+    ()=>`어젯밤 꿈이 너무 선명해서 적어봐요. ${josaIGa(symbol)} 나왔고 ${acted} 처음엔 ${feeling}했는데 어느 순간 ${feeling2}해지더라고요. ${afterthought}`,
+    ()=>`${situation} 꿈 내용이 진짜 생생해요. ${josaIGa(symbol)} 있었는데 ${acted} 분위기는 전체적으로 ${feeling}했어요. 깨자마자 여기 적어요. ${afterthought}`,
+    ()=>`이런 꿈 꾸는 사람 저 말고 또 있나요? ${josaIGa(symbol)} ${acting} 꿈이었는데 ${feeling}면서도 ${feeling2}한 게 진짜 묘했어요. ${situation} 이런 꿈 꿨어요. ${afterthought}`,
   ];
   const body=pickOne(bodyPatterns,rng)();
 
@@ -385,6 +385,13 @@ function composeDreamPost(tag, rng, usedCombos){
   const similar=`${getTagEmoji(tag)} ${tag} · ${similarCount}명`;
 
   return { title, body, badges, stats, tag, similar };
+}
+
+function josaIGa(word){
+  if(!word) return '이';
+  const code=word.charCodeAt(word.length-1);
+  if(code<0xAC00||code>0xD7A3) return word+'이';
+  return word+(((code-0xAC00)%28!==0)?'이':'가');
 }
 
 function getTagEmoji(tag){
