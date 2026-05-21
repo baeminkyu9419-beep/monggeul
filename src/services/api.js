@@ -20,6 +20,10 @@ export async function callOpenAI(endpoint, payload, mode) {
   if (!window.SUPABASE_URL) {
     throw new Error('해몽 기능을 준비 중이에요. 기본 해석을 보여드릴게요 🌙');
   }
+  // offline 즉시 fallback (retry 4초 대기 없이 — demoResult 로 바로)
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    throw new Error('인터넷 연결을 확인해 주세요.');
+  }
   const url = window.SUPABASE_URL + '/functions/v1/openai-proxy';
   // openai-proxy 는 user JWT(auth.getUser) 필수 → 익명/로그인 세션의 access_token 우선, 없으면 anon key
   let authToken = window.SUPABASE_ANON_KEY || '';
