@@ -240,20 +240,48 @@ stats 규칙(필수): 각 항목은 반드시 0~100 사이의 정수. 위 숫자
   }
 }
 
+// fullInterpretation 의 【...】 섹션을 3분기 탭으로 분할 (전통/심리/현실).
+// LLM/데모가 traditional·psychology·advice 필드를 안 줄 때 빈 탭 방지용 폴백.
+function _splitFullToBranches(full){
+  if(!full) return null;
+  // 【제목】본문 패턴 추출
+  const secs={};
+  const re=/【([^】]+)】\s*([\s\S]*?)(?=【|$)/g; let m;
+  while((m=re.exec(full))){ secs[m[1].trim()]=(m[2]||'').trim(); }
+  const keys=Object.keys(secs);
+  if(keys.length<2) return null; // 섹션 구분 불가 → 폴백 무의미
+  const pick=(...names)=>names.map(n=>secs[n]).filter(Boolean).join('\n\n');
+  // 전통=핵심상징, 심리=무의식 메시지, 현실=운세+흐름+한마디
+  const traditional=pick('꿈의 핵심 상징','핵심 상징','전통 해몽') || keys[0]&&secs[keys[0]] || '';
+  const psychology=pick('무의식의 메시지','무의식','심리') || (keys[1]?secs[keys[1]]:'') || '';
+  const advice=pick('운세 분석','앞으로의 흐름','달이의 한마디','현실 조언','조언') || (keys.slice(2).map(k=>secs[k]).join('\n\n')) || '';
+  if(!traditional && !psychology && !advice) return null;
+  return { traditional, psychology, advice };
+}
+
 // 2단계 응답의 2차: 상세 해석(전통/심리/조언/깊은해석)을 백그라운드로 받아 DOM 채움
 export function showResultDetail(data){
-  if(data.traditional||data.psychology||data.advice){
+  const full=data.fullInterpretation||data.interpretation||'';
+  // 분기 필드가 없으면 fullInterpretation 을 분할해 채움(돈 내고 보는 화면에서 빈 탭 금지)
+  let branches=(data.traditional||data.psychology||data.advice)
+    ? { traditional:data.traditional||'', psychology:data.psychology||'', advice:data.advice||'' }
+    : _splitFullToBranches(full);
+  if(branches){
     const w=document.getElementById('interp3Wrap');
     if(w){
       w.style.display='block';
-      document.getElementById('i3traditional').innerHTML=sanitize((data.traditional||'').replace(/\n/g,'<br>'));
-      document.getElementById('i3psychology').innerHTML=sanitize((data.psychology||'').replace(/\n/g,'<br>'));
-      document.getElementById('i3advice').innerHTML=sanitize((data.advice||'').replace(/\n/g,'<br>'));
+      // 개별 필드가 비어도 폴백: 비면 full 분할분이라도 채워 빈 탭 방지
+      const fb=_splitFullToBranches(full)||{};
+      const trad=branches.traditional||fb.traditional||'';
+      const psy=branches.psychology||fb.psychology||'';
+      const adv=branches.advice||fb.advice||'';
+      document.getElementById('i3traditional').innerHTML=sanitize((trad||'해석을 불러오는 중이에요 🌙').replace(/\n/g,'<br>'));
+      document.getElementById('i3psychology').innerHTML=sanitize((psy||'해석을 불러오는 중이에요 🌙').replace(/\n/g,'<br>'));
+      document.getElementById('i3advice').innerHTML=sanitize((adv||'해석을 불러오는 중이에요 🌙').replace(/\n/g,'<br>'));
       document.querySelectorAll('.i3tab').forEach((b,i)=>{b.classList.toggle('active',i===0);});
       document.querySelectorAll('.i3content').forEach((c,i)=>{c.style.display=i===0?'block':'none';});
     }
   }
-  const full=data.fullInterpretation||data.interpretation||'';
   if(full){
     document.getElementById('lockPreview').innerHTML=sanitize(full.substring(0,250).replace(/\n/g,'<br>'))+'...';
     document.getElementById('interpFull').innerHTML=linkSymbols(sanitize(full.replace(/\n/g,'<br>')));
