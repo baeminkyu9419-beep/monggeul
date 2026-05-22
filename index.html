@@ -314,6 +314,8 @@ html,body{height:100%;margin:0;background:#0e0c1a;color:#f0ecff;font-family:'Not
       </div>
 
       <div class="result" id="resultEl">
+        <!-- [2026-05-23] 폴리시5: 결과 헤더 우상단 공유 미러(하단 공유버튼까지 스크롤 불필요) -->
+        <button class="result-share-mirror" onclick="shareResult()" aria-label="해몽 결과 공유">📤</button>
         <div class="rtitle" id="rTitle">🌙 해몽 결과</div>
         <div class="rdate" id="rDate"></div>
         <div style="text-align:center;font-size:9px;color:rgba(255,255,255,.15);margin-bottom:8px">꿈 해석은 재미와 자기 성찰을 위한 거예요 🌙</div>
@@ -344,9 +346,10 @@ html,body{height:100%;margin:0;background:#0e0c1a;color:#f0ecff;font-family:'Not
           <!-- 상세해석 잠금 영역 -->
           <div class="detail-lock" id="detailLock">
             <div class="lock-preview" id="lockPreview"></div>
+            <span class="lock-badge">🔒 프리미엄</span>
             <div class="lock-overlay">
-              <div class="lock-icon">✨</div>
-              <div class="lock-title">상세 해몽</div>
+              <div class="lock-icon">🔒</div>
+              <div class="lock-title">상세 해몽 (프리미엄)</div>
               <div class="lock-sub" id="lockSubText">오늘 무료 해몽 2회 중 사용 가능</div>
               <button class="lock-btn" id="lockBtn" onclick="watchAd()">🔓 상세 해몽 보기</button>
             </div>

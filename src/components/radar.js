@@ -111,14 +111,14 @@ export function drawRadar(stats){
     const txt=document.createElementNS(ns,'text');
     txt.setAttribute('x',lx);txt.setAttribute('y',ly-6);
     txt.setAttribute('text-anchor','middle');txt.setAttribute('dominant-baseline','central');
-    txt.setAttribute('font-size','12');
+    txt.setAttribute('font-size','13');
     txt.textContent=emoji;
     svg.appendChild(txt);
 
     const label=document.createElementNS(ns,'text');
     label.setAttribute('x',lx);label.setAttribute('y',ly+8);
     label.setAttribute('text-anchor','middle');label.setAttribute('dominant-baseline','central');
-    label.setAttribute('font-size','9');label.setAttribute('font-weight','600');
+    label.setAttribute('font-size','11');label.setAttribute('font-weight','600');  // [2026-05-23] 폴리시4: 라벨 9→11px 가독성
     label.setAttribute('fill',STAT_COLORS[i]);label.setAttribute('font-family','Noto Sans KR, sans-serif');
     label.textContent=k+' '+stats[k];
     svg.appendChild(label);

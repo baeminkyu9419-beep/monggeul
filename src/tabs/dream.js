@@ -851,12 +851,13 @@ export async function animateCounter(){
   const {store}=await import('../store.js');
 
   let cur=256862; // 기본값
+  let realDbValue=null;
 
   // Supabase에서 실제 카운터 가져오기
   if(store.supabase){
     try{
       const {data}=await store.supabase.from('app_stats').select('value').eq('key','total_dreams').maybeSingle();  // 0행 406 방지
-      if(data)cur=parseInt(data.value)||1331;
+      if(data){ realDbValue=parseInt(data.value); cur=realDbValue||1331; }
     }catch{
       // 테이블 없으면 시간 기반 폴백
       const launch=new Date('2026-03-21T00:00:00+09:00').getTime();
@@ -865,6 +866,13 @@ export async function animateCounter(){
   }else{
     const launch=new Date('2026-03-21T00:00:00+09:00').getTime();
     cur=256862+Math.floor(Math.max(0,Date.now()-launch)/(1000*60*4));
+  }
+
+  // [2026-05-23] 폴리시1: 실 DB 누적치가 비신뢰 수준(< 1000)이면 "지금 N명 해몽 중"(880+)과 모순 +
+  // 출시초 티 → 거짓 부풀리기 대신 누적 카운터 문구를 숨김(honest). 증가 시 자연 노출.
+  if(realDbValue!==null && realDbValue<1000){
+    const wrap=el.closest('p'); if(wrap)wrap.style.display='none'; else el.style.display='none';
+    return;
   }
 
   // 카운트업 애니메이션

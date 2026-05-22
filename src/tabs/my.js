@@ -535,10 +535,10 @@ window.renderLevelCard=renderLevelCard;
 export function addXP(n){
   const prevLv=getLevel(store.xp);store.xp+=n;localStorage.setItem('mg_xp',store.xp);const newLv=getLevel(store.xp);updateStats();renderDreamPersonality();renderPatternCard();renderLevelCard();if(newLv.lv>prevLv.lv)showToast(newLv.emoji+' 레벨 업! '+newLv.title+' 달성!');
   if(n>=20)addStardust(Math.floor(n/5),'해몽');
-  // XP 플로트 애니메이션
+  // XP 플로트 애니메이션 — [2026-05-23] 폴리시3: top 40%→14%(입력칸/결과 텍스트 위 겹침 제거, 상단 표시)
   const float=document.createElement('div');
   float.textContent='+'+n+' XP';
-  float.style.cssText='position:fixed;top:40%;left:50%;transform:translateX(-50%);z-index:9999;font-size:24px;font-weight:900;color:var(--amber);text-shadow:0 0 12px rgba(248,201,76,.5);pointer-events:none;animation:xpFloat 1.5s ease-out forwards;';
+  float.style.cssText='position:fixed;top:14%;left:50%;transform:translateX(-50%);z-index:9999;font-size:24px;font-weight:900;color:var(--amber);text-shadow:0 0 12px rgba(248,201,76,.5);pointer-events:none;animation:xpFloat 1.5s ease-out forwards;';
   document.body.appendChild(float);
   setTimeout(()=>float.remove(),1500);
 }
