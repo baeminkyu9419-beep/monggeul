@@ -23,11 +23,13 @@
 <!-- Daum webmaster (등록 후 content 값 교체) -->
 <!-- <meta name="verify-v1" content="YOUR_DAUM_CODE"> -->
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
-<meta http-equiv="X-Frame-Options" content="DENY">
+<!-- X-Frame-Options 는 meta 로 설정 불가(브라우저 거부+콘솔 에러). 클릭재킹 방지는 CSP frame-ancestors 로 대체 -->
+<meta http-equiv="Content-Security-Policy" content="frame-ancestors 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="assets/cat_normal.png">
 <link rel="apple-touch-icon" href="assets/cat_normal.png">
 <title>몽글몽글 🌙 꿈 해몽 & 꿈 기록</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">

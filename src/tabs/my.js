@@ -967,7 +967,8 @@ export function nextOnbStep(n){
 
 export function claimOnboarding(){
   localStorage.setItem('mg_onboarded','true');
-  localStorage.setItem('mg_free_unlocks','3');
+  // 온보딩 선물 화면(index.html onbStep2)이 '상세 해몽 5회 무료'를 약속 → 실제도 5회 지급(이전 3회=약속 불일치)
+  localStorage.setItem('mg_free_unlocks','5');
   document.getElementById('onboardingOverlay').style.display='none';
   showToast('🎁 환영 선물을 받았어요!');
 }

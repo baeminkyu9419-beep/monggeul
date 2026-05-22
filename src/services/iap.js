@@ -155,7 +155,7 @@ export async function getEntitlement() {
     .from('user_entitlements')
     .select('entitlement_key, status, current_period_end')
     .eq('user_id', store.currentUser.id)
-    .single();
+    .maybeSingle();  // 0행(신규 유저) 406 방지
   return data || { entitlement_key: 'free', status: 'inactive' };
 }
 

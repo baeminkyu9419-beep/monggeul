@@ -780,7 +780,7 @@ export async function animateCounter(){
   // Supabase에서 실제 카운터 가져오기
   if(store.supabase){
     try{
-      const {data}=await store.supabase.from('app_stats').select('value').eq('key','total_dreams').single();
+      const {data}=await store.supabase.from('app_stats').select('value').eq('key','total_dreams').maybeSingle();  // 0행 406 방지
       if(data)cur=parseInt(data.value)||1331;
     }catch{
       // 테이블 없으면 시간 기반 폴백

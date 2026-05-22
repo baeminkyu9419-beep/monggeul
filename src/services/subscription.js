@@ -66,7 +66,7 @@ export async function getCreditsAsync() {
         .from('user_entitlements')
         .select('premium_credits')
         .eq('user_id', store.currentUser.id)
-        .single();
+        .maybeSingle();  // 0행(신규 유저) 406 방지
       const credits = data?.premium_credits ?? 0;
       _cachedCredits = credits;
       localStorage.setItem('mg_premium_credits', String(credits));
@@ -192,7 +192,7 @@ export async function getUserTier() {
         .from('user_entitlements')
         .select('entitlement_key, status')
         .eq('user_id', store.currentUser.id)
-        .single();
+        .maybeSingle();  // 0행(신규 유저) 406 방지
       if (data && (data.status === 'active' || data.status === 'grace')) {
         const tier = normalizeEntitlement(data.entitlement_key);
         if (tier === 'plus' || tier === 'premium') {
@@ -238,7 +238,7 @@ export async function getDreamCountAsync() {
         .select('count')
         .eq('user_id', store.currentUser.id)
         .eq('date', getTodayKey())
-        .single();
+        .maybeSingle();  // .single()은 0행일 때 406 에러 로깅 → 신규 유저(행 없음)는 정상이므로 maybeSingle
       const count = data?.count ?? 0;
       localStorage.setItem('mg_daily_dream', JSON.stringify({ date: getTodayKey(), count }));
       return count;

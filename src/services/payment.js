@@ -186,7 +186,7 @@ async function fallbackEntitlementCheck() {
       .from('user_entitlements')
       .select('premium_credits')
       .eq('user_id', store.currentUser.id)
-      .single();
+      .maybeSingle();  // 0행(신규 유저) 406 방지
     const credits = data?.premium_credits ?? 0;
     return { has_subscription: false, pack_credits: credits, can_use: credits > 0 };
   } catch (e) {
