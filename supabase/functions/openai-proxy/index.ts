@@ -17,11 +17,18 @@ const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || ''
 
 // 멀티 LLM 프로바이더 — Fallback 라우팅(무료) + Consensus 교차검증(프리미엄).
 // 키가 설정된 provider 만 활성. 우선순위 = 배열 순서. compatible=true 는 OpenAI 호환 API.
-interface Provider { name: string; key: string | undefined; model: string; compatible: boolean; url: string }
+// enabled=false 면 키가 있어도 라우팅에서 제외 (무효 키로 인한 헛호출/401 방지용 플래그).
+//
+// [2026-05-23] OpenAI 키가 현재 무효(sk-proj-...5w0A → 401 invalid_api_key)라
+//   매 해몽마다 OpenAI 우선 호출 → 401 → Gemini 폴백 = 헛호출 + consensus 품질 저하.
+//   조치: gemini 를 1차로 고정, openai 는 enabled:false 로 일시 비활성.
+//   복구: 유효한 OPENAI_API_KEY 재발급 후 openai 의 enabled 를 true 로 되돌리고
+//         원하면 배열 맨 앞으로 이동 (그러면 다시 OpenAI 우선).
+interface Provider { name: string; key: string | undefined; model: string; compatible: boolean; url: string; enabled: boolean }
 const PROVIDERS: Provider[] = [
-  { name: 'openai',   key: Deno.env.get('OPENAI_API_KEY'),   model: 'gpt-4o',           compatible: true,  url: 'https://api.openai.com/v1/chat/completions' },
-  { name: 'deepseek', key: Deno.env.get('DEEPSEEK_API_KEY'), model: 'deepseek-chat',    compatible: true,  url: 'https://api.deepseek.com/v1/chat/completions' },
-  { name: 'gemini',   key: Deno.env.get('GEMINI_API_KEY'),   model: 'gemini-2.5-flash-lite', compatible: false, url: 'https://generativelanguage.googleapis.com/v1beta/models' },
+  { name: 'gemini',   key: Deno.env.get('GEMINI_API_KEY'),   model: 'gemini-2.5-flash-lite', compatible: false, url: 'https://generativelanguage.googleapis.com/v1beta/models', enabled: true },
+  { name: 'deepseek', key: Deno.env.get('DEEPSEEK_API_KEY'), model: 'deepseek-chat',    compatible: true,  url: 'https://api.deepseek.com/v1/chat/completions', enabled: true },
+  { name: 'openai',   key: Deno.env.get('OPENAI_API_KEY'),   model: 'gpt-4o',           compatible: true,  url: 'https://api.openai.com/v1/chat/completions', enabled: false }, // 무효 키 — 복구 시 true
 ]
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')  // image(DALL-E) 전용
 
@@ -114,7 +121,7 @@ async function _callProvider(p: Provider, payload: any): Promise<any> {
 
 // Fallback 라우팅: 우선순위대로 시도, 첫 성공 반환. 전부 실패 시 마지막 에러.
 async function _chatFallback(payload: any): Promise<any> {
-  const avail = PROVIDERS.filter((p) => p.key)
+  const avail = PROVIDERS.filter((p) => p.key && p.enabled)
   if (!avail.length) throw new Error('NO_LLM_KEY')
   let lastErr: any
   for (const p of avail) {
@@ -126,7 +133,7 @@ async function _chatFallback(payload: any): Promise<any> {
 
 // Consensus 교차검증: 상위 2개 동시 호출 → 1번째를 기본, _consensus 에 전체.
 async function _chatConsensus(payload: any): Promise<any> {
-  const avail = PROVIDERS.filter((p) => p.key).slice(0, 2)
+  const avail = PROVIDERS.filter((p) => p.key && p.enabled).slice(0, 2)
   if (avail.length < 2) return _chatFallback(payload)  // 2개 미만이면 fallback
   const settled = await Promise.allSettled(avail.map((p) => _callProvider(p, payload)))
   const ok = settled.filter((s) => s.status === 'fulfilled').map((s: any) => s.value)
@@ -200,8 +207,8 @@ serve(async (req) => {
       })
     }
 
-    // 3. LLM 키 확인 (chat = provider 최소 1개, image = OpenAI 필요)
-    const hasAnyLLM = PROVIDERS.some((p) => p.key)
+    // 3. LLM 키 확인 (chat = 활성 provider 최소 1개, image = OpenAI 필요)
+    const hasAnyLLM = PROVIDERS.some((p) => p.key && p.enabled)
     if (!hasAnyLLM && !OPENAI_API_KEY) {
       return new Response(JSON.stringify({ error: 'No LLM key configured' }), {
         status: 500,
