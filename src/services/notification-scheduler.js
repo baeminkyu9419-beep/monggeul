@@ -146,8 +146,10 @@ export function checkDaliWeeklyNotification() {
 
   localStorage.setItem(LAST_DALI_KEY, thisWeekStr());
 
+  // [2026-05-23] 주간 리포트는 MY(log) 탭의 유지 기능 — 숨긴 chat 탭(tab=chat)으로 보내던 딥링크를 tab=log 로 수정.
+  // (달이=마스코트 브랜드 톤이라 문구는 유지, 목적지만 실제 리포트로)
   showLocalNotification('dali_weekly', '🐱 달이의 주간 정리', `달이가 이번 주 꿈 ${recentLogs.length}개를 정리해뒀어요. 주간 리포트를 확인해보세요!`, {
-    url: '/monggeul/?tab=chat',
+    url: '/monggeul/?tab=log',
   });
   logEvent('dali_weekly_notif_triggered', { dreamCount: recentLogs.length });
 }

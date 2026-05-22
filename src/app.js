@@ -39,6 +39,10 @@ function applyFeatureFlags(){
       const tbChat=document.getElementById('tb-chat'); if(tbChat)tbChat.style.display='none';
       byOnclick("switchTab('chat')").forEach(el=>{ el.style.display='none'; });
       const daliMini=document.getElementById('daliMini'); if(daliMini)daliMini.style.display='none';
+      // [2026-05-23] 하단 탭바 그리드 4→가시탭수 로 보정(탭 숨김 시 빈 칸/간격 불균형 방지). 가역.
+      const tabbar=document.querySelector('.tabbar');
+      if(tabbar){ const visible=[...tabbar.querySelectorAll('.tb')].filter(t=>getComputedStyle(t).display!=='none').length;
+        if(visible>0) tabbar.style.gridTemplateColumns='repeat('+visible+',1fr)'; }
     }
     // 운세/퀴즈 진입 버튼 숨김 (동적 카드 버튼은 dream.js 가 FEATURES 확인)
     if(!FEATURES.fortune){ byOnclick('initTodayFortune').forEach(el=>{ el.style.display='none'; }); }

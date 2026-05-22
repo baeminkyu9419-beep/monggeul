@@ -207,7 +207,9 @@ export function checkSmartUpsell() {
   // ── 행동 기반 ──
   if (!triggerId && logs.length >= 3 && logs.length < 5) triggerId = 'dream_3rd';
   if (!triggerId && streak >= 7) triggerId = 'dream_7day';
-  if (!triggerId && totalChats >= 10) triggerId = 'dali_deep';
+  // [2026-05-23] dali_deep 업셀은 숨긴 달이 대화 기능 전제 → FEATURES.dali off면 스킵(가역). 기존 chat 이력 유저 오발동 방지.
+  const _daliOn = !(typeof window!=='undefined' && window.FEATURES && window.FEATURES.dali===false);
+  if (!triggerId && _daliOn && totalChats >= 10) triggerId = 'dali_deep';
 
   // ── 시간대별 (가장 낮은 우선순위) ──
   if (!triggerId && hour >= 6 && hour <= 9) triggerId = 'time_morning';
