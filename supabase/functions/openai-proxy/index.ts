@@ -31,6 +31,10 @@ const PROVIDERS: Provider[] = [
   { name: 'openai',   key: Deno.env.get('OPENAI_API_KEY'),   model: 'gpt-4o',           compatible: true,  url: 'https://api.openai.com/v1/chat/completions', enabled: false }, // 무효 키 — 복구 시 true
 ]
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')  // image(DALL-E) 전용
+// [2026-05-23] OpenAI 키 무효(401) → DALL-E 꿈 일러스트 호출도 매번 401→retry 헛호출.
+//   image 경로를 일시 비활성 (해몽 결과는 일러스트 없이도 정상 렌더 — E2E 확인).
+//   복구: 유효 OPENAI_API_KEY 재발급 후 false → true.
+const OPENAI_IMAGE_ENABLED = false
 
 // 허용된 CORS origin (프로덕션 GitHub Pages + 로컬 개발)
 const ALLOWED_ORIGINS = new Set<string>([
@@ -243,9 +247,9 @@ serve(async (req) => {
       })
     }
 
-    // image = OpenAI DALL-E 전용
-    if (!OPENAI_API_KEY) {
-      return new Response(JSON.stringify({ error: 'Image generation requires OpenAI key' }), {
+    // image = OpenAI DALL-E 전용 (키 무효 시 OPENAI_IMAGE_ENABLED=false 로 헛호출 차단)
+    if (!OPENAI_API_KEY || !OPENAI_IMAGE_ENABLED) {
+      return new Response(JSON.stringify({ error: 'Image generation unavailable' }), {
         status: 503,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
