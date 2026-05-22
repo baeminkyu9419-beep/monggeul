@@ -80,7 +80,7 @@ export async function loginWith(provider) {
       });
     }
   } catch (e) {
-    if (typeof showToast === 'function') showToast('로그인에 실패했어요. 다시 시도해주세요 🌙');
+    if (typeof window.showToast === 'function') window.showToast('로그인에 실패했어요. 다시 시도해주세요 🌙');  // 바레 showToast → window(미표시 버그)
     // login error — silent
   }
 }
@@ -125,7 +125,7 @@ export async function logout() {
   await store.supabase.auth.signOut();
   store.currentUser = null;
   updateLoginUI(null);
-  if (typeof showToast === 'function') showToast('로그아웃 됐어요 🌙');
+  if (typeof window.showToast === 'function') window.showToast('로그아웃 됐어요 🌙');  // 바레 showToast → window(미표시 버그)
   logEvent('logout');
 }
 

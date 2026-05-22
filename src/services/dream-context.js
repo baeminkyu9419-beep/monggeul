@@ -186,7 +186,7 @@ window.submitDreamContext = function() {
           <div style="font-size:11px;color:var(--text-muted);margin-top:4px">다음 해몽부터 달이가 당신을 더 잘 이해할 거예요</div>
         </div>`;
     }
-    if (typeof showToast === 'function') showToast('맥락이 저장됐어요! 다음 해몽이 더 정확해져요 🐱');
+    if (typeof window.showToast === 'function') window.showToast('맥락이 저장됐어요! 다음 해몽이 더 정확해져요 🐱');  // 바레 showToast → window(미표시 버그)
   }
 };
 

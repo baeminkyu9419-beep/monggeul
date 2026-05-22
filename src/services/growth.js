@@ -77,7 +77,9 @@ function grantShareReward() {
   const todayCount = shareData.date === today ? shareData.count : 0;
 
   if (todayCount < 3) {
-    if (typeof addXPSilent === 'function') addXPSilent(5);
+    // growth.js 는 addXPSilent 를 import 안 함 → 바레 식별자는 항상 undefined(typeof 가드가 늘 false)였음.
+    // my.js 가 window.addXPSilent 로 노출하므로 window 경유로 호출(토스트는 +5 XP 라 했는데 실제 미지급이던 버그).
+    if (typeof window.addXPSilent === 'function') window.addXPSilent(5);
     showToast('공유 완료! +5 XP 🎉');
   }
 
@@ -352,7 +354,7 @@ export function checkReturnReward() {
       // 3일 이상 안 온 사용자 → 복귀 보상
       setTimeout(() => {
         showToast('다시 와줘서 고마워요! 🌙 +10 XP');
-        if (typeof addXPSilent === 'function') addXPSilent(10);
+        if (typeof window.addXPSilent === 'function') window.addXPSilent(10);  // 바레 addXPSilent → window 경유(미지급 버그 수정)
         logEvent('return_reward', { days_away: daysDiff });
       }, 2000);
     }

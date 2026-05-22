@@ -1118,6 +1118,14 @@ window.useFreeUnlock = useFreeUnlock;
 window.addXPSilent = addXPSilent;
 window.renderUnconsciousProfile = renderUnconsciousProfile;
 window.showUnconsciousPaywall = showUnconsciousPaywall;
+// [버그수정] 아래 함수들이 window 에 노출 안 돼 app.js 의 window.fn?.() 호출(init/탭전환)이
+// 항상 no-op 였음 → 업적/꿈성격/패턴/갤러리/연속리셋체크가 init 시 미작동.
+// (deleteDreamLog 등 일부 내부 경로로만 우연히 렌더됐음). 정상 노출.
+window.renderAchievements = renderAchievements;
+window.renderDreamPersonality = renderDreamPersonality;
+window.renderDreamGallery = renderDreamGallery;
+window.renderPatternCard = renderPatternCard;
+window.checkStreakReset = checkStreakReset;
 
 
 // ── 썸네일 인젝션 (renderLog 후처리) ──
