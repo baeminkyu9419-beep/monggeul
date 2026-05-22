@@ -183,6 +183,10 @@ export async function analyzeDream(){
   document.querySelectorAll('#resultEl > [onclick]').forEach(el=>{if(el.textContent.includes('해금'))el.remove();});
   const ld=document.getElementById('loadingEl');ld.classList.add('on');
   startLoadingSteps();
+  // [2026-05-23] 결함4: 해몽 버튼 로딩 피드백 — 클릭 즉시 비활성+스피너 카피(503 재시도 동안 진행감)
+  const _analyzeBtn=document.querySelector('.btn-main[onclick*="analyzeDream"]');
+  let _analyzeBtnHtml='';
+  if(_analyzeBtn){ _analyzeBtnHtml=_analyzeBtn.innerHTML; _analyzeBtn.disabled=true; _analyzeBtn.style.opacity='.7'; _analyzeBtn.style.cursor='wait'; _analyzeBtn.innerHTML='<span class="dream-spin" style="display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;vertical-align:middle;margin-right:6px;animation:dreamspin .7s linear infinite"></span>달이가 꿈을 읽는 중...'; }
   let mi=0;const iv=setInterval(()=>{mi=(mi+1)%LMSGS.length;document.getElementById('loadTxt').textContent=LMSGS[mi];},1800);
   try{
     const minLoadTime=new Promise(r=>setTimeout(r,2000));
@@ -234,6 +238,8 @@ stats 규칙(필수): 각 항목은 반드시 0~100 사이의 정수. 위 숫자
     },500);
   }
   finally{analyzeDream._busy=false;clearInterval(iv);stopLoadingSteps();ld.classList.remove('on');await incDreamCount();
+    // 결함4: 해몽 버튼 원복
+    if(_analyzeBtn){ _analyzeBtn.disabled=false; _analyzeBtn.style.opacity=''; _analyzeBtn.style.cursor=''; _analyzeBtn.innerHTML=_analyzeBtnHtml||'🔮 해몽하기'; }
     // 무료 사용자: 해몽 후 전면광고 (3회에 1번)
     if(typeof showInterstitialIfReady==='function')showInterstitialIfReady();  // 광고 노출=수익 동작이라 민규 보류(현 미작동 유지)
     if(typeof window._bumpHeroCounter==='function')window._bumpHeroCounter();  // 바레→window(히어로 카운터 미증가 버그)
@@ -404,7 +410,7 @@ export function showResult(data,inp){
   renderRecurringComparison(data,inp);
   // 관련 상징 카드 표시
   try{ renderSymbolCards(inp); }catch(e){}
-  // 프리미엄 해석 잠금 (₩500 단건 결제)
+  // 프리미엄 해석 잠금 (정본 카탈로그 pack_1 = ₩1,900 단건 결제)
   const credits=getCredits();
   const lockBtn=document.getElementById('lockBtn');
   const lockSub=document.getElementById('lockSubText');
@@ -412,7 +418,8 @@ export function showResult(data,inp){
     if(lockBtn)lockBtn.textContent=`🔓 프리미엄 해석 보기 (${credits}회 보유)`;
     if(lockSub)lockSub.textContent='크레딧을 사용해서 전문가급 해석을 확인하세요';
   }else{
-    if(lockBtn)lockBtn.textContent='📜 프리미엄 해석 · ₩500';
+    // [2026-05-23] ₩500 → ₩1,900 정본 통일(페이월 모달/카탈로그 pack_1 과 일치, 미끼가격 신뢰 직타 해소)
+    if(lockBtn)lockBtn.textContent='📜 프리미엄 해석 · ₩1,900';
     if(lockSub)lockSub.textContent='융 심리학 · 전통 해몽서 · 학술 연구 기반 분석';
   }
   document.getElementById('detailLock').style.display='block';
