@@ -13,11 +13,11 @@
   "dir": "ltr",
   "prefer_related_applications": false,
   "icons": [
-    {"src": "/monggeul/assets/cat_normal.png", "sizes": "192x192", "type": "image/png"},
-    {"src": "/monggeul/assets/cat_normal.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+    {"src": "/monggeul/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "/monggeul/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
   ],
   "shortcuts": [
-    {"name": "꿈 해몽하기", "url": "/monggeul/", "icons": [{"src": "/monggeul/assets/cat_normal.png", "sizes": "96x96"}]},
-    {"name": "달이와 대화", "url": "/monggeul/?tab=chat", "icons": [{"src": "/monggeul/assets/cat_normal.png", "sizes": "96x96"}]}
+    {"name": "꿈 해몽하기", "url": "/monggeul/", "icons": [{"src": "/monggeul/icon-192.png", "sizes": "192x192"}]},
+    {"name": "달이와 대화", "url": "/monggeul/?tab=chat", "icons": [{"src": "/monggeul/icon-192.png", "sizes": "192x192"}]}
   ]
 }

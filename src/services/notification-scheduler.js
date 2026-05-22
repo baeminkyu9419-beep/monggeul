@@ -50,8 +50,8 @@ async function showLocalNotification(type, title, body, data = {}) {
     if (!reg) return false;
     await reg.showNotification(title, {
       body,
-      icon: '/monggeul/assets/cat_normal.png',
-      badge: '/monggeul/assets/cat_normal.png',
+      icon: '/monggeul/icon-192.png',
+      badge: '/monggeul/icon-192.png',
       tag: `monggeul-${type}`,
       data: { url: data.url || '/monggeul/', type, ...data },
       actions: data.actions || [],
