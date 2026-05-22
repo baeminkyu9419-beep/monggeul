@@ -56,7 +56,8 @@ export async function callOpenAI(endpoint, payload, mode) {
         }
         throw new Error('요청이 너무 많아요. 잠시 후 다시 시도해 주세요.');
       }
-      if (res.status >= 500 && attempt < MAX_RETRIES) {
+      // 503 = 기능 비활성(예: image 생성 OFF) → 복구 불가, retry 무의미. 즉시 throw.
+      if (res.status >= 500 && res.status !== 503 && attempt < MAX_RETRIES) {
         await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]));
         continue;
       }
