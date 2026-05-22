@@ -7,8 +7,10 @@ import { callOpenAI } from '../services/api.js';
 
 export function shareResult(){
   // 바이럴 공유 (레퍼럴 코드 포함)
-  if(window._last&&window._last.data&&typeof shareDreamResult==='function'){
-    shareDreamResult(window._last.data);
+  // [버그수정] 바레 shareDreamResult 는 import 안 돼 typeof 항상 false → 레퍼럴 공유 경로가 한 번도 안 탔음.
+  // window.shareDreamResult(growth.js 노출)로 호출해야 ref코드 임베드 공유 작동.
+  if(window._last&&window._last.data&&typeof window.shareDreamResult==='function'){
+    window.shareDreamResult(window._last.data);
     return;
   }
   logEvent('dream_shared');

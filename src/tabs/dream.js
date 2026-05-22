@@ -63,6 +63,10 @@ export function restoreDreamDraft(){
 function clearDreamDraft(){ localStorage.removeItem('mg_dream_draft'); }
 
 window.saveDreamDraft=saveDreamDraft;
+// [버그수정] app.js init이 window.restoreDreamDraft?.()/window.showEmotionTagsSection?.() 호출하나
+// 노출 안 돼 항상 no-op 였음 → 작성중 꿈 복원/포커스시 감정태그 섹션 미작동(saveDreamDraft만 노출됨=초안 저장은 되나 복원 안 됨).
+window.restoreDreamDraft=restoreDreamDraft;
+window.showEmotionTagsSection=showEmotionTagsSection;
 
 // 동적 placeholder 로테이션 (탭 보일 때만 동작)
 const DREAM_PLACEHOLDERS=[
@@ -215,8 +219,8 @@ stats 규칙(필수): 각 항목은 반드시 0~100 사이의 정수. 위 숫자
   }
   finally{analyzeDream._busy=false;clearInterval(iv);stopLoadingSteps();ld.classList.remove('on');await incDreamCount();
     // 무료 사용자: 해몽 후 전면광고 (3회에 1번)
-    if(typeof showInterstitialIfReady==='function')showInterstitialIfReady();
-    if(typeof _bumpHeroCounter==='function')_bumpHeroCounter();
+    if(typeof showInterstitialIfReady==='function')showInterstitialIfReady();  // 광고 노출=수익 동작이라 민규 보류(현 미작동 유지)
+    if(typeof window._bumpHeroCounter==='function')window._bumpHeroCounter();  // 바레→window(히어로 카운터 미증가 버그)
   }
 }
 
@@ -248,9 +252,9 @@ export function showResult(data,inp){
   trackFunnelStep('interpretation_viewed',{title:data.title});
   // 퍼널 추적
   const logs=JSON.parse(localStorage.getItem('mg_logs')||'[]');
-  if(typeof trackFunnel==='function'){
-    if(logs.length===0)trackFunnel('first_dream');
-    else if(logs.length===1)trackFunnel('second_dream');
+  if(typeof window.trackFunnel==='function'){  // 바레→window(퍼널 추적 미작동 버그)
+    if(logs.length===0)window.trackFunnel('first_dream');
+    else if(logs.length===1)window.trackFunnel('second_dream');
   }
   document.getElementById('rTitle').textContent=data.title;
   document.getElementById('rDate').textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});

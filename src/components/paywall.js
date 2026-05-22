@@ -14,7 +14,7 @@ export function showPaywall(feature) {
       title: '로그인이 필요해요',
       desc: '로그인하면 하루 2회 무료 해몽을 받을 수 있어요 🌙',
       cta: '로그인하기',
-      action: () => { if (typeof showLoginModal === 'function') showLoginModal(); },
+      action: () => { if (typeof window.showLoginModal === 'function') window.showLoginModal(); },  // 바레→window(로그인 CTA 무반응 버그)
     },
     daily_limit: {
       title: '오늘의 무료 해몽을 모두 사용했어요',

@@ -937,41 +937,10 @@ html,body{height:100%;margin:0;background:#0e0c1a;color:#f0ecff;font-family:'Not
   </div>
 </div>
 
-<!-- 프리미엄 해석 모달 (단건 결제) -->
-<div class="modal-overlay" id="premiumModal" onclick="closePremiumModal(event)">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div style="font-size:36px;text-align:center;margin-bottom:8px">📜</div>
-    <div class="modal-title">프리미엄 꿈 해석</div>
-    <div class="modal-sub">이 꿈이 진짜 말하려는 게 뭔지 알아보세요</div>
-    <div style="background:rgba(255,255,255,.03);border-radius:12px;padding:14px;margin:14px 0;text-align:left">
-      <div style="font-size:12px;color:var(--text-secondary);line-height:1.8">
-        🌙 옛 해몽책이 이 꿈을 어떻게 봤는지<br>
-        💜 지금 내 마음이랑 어떻게 이어지는지<br>
-        ✨ 이 꿈 꾼 뒤 해보면 좋을 것 3가지<br>
-        🔮 꿈 속 상징 하나하나 깊게 풀어드려요<br>
-        📖 에세이처럼 읽히는 1000자+ 해석
-      </div>
-    </div>
-    <!-- 단건 -->
-    <button class="modal-plan-btn" onclick="closePremiumModalDirect();buyPremium('single')" style="background:linear-gradient(135deg,#f8c94c,#ffaa33);color:#1a1200;margin-bottom:8px">📜 단건 해석 · ₩500</button>
-    <!-- 팩 -->
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <button onclick="closePremiumModalDirect();buyPremium('pack5')" style="flex:1;background:rgba(166,124,239,.1);border:1px solid rgba(166,124,239,.2);border-radius:10px;padding:10px 8px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;text-align:center">
-        <div style="font-size:12px;font-weight:700;color:var(--purple-bright)">5회팩</div>
-        <div style="font-size:16px;font-weight:700;color:var(--moon)">₩1,900</div>
-        <div style="font-size:9px;color:var(--teal)">회당 ₩380</div>
-      </button>
-      <button onclick="closePremiumModalDirect();buyPremium('pack10')" style="flex:1;background:rgba(166,124,239,.1);border:1px solid rgba(166,124,239,.2);border-radius:10px;padding:10px 8px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;text-align:center;position:relative">
-        <div style="position:absolute;top:-6px;right:6px;background:linear-gradient(135deg,#f8c94c,#ffaa33);border-radius:8px;padding:1px 6px;font-size:8px;font-weight:700;color:#1a1200">최저가</div>
-        <div style="font-size:12px;font-weight:700;color:var(--purple-bright)">10회팩</div>
-        <div style="font-size:16px;font-weight:700;color:var(--moon)">₩3,500</div>
-        <div style="font-size:9px;color:var(--teal)">회당 ₩350</div>
-      </button>
-    </div>
-    <button class="modal-close" onclick="closePremiumModalDirect()">1차 해석만 볼게요</button>
-  </div>
-</div>
+<!-- [제거됨 2026-05-23] 레거시 #premiumModal: 어떤 트리거도 .on 부여 안 함(showPremiumPaywall은 동적생성)
+     = unreachable dead modal. 게다가 스테일 가격(단건 ₩500/5회팩 ₩1,900/10회팩 ₩3,500)이 정본 카탈로그
+     (단건 ₩1,900/5회 ₩7,900/15회 ₩19,900)와 불일치 + pack10은 keyMap에 없어 결제 실패.
+     향후 실수 노출 시 잘못된 가격 표시 위험이라 제거. 결제 모달은 paywall.js showPremiumPaywall/showMethodSelect 사용. -->
 
 <!-- 글쓰기 시트 -->
 <div class="write-sheet" id="writeSheet">
