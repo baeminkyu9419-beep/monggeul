@@ -474,12 +474,17 @@ function showRetentionHook(){
     msg='✨ 내일의 꿈 운세가 기다리고 있어요. 매일 달라지는 운세를 확인해보세요!';
   }
 
+  // [2026-05-23] 운세/퀴즈 버튼은 feature-flags 로 가역 숨김 (window.FEATURES 확인)
+  const _ff=(typeof window!=='undefined'&&window.FEATURES)||{fortune:true,quiz:true};
+  let _ctaBtns='';
+  if(_ff.fortune)_ctaBtns+='<button onclick="switchTab(\'log\');initTodayFortune()" style="background:rgba(248,201,76,.1);border:1px solid rgba(248,201,76,.2);border-radius:10px;padding:6px 14px;font-size:11px;color:var(--amber);cursor:pointer;font-family:\'Noto Sans KR\',sans-serif">🔮 오늘의 운세 보기</button>';
+  if(_ff.quiz)_ctaBtns+='<button onclick="switchTab(\'log\');renderQuiz()" style="background:rgba(166,124,239,.1);border:1px solid rgba(166,124,239,.2);border-radius:10px;padding:6px 14px;font-size:11px;color:var(--purple-bright);cursor:pointer;font-family:\'Noto Sans KR\',sans-serif">🧠 꿈 퀴즈 도전</button>';
+  if(!_ctaBtns){ el.style.display='none'; return; }  // 둘 다 숨김이면 카드 자체 미표시
   el.style.display='block';
   el.innerHTML='<div style="margin-top:14px;background:linear-gradient(135deg,rgba(248,201,76,.08),rgba(166,124,239,.06));border:1px solid rgba(248,201,76,.15);border-radius:14px;padding:14px;text-align:center;">'
     +'<div style="font-size:12px;color:var(--moon);font-weight:700;margin-bottom:6px">'+msg+'</div>'
     +'<div style="display:flex;gap:8px;justify-content:center;margin-top:8px;">'
-    +'<button onclick="switchTab(\'log\');initTodayFortune()" style="background:rgba(248,201,76,.1);border:1px solid rgba(248,201,76,.2);border-radius:10px;padding:6px 14px;font-size:11px;color:var(--amber);cursor:pointer;font-family:\'Noto Sans KR\',sans-serif">🔮 오늘의 운세 보기</button>'
-    +'<button onclick="switchTab(\'log\');renderQuiz()" style="background:rgba(166,124,239,.1);border:1px solid rgba(166,124,239,.2);border-radius:10px;padding:6px 14px;font-size:11px;color:var(--purple-bright);cursor:pointer;font-family:\'Noto Sans KR\',sans-serif">🧠 꿈 퀴즈 도전</button>'
+    +_ctaBtns
     +'</div></div>';
 }
 
@@ -976,6 +981,7 @@ export function goToStoryTag(tag){
 
 // ═══ 달이 미니카드 (메인탭 상단) ═══
 export function renderDaliMini(){
+  if((typeof window!=='undefined'&&window.FEATURES)&&!window.FEATURES.dali)return;  // 달이 숨김 시 미니카드 미표시(가역)
   const el=document.getElementById('daliMini');
   const msg=document.getElementById('daliMiniMsg');
   if(!el||!msg)return;
@@ -1012,6 +1018,7 @@ export function renderDaliMini(){
 
 // ═══ 해몽 결과 달이 인사이트 ═══
 export function renderDaliResultInsight(data,inp){
+  if((typeof window!=='undefined'&&window.FEATURES)&&!window.FEATURES.dali)return;  // 달이 숨김 시 결과 인사이트 카드 미표시(가역)
   const card=document.getElementById('daliResultCard');
   const msgEl=document.getElementById('daliResultMsg');
   if(!card||!msgEl)return;

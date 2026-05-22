@@ -27,6 +27,30 @@ import './utils/symbols.js';
 import './utils/emotion.js';
 import './utils/sanitize.js';
 
+// 기능 플래그 (가역적 군더더기 숨김)
+import { FEATURES } from './config/feature-flags.js';
+
+// [2026-05-23] 핵심 루프 집중: 달이/운세/퀴즈 진입점을 플래그로 숨김(코드 보존, 복원=flag true).
+function applyFeatureFlags(){
+  try{
+    const byOnclick=(needle)=>[...document.querySelectorAll('[onclick]')].filter(el=>(el.getAttribute('onclick')||'').includes(needle));
+    // 달이 대화 탭 + 진입 버튼 숨김
+    if(!FEATURES.dali){
+      const tbChat=document.getElementById('tb-chat'); if(tbChat)tbChat.style.display='none';
+      byOnclick("switchTab('chat')").forEach(el=>{ el.style.display='none'; });
+      const daliMini=document.getElementById('daliMini'); if(daliMini)daliMini.style.display='none';
+    }
+    // 운세/퀴즈 진입 버튼 숨김 (동적 카드 버튼은 dream.js 가 FEATURES 확인)
+    if(!FEATURES.fortune){ byOnclick('initTodayFortune').forEach(el=>{ el.style.display='none'; }); }
+    if(!FEATURES.quiz){
+      byOnclick('renderQuiz').forEach(el=>{ el.style.display='none'; });
+      byOnclick('initQuiz').forEach(el=>{ el.style.display='none'; });
+      const quizCard=document.getElementById('quizCard'); if(quizCard)quizCard.style.display='none';
+    }
+  }catch(e){ void('feature flags:',e); }
+}
+window.applyFeatureFlags=applyFeatureFlags;
+
 // Tabs — 동적 import (각 탭이 별도 청크로 분리, 병렬 로드)
 // 각 탭 모듈은 로드 시 window에 전역 함수를 자동 등록함
 const _loadTabs = Promise.all([
@@ -52,6 +76,8 @@ window.onunhandledrejection=function(e){
 // 탭 전환
 var _scrollPositions={};
 function switchTab(n){
+  // 숨김 기능 탭으로의 이동 차단(가역: feature-flags.js dali=true 면 통과)
+  if(n==='chat' && !FEATURES.dali){ n='dream'; }
   if(window._haptic)window._haptic();
   // 탭 전환 시 음성 인식 중단
   if(window.stopVoiceInput)window.stopVoiceInput();
@@ -312,6 +338,7 @@ window.addEventListener("load",async()=>{
   try{ window.restoreDreamDraft?.(); }catch(e){}
   try{ window.showEmotionTagsSection?.();window.initTodayFortune?.();window.initQuiz?.();window.checkNoDreamStatus?.();window.checkYesterdayReview?.(); }catch(e){ void('daily init:',e); }
   try{ window.animateCounter?.();window.updateDariLevel?.(); }catch(e){}
+  try{ applyFeatureFlags(); }catch(e){}
   // 가입일
   if(!localStorage.getItem('mg_join_date'))localStorage.setItem('mg_join_date',String(Date.now()));
   const joinDays=Math.max(1,Math.floor((Date.now()-parseInt(localStorage.getItem('mg_join_date')))/(1000*60*60*24))+1);

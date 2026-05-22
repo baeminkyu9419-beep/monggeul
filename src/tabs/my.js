@@ -1042,8 +1042,16 @@ export function renderAchievements(){
   const el=document.getElementById('achievementList');
   if(!el)return;
   const logs=JSON.parse(localStorage.getItem('mg_logs')||'[]').filter(l=>!l.noDream);
-  const earned=ACHIEVEMENTS.filter(a=>a.check(logs));
-  const locked=ACHIEVEMENTS.filter(a=>!a.check(logs));
+  // [2026-05-23] 숨긴 기능(달이/퀴즈/운세) 의존 업적은 영구 잠금이라 목록에서 제외(가역: FEATURES true 면 복원).
+  const _ff=(typeof window!=='undefined'&&window.FEATURES)||{dali:true,quiz:true,fortune:true};
+  const _hiddenAch=new Set([
+    ...(_ff.dali?[]:['dali10','dali50']),
+    ...(_ff.quiz?[]:['quiz10','quiz50']),
+    ...(_ff.fortune?[]:['fortune']),
+  ]);
+  const _pool=ACHIEVEMENTS.filter(a=>!_hiddenAch.has(a.id));
+  const earned=_pool.filter(a=>a.check(logs));
+  const locked=_pool.filter(a=>!a.check(logs));
 
   // 새로 달성된 업적 → 별가루 지급 (중복 방지)
   const claimed=JSON.parse(localStorage.getItem('mg_achievements_claimed')||'[]');
@@ -1057,8 +1065,8 @@ export function renderAchievements(){
   localStorage.setItem('mg_achievements_claimed',JSON.stringify(claimed));
 
   el.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-    <span style="font-size:12px;font-weight:700;color:var(--text-primary)">${earned.length}/${ACHIEVEMENTS.length} 달성</span>
-    <span style="font-size:10px;color:var(--text-muted)">${Math.round(earned.length/ACHIEVEMENTS.length*100)}%</span>
+    <span style="font-size:12px;font-weight:700;color:var(--text-primary)">${earned.length}/${_pool.length} 달성</span>
+    <span style="font-size:10px;color:var(--text-muted)">${Math.round(earned.length/_pool.length*100)}%</span>
   </div>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;">
     ${earned.map(a=>`<div style="text-align:center;padding:8px 4px;background:rgba(248,201,76,.06);border:1px solid rgba(248,201,76,.15);border-radius:12px;">
