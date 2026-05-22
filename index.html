@@ -26,6 +26,7 @@
 <!-- 클릭재킹 방지(X-Frame-Options / CSP frame-ancestors)는 HTTP 응답 헤더 전용 — meta 로는 브라우저가 무시+콘솔에러.
      GitHub Pages 는 커스텀 헤더 불가 → 호스팅 이전(Cloudflare/Netlify _headers) 시 헤더로 설정할 것. meta 는 제거(무효+에러). -->
 <meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.json">
