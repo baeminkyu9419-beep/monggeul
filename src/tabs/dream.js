@@ -173,19 +173,22 @@ export async function analyzeDream(){
     // 1차 해석 (가벼운 호출 — 광고 시청 후 공개)
     // 2단계 1차: 빠른 응답 (제목/뱃지/점수/감정/미리보기만) — 즉시 표시 ~3초
     const apiCall=callOpenAI('chat',{model:'gpt-4o',messages:[{role:'system',content:`너는 30년 경력 꿈 해석가야. 친구한테 얘기하듯 편하게.${toneMod}
+사용자가 적은 꿈에 실제로 나온 소재(등장인물·장소·사물·행동·감정)에 근거해서만 해석해. 입력에 없는 내용을 지어내지 말고, 누구에게나 들어맞는 일반론·뜬구름 잡는 말 금지. 입력이 짧으면 짧은 대로 그 소재에 집중해.
 영어·학술용어·불릿(■●✦) 금지. 자연스러운 글. 반드시 JSON으로만 응답.
 {
   "title": "꿈 제목 (이모지+한글, 10자 이내)",
   "badges": ["길몽","흉몽","태몽","연애운","재물운","건강운" 중 1~3개],
-  "stats": {"길흉":0~100,"연애운":0~100,"재물운":0~100,"건강운":0~100,"활력":0~100,"직관":0~100},
+  "stats": {"길흉":55,"연애운":40,"재물운":70,"건강운":50,"활력":65,"직관":60},
   "emotions": ["이모지 감정명" 3~5개. 복합감정 가능],
-  "preview": "맛보기 해석 3~4문장. 핵심 상징 2개를 친근하게 짚어주고 '이 꿈엔 더 깊은 이야기가 숨어있어요...'로 마무리. <strong>강조</strong> 가능"
-}`},{role:'user',content:fullInput}],temperature:.85,max_tokens:700,response_format:{type:'json_object'}},dreamMode);
+  "preview": "맛보기 해석 3~4문장. 입력한 꿈에 실제 등장한 구체적 소재(사람·장소·사물·행동)를 반드시 1개 이상 그대로 언급하며 짚어주고 '이 꿈엔 더 깊은 이야기가 숨어있어요...'로 마무리. <strong>강조</strong> 가능"
+}
+stats 규칙(필수): 각 항목은 반드시 0~100 사이의 정수. 위 숫자는 형식 예시일 뿐 그대로 쓰지 말고 꿈 내용에 맞게 0~100 범위로 산출. 보통 30~75 사이, 매우 길하면 80+, 매우 흉하면 20-. 음수·소수·0~10 같은 작은 값 금지.`},{role:'user',content:fullInput}],temperature:.85,max_tokens:700,response_format:{type:'json_object'}},dreamMode);
     const [data]=await Promise.all([apiCall,minLoadTime]);
     const raw=JSON.parse(data.choices[0].message.content.replace(/```json|```/g,'').trim());
     showResult(validateDreamResult(raw)||demoResult(inp),inp);
     // 2단계 2차: 상세 해석 백그라운드 (전통/심리/조언/깊은해석 — 길고 자세하게)
     callOpenAI('chat',{model:'gpt-4o',messages:[{role:'system',content:`너는 30년 경력 꿈 해석가야. 한국 할머니가 들려주는 해몽처럼 따뜻하고 자세하게.${toneMod}${lifeStagePrompt ? '\n' + lifeStagePrompt : ''}
+사용자가 적은 꿈에 실제 나온 소재를 각 항목에서 직접 짚어가며 해석해. 입력에 없는 장면을 지어내지 말고, 누구에게나 통하는 일반론은 피해. 그 사람의 그 꿈에만 해당하는 해석을 해.
 영어·학술용어·불릿(■●✦) 금지. 반드시 JSON으로만 응답.
 {
   "traditional": "전통 해몽 이야기 300자 이상. 옛날 해몽책·할머니 민간 해석을 편하게 풀어서.",
