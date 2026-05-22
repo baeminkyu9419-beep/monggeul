@@ -21,7 +21,10 @@ insert into public.products (id, name, type, price, count, duration_days) values
   ('pack_5',              '상세 해몽 5회 팩',    'pack',         7900,  5,    null),
   ('pack_15',             '상세 해몽 15회 팩',   'pack',         19900, 15,   null),
   ('unconscious_profile', '무의식 프로파일',     'one_time',     2900,  null, null),
-  ('pro_monthly',         '프로 월간 구독',      'subscription', 9900,  null, 30)
+  ('pro_monthly',         '프로 월간 구독',      'subscription', 9900,  null, 30),
+  -- payment.js PRODUCT_CATALOG 정합: Plus/Premium 구독 (pro_monthly = plus_monthly alias)
+  ('plus_monthly',        'Plus 월간 구독',     'subscription', 3900,  null, 30),
+  ('premium_monthly',     'Premium 월간 구독',  'subscription', 19900, null, 30)
 on conflict (id) do update set
   name = excluded.name,
   type = excluded.type,

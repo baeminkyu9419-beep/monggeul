@@ -50,20 +50,36 @@ serve(async (req) => {
       })
     }
 
-    const { product_id, order_id, method, amount, order_name, success_url, fail_url } = await req.json()
+    const { product_id, order_id, method, order_name, success_url, fail_url } = await req.json()
 
-    if (!product_id || !order_id || !amount) {
+    if (!product_id || !order_id) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    // DB에 pending 결제 레코드 생성
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
+    // [보안] 금액 변조 방지: 클라이언트가 보낸 amount 를 신뢰하지 않고
+    //   서버가 products 테이블의 정본 가격을 조회해 사용. (이전엔 클라 amount 그대로 토스 전달)
+    const { data: product, error: prodErr } = await supabaseAdmin
+      .from('products')
+      .select('id, price, name, is_active')
+      .eq('id', product_id)
+      .eq('is_active', true)
+      .single()
+
+    if (prodErr || !product) {
+      return new Response(JSON.stringify({ error: '유효하지 않은 상품입니다' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    const amount = product.price  // 정본 가격 — 결제/DB/토스 전부 이 값만 사용
+
+    // DB에 pending 결제 레코드 생성
     await supabaseAdmin.from('payments').insert({
       user_id: user.id,
       order_id,
@@ -86,7 +102,7 @@ serve(async (req) => {
         method: method || '카카오페이',
         amount,
         orderId: order_id,
-        orderName: order_name || '몽글몽글 해석',
+        orderName: product.name || order_name || '몽글몽글 해석',
         successUrl: success_url,
         failUrl: fail_url,
         metadata: { user_id: user.id, product_id },
