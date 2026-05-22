@@ -19,6 +19,21 @@ import { stopVoiceInput, startVoiceInput } from './dream-voice.js';
 let loadStepTimer=null;
 const FEED_THUMBS={};
 
+// [2026-05-23] LLM(JSON) 응답 견고 파싱. Gemini가 코드펜스/앞뒤 산문/문자열 내 raw 제어문자(\n 등)를
+// 섞어 보내면 순수 JSON.parse 가 throw → 유료 상세해몽이 demoResult 로 폴백되던 버그 방지.
+function parseLLMJson(content){
+  let s=String(content||'').replace(/```json|```/g,'').trim();
+  const a=s.indexOf('{'), b=s.lastIndexOf('}');
+  if(a>=0&&b>a) s=s.slice(a,b+1);
+  try{ return JSON.parse(s); }
+  catch(_){
+    // 제어문자(0x00-0x1F) 중 개행/탭/캐리지리턴만 유효 이스케이프로, 나머지는 제거(소스에 raw 제어문자 없음)
+    const ESC={10:"\n",9:"\t",13:"\r"};
+    const repaired=s.split("").map(function(ch){var cc=ch.charCodeAt(0);if(cc>31)return ch;return ESC[cc]||"";}).join("");
+    return JSON.parse(repaired);
+  }
+}
+
 // ── 상징 자동 링크: 해몽 결과에서 DICT_DATA 키워드를 탭 가능한 링크로 변환 ──
 const _symbolNames = DICT_DATA.map(d => d.n).sort((a,b) => b.length - a.length); // 긴 것 먼저 매칭
 function linkSymbols(html) {
@@ -188,11 +203,12 @@ export async function analyzeDream(){
 }
 stats 규칙(필수): 각 항목은 반드시 0~100 사이의 정수. 위 숫자는 형식 예시일 뿐 그대로 쓰지 말고 꿈 내용에 맞게 0~100 범위로 산출. 보통 30~75 사이, 매우 길하면 80+, 매우 흉하면 20-. 음수·소수·0~10 같은 작은 값 금지.`},{role:'user',content:fullInput}],temperature:.85,max_tokens:700,response_format:{type:'json_object'}},dreamMode);
     const [data]=await Promise.all([apiCall,minLoadTime]);
-    const raw=JSON.parse(data.choices[0].message.content.replace(/```json|```/g,'').trim());
+    const raw=parseLLMJson(data.choices[0].message.content);
     showResult(validateDreamResult(raw)||demoResult(inp),inp);
     // 2단계 2차: 상세 해석 백그라운드 (전통/심리/조언/깊은해석 — 길고 자세하게)
     callOpenAI('chat',{model:'gpt-4o',messages:[{role:'system',content:`너는 30년 경력 꿈 해석가야. 한국 할머니가 들려주는 해몽처럼 따뜻하고 자세하게.${toneMod}${lifeStagePrompt ? '\n' + lifeStagePrompt : ''}
 사용자가 적은 꿈에 실제 나온 소재를 각 항목에서 직접 짚어가며 해석해. 입력에 없는 장면을 지어내지 말고, 누구에게나 통하는 일반론은 피해. 그 사람의 그 꿈에만 해당하는 해석을 해.
+균형 규칙(중요): 좋은 의미만 늘어놓지 마. 흉몽·경고·주의가 필요한 꿈이면 그 부정적 의미도 솔직하게 짚어줘(예: 손실·갈등·건강·스트레스 경고). 단 겁주기로 끝내지 말고 반드시 '그래서 무엇을 하면 되는지' 건설적 행동으로 이어줘. 따뜻함 = 무조건 좋게 포장이 아니라, 불편한 진실도 다정하게 전하는 것.
 영어·학술용어·불릿(■●✦) 금지. 반드시 JSON으로만 응답.
 {
   "traditional": "전통 해몽 이야기 300자 이상. 옛날 해몽책·할머니 민간 해석을 편하게 풀어서.",
@@ -200,7 +216,7 @@ stats 규칙(필수): 각 항목은 반드시 0~100 사이의 정수. 위 숫자
   "advice": "현실 조언 250자 이상. 일주일 안에 해보면 좋을 것 3가지 구체적·현실적으로.",
   "fullInterpretation": "깊은 해석 1000자 이상. 에세이처럼 자연스럽게. 꿈에 나온 것들 각각의 의미, 마음 상태, 앞으로의 힌트, 비슷한 꿈을 또 꾸면의 의미, 따뜻한 마무리까지. 목록·번호 금지, 단락만 나눠서."
 }`},{role:'user',content:fullInput}],temperature:.85,max_tokens:3500,response_format:{type:'json_object'}},dreamMode)
-      .then(d2=>{ const r2=JSON.parse(d2.choices[0].message.content.replace(/```json|```/g,'').trim()); if(window.showResultDetail)window.showResultDetail(r2); })
+      .then(d2=>{ const r2=parseLLMJson(d2.choices[0].message.content); if(window.showResultDetail)window.showResultDetail(r2); })
       .catch(()=>{ try{ if(window.showResultDetail)window.showResultDetail(demoResult(inp)); }catch(_){} });
   }catch(e){
     await new Promise(r=>setTimeout(r,2000));
