@@ -319,8 +319,21 @@ window.addEventListener("load",async()=>{
   try{ handlePaymentReturn(); }catch(e){}
   // 탭 청크 + Supabase 초기화 병렬 로드
   await Promise.allSettled([_loadTabs, initSupabase()]);
-  // 로그인 모달: 온보딩 끝난 뒤에 표시 (겹침 방지)
-  if(!store.currentUser && !localStorage.getItem('mg_login_skipped')){
+  // [2026-05-28] DEMO 모드 명시 — SUPABASE 미설정 시 사용자에게 명확히 알림 (저장/계정/AI 비활성 = 데모 해석만)
+  try{
+    if(!window.SUPABASE_URL || !store.supabase){
+      const bar=document.createElement('div');
+      bar.id='demoModeBanner';
+      bar.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,#FFD194,#D1913C);color:#3a2410;padding:8px 12px;font-size:12px;text-align:center;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.15)';
+      bar.innerHTML='🌙 데모 모드 — 로컬에 저장돼요(계정/AI 해몽 미연결). 해석은 기본 사전 기반이에요.';
+      document.body.appendChild(bar);
+      // 본문 위쪽 여백 보정
+      const root=document.querySelector('.app-shell')||document.body.firstElementChild;
+      if(root && root.style) root.style.paddingTop=(parseInt(getComputedStyle(root).paddingTop)||0)+34+'px';
+    }
+  }catch(e){ void('demo banner:',e); }
+  // 로그인 모달: 온보딩 끝난 뒤에 표시 (겹침 방지). 데모 모드(Supabase 없음) = 로그인 무의미 → 차단.
+  if(!store.currentUser && !localStorage.getItem('mg_login_skipped') && window.SUPABASE_URL){
     const waitForOnboarding=()=>{
       if(localStorage.getItem('mg_onboarded')||document.getElementById('onboardingOverlay')?.style.display==='none'){
         setTimeout(()=>{ if(!store.currentUser) showLoginModal(); }, 500);

@@ -26,6 +26,9 @@ const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || ''
 //         원하면 배열 맨 앞으로 이동 (그러면 다시 OpenAI 우선).
 interface Provider { name: string; key: string | undefined; model: string; compatible: boolean; url: string; enabled: boolean }
 const PROVIDERS: Provider[] = [
+  // [2026-05-28] Mistral 추가 — JARVIS_NEW 메모리 박제: Mistral 키 살아있음(F-* providers 실측).
+  //   Gemini 키 부재 시 단독으로도 chat 동작. OpenAI 호환 API.
+  { name: 'mistral',  key: Deno.env.get('MISTRAL_API_KEY'),  model: 'mistral-small-latest', compatible: true,  url: 'https://api.mistral.ai/v1/chat/completions', enabled: true },
   { name: 'gemini',   key: Deno.env.get('GEMINI_API_KEY'),   model: 'gemini-2.5-flash-lite', compatible: false, url: 'https://generativelanguage.googleapis.com/v1beta/models', enabled: true },
   { name: 'deepseek', key: Deno.env.get('DEEPSEEK_API_KEY'), model: 'deepseek-chat',    compatible: true,  url: 'https://api.deepseek.com/v1/chat/completions', enabled: true },
   { name: 'openai',   key: Deno.env.get('OPENAI_API_KEY'),   model: 'gpt-4o',           compatible: true,  url: 'https://api.openai.com/v1/chat/completions', enabled: false }, // 무효 키 — 복구 시 true

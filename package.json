@@ -9,6 +9,10 @@
     "generate:blog": "node scripts/generate-blog-content.js",
     "build": "node scripts/generate-seo-pages.js && vite build",
     "preview": "vite preview",
+    "build:root": "node scripts/generate-seo-pages.js && node -e \"process.env.DEPLOY_BASE='/';require('child_process').execSync('npx vite build',{stdio:'inherit',env:process.env})\"",
+    "deploy:cf": "npm run build:root && npx wrangler@latest pages deploy dist --project-name=monggeul --branch=main",
+    "deploy:vercel": "npm run build:root && npx vercel@latest --prod ./dist --yes",
+    "deploy:netlify": "npm run build:root && npx netlify-cli@latest deploy --dir=dist --prod",
     "cap:sync": "vite build && npx cap sync",
     "cap:android": "vite build && npx cap sync android && npx cap open android",
     "cap:ios": "vite build && npx cap sync ios && npx cap open ios"

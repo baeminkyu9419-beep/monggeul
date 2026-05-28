@@ -1,7 +1,12 @@
 import { defineConfig } from 'vite';
 
+// [2026-05-28] base path 분기 — JARVIS_NEW 메모리 박제 배포 대안 (Cloudflare/Vercel/Netlify=루트, GitHub Pages=/monggeul/)
+//   DEPLOY_BASE=/  → 루트 도메인용 (npm run deploy:cf|vercel|netlify)
+//   미지정         → 기본 /monggeul/ (GitHub Pages, 기존 동작 유지 — 회귀 0)
+const _base = process.env.DEPLOY_BASE || '/monggeul/';
+
 export default defineConfig({
-  base: '/monggeul/',
+  base: _base,
   build: {
     outDir: 'dist',
     emptyOutDir: true,

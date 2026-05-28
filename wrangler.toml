@@ -1,0 +1,10 @@
+# Cloudflare Pages 배포 설정 — JARVIS_NEW 메모리 박제 [[project-monggeul-master-session-20260520]] LIVE URL 404 우회
+# 사용:
+#   1) (최초 1회) npx wrangler@latest login   → Cloudflare 계정 인증
+#   2) npm run deploy:cf                       → 빌드 + 배포 (이 toml의 name/output 자동 사용)
+# 또는 GitHub 연동: Cloudflare 대시보드 → Pages → Connect to Git → repo 선택 (build cmd=npm run build, output=dist)
+# private repo 무료, 빌드/트래픽 무제한, SPA fallback=public/_redirects 이미 구성.
+
+name = "monggeul"
+pages_build_output_dir = "dist"
+compatibility_date = "2025-01-01"
