@@ -312,6 +312,58 @@ export function showResultDetail(data){
 }
 window.showResultDetail=showResultDetail;
 
+// ── 전환 모먼트: 잠금 화면을 "가치 스택"으로 렌더 ──
+// 연구(freemium=욕구를 제조해야 함): 사용자가 감정적으로 산 직후(WOW: 에너지 레이더+감정분석)
+// 맥락 후킹(이 꿈 한정) + 무엇이 들어있는지 4종 명시 + 가격 앵커 + 신뢰선.
+// lockBtn / lockSubText ID 는 하위호환 유지.
+const _LOCK_HOOKS={
+  '흉몽':'이 꿈, 그냥 넘기면 안 되는 신호일 수 있어요.',
+  '길몽':'좋은 기운이 보여요 — 언제·어떻게 올지 깊은 해석이 짚어줘요.',
+  '태몽':'태몽일 가능성이 있어요. 상세 해몽에서 더 구체적으로 풀어드려요.',
+  '연애운':'이 관계, 마음 속에서 무슨 일이 벌어지는지 더 깊이 볼 수 있어요.',
+  '재물운':'돈·기회의 흐름이 보여요. 상세 해몽에서 시기까지 짚어드려요.',
+  '건강운':'몸과 마음이 보내는 메시지, 더 자세히 들여다볼게요.',
+  '중립':'겉으론 평범해 보여도, 무의식은 분명한 말을 하고 있어요.'
+};
+export function renderConversionLock(data,inp,credits){
+  const hookEl=document.getElementById('lockHook');
+  const stackEl=document.getElementById('lockValueStack');
+  const priceEl=document.getElementById('lockPriceRow');
+  const lockBtn=document.getElementById('lockBtn');
+  const lockSub=document.getElementById('lockSubText');
+  const trustEl=document.getElementById('lockTrust');
+  // 맥락 후킹 — 이 꿈의 대표 배지 기준 (욕구 제조)
+  const badge=(data.badges&&data.badges[0])||'중립';
+  if(hookEl)hookEl.textContent=_LOCK_HOOKS[badge]||_LOCK_HOOKS['중립'];
+  // 가치 스택 — 실제로 받는 것 4종 (껍데기 아님: 3분기 탭+깊은해석이 실제 산출물)
+  if(stackEl){
+    const items=[
+      ['📜','<b>전통 해몽서</b> 기반 상징 풀이'],
+      ['🧠','<b>융 심리학</b> 무의식 분석'],
+      ['💡','오늘부터 쓸 수 있는 <b>현실 조언</b>'],
+      ['📖','에세이처럼 읽히는 <b>깊은 해석 1,000자+</b>']
+    ];
+    stackEl.innerHTML=items.map(([ic,tx])=>`<div class="lock-vitem"><span class="vchk">✓</span><span>${ic} ${tx}</span></div>`).join('');
+  }
+  if(credits>0){
+    // 크레딧 보유 = 결제 마찰 0, 즉시 사용 유도
+    if(priceEl)priceEl.style.display='none';
+    if(lockBtn)lockBtn.textContent=`🔓 지금 바로 열기 (${credits}회 보유)`;
+    if(lockSub)lockSub.textContent='보유한 크레딧으로 추가 비용 없이 확인하세요';
+    if(trustEl)trustEl.innerHTML='✨ 결제 없이 즉시 공개돼요';
+  }else{
+    // 가격 앵커 — 단건 ₩1,900 을 15회팩 단가(₩1,327/회)와 "커피 한 잔" 프레임으로 정박
+    if(priceEl){
+      priceEl.style.display='flex';
+      priceEl.innerHTML='<span class="lock-price-now">₩1,900</span><span class="lock-price-anchor">커피 한 잔보다 싸게 · 영구 소장</span>';
+    }
+    if(lockBtn)lockBtn.textContent='📜 상세 해몽 열기 · ₩1,900';
+    if(lockSub)lockSub.textContent='지금 이 꿈의 깊은 해석을 바로 받아보세요';
+    if(trustEl)trustEl.innerHTML='🔒 안전 결제 · 🔁 <b>15회팩이면 회당 ₩1,327</b>';
+  }
+}
+window.renderConversionLock=renderConversionLock;
+
 export function showResult(data,inp){
   logEvent('dream_completed',{title:data.title,badges:data.badges});
   trackFunnelStep('interpretation_viewed',{title:data.title});
@@ -425,18 +477,9 @@ export function showResult(data,inp){
   renderRecurringComparison(data,inp);
   // 관련 상징 카드 표시
   try{ renderSymbolCards(inp); }catch(e){}
-  // 프리미엄 해석 잠금 (정본 카탈로그 pack_1 = ₩1,900 단건 결제)
+  // 프리미엄 해석 잠금 — 전환 모먼트: 맥락 후킹 + 가치 스택 + 가격 앵커 (정본 카탈로그 pack_1 = ₩1,900)
   const credits=getCredits();
-  const lockBtn=document.getElementById('lockBtn');
-  const lockSub=document.getElementById('lockSubText');
-  if(credits>0){
-    if(lockBtn)lockBtn.textContent=`🔓 프리미엄 해석 보기 (${credits}회 보유)`;
-    if(lockSub)lockSub.textContent='크레딧을 사용해서 전문가급 해석을 확인하세요';
-  }else{
-    // [2026-05-23] ₩500 → ₩1,900 정본 통일(페이월 모달/카탈로그 pack_1 과 일치, 미끼가격 신뢰 직타 해소)
-    if(lockBtn)lockBtn.textContent='📜 프리미엄 해석 · ₩1,900';
-    if(lockSub)lockSub.textContent='융 심리학 · 전통 해몽서 · 학술 연구 기반 분석';
-  }
+  renderConversionLock(data,inp,credits);
   document.getElementById('detailLock').style.display='block';
   document.getElementById('detailFull').style.display='none';
   // Premium / Plus / dev unlock 시 자동 잠금 해제

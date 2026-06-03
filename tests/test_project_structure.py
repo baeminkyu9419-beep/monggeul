@@ -309,3 +309,71 @@ class TestDistFreshness:
             f"dist/ 가 src/ 보다 오래됨 — rebuild 필요.\n"
             f"dist/index.html mtime: {dist_mtime}\nsrc/app.js mtime: {src_mtime}"
         )
+
+
+# ═══════════════════════════════════════════════════════════════
+# 전환 모먼트(잠금 화면) 고도화 — 변경 민감 회귀 방어 (2026-06-03)
+# ═══════════════════════════════════════════════════════════════
+class TestConversionLock:
+    """프리미엄 잠금 = 전환 모먼트. 연구(freemium=욕구 제조) 기반 4요소를 핀.
+
+    이 테스트가 존재하는 이유: 무료→유료 CTA 는 매출의 80%가 걸린 단일 지점인데
+    과거엔 '융 심리학·전통 해몽서' 한 줄짜리 제네릭 서브텍스트뿐이었다.
+    맥락 후킹 / 가치 스택(실제 산출물 4종) / 가격 앵커 / 신뢰선을 추가했고,
+    다음 세션이 무심코 되돌리면 이 단언이 FAIL 하도록 결합한다.
+    """
+
+    DREAM_JS = (ROOT / "src" / "tabs" / "dream.js").read_text(encoding="utf-8")
+    INDEX = (ROOT / "index.html").read_text(encoding="utf-8")
+    CSS = (ROOT / "src" / "styles" / "main.css").read_text(encoding="utf-8")
+
+    def test_render_conversion_lock_exists(self):
+        """전환 잠금 렌더 함수가 dream.js 에 존재 + showResult 가 호출."""
+        assert "function renderConversionLock" in self.DREAM_JS, "renderConversionLock 함수 누락"
+        assert "renderConversionLock(data,inp,credits)" in self.DREAM_JS, (
+            "showResult 가 renderConversionLock 을 호출하지 않음 — 전환 잠금 미배선"
+        )
+
+    def test_contextual_hook_per_badge(self):
+        """맥락 후킹: 배지별 분기(흉몽/길몽/재물운 등)로 욕구 제조."""
+        for badge in ("흉몽", "길몽", "재물운", "연애운"):
+            assert badge in self.DREAM_JS, f"_LOCK_HOOKS 배지 분기 누락: {badge}"
+        assert "_LOCK_HOOKS" in self.DREAM_JS, "맥락 후킹 맵(_LOCK_HOOKS) 누락"
+
+    def test_value_stack_four_deliverables(self):
+        """가치 스택: 실제 산출물 4종(전통/심리/조언/깊은해석)이 명시."""
+        for item in ("전통 해몽서", "융 심리학", "현실 조언", "깊은 해석 1,000자"):
+            assert item in self.DREAM_JS, f"가치 스택 항목 누락: {item}"
+
+    def test_price_anchor_present(self):
+        """가격 앵커: 단건 ₩1,900 + 15회팩 회당 단가 정박."""
+        assert "₩1,900" in self.DREAM_JS, "단건 가격 앵커 ₩1,900 누락"
+        assert "1,327" in self.DREAM_JS, "15회팩 회당 단가 앵커 누락"
+
+    def test_pack_unit_price_math_is_honest(self):
+        """무결성: ₩1,327 주장이 실제 카탈로그(15팩 ₩19,900) 산수와 일치해야 함.
+
+        no-fabrication: 앵커 수치가 임의 조작이 아님을 코드로 강제.
+        """
+        sub = (ROOT / "src" / "services" / "subscription.js").read_text(encoding="utf-8")
+        assert "19900" in sub, "subscription.js 에 15팩 정가(19900) 부재 — 앵커 근거 소실"
+        unit = round(19900 / 15)  # = 1327
+        assert unit == 1327, f"15팩 회당 단가 산수 불일치: {unit}"
+        assert "1,327" in self.DREAM_JS, "코드 앵커가 실제 산수(₩1,327)와 불일치"
+
+    def test_lock_dom_slots_exist(self):
+        """index.html 에 전환 잠금 DOM 슬롯이 존재(JS 가 채울 대상)."""
+        for slot in ("lockHook", "lockValueStack", "lockPriceRow", "lockTrust"):
+            assert f'id="{slot}"' in self.INDEX, f"잠금 DOM 슬롯 누락: {slot}"
+
+    def test_lock_value_stack_css_exists(self):
+        """가치 스택/가격/신뢰선 스타일이 main.css 에 정의."""
+        for cls in (".lock-hook", ".lock-value-stack", ".lock-vitem", ".lock-price-now", ".lock-trust"):
+            assert cls in self.CSS, f"전환 잠금 CSS 누락: {cls}"
+
+    def test_credit_path_suppresses_price(self):
+        """크레딧 보유 시 가격 행 숨김(결제 마찰 0 — 즉시 사용 유도)."""
+        # credits>0 분기에서 priceEl.style.display='none'
+        assert "priceEl.style.display='none'" in self.DREAM_JS, (
+            "크레딧 보유 경로에서 가격 숨김 누락 — 마찰 0 경로 깨짐"
+        )
