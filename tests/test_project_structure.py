@@ -227,17 +227,16 @@ class TestEdgeFunctionsStructure:
         "stripe-webhook",
         "toss-checkout",
         "toss-confirm",
-        "toss-payment-confirm",
-        "toss-payment-ready",
-        "toss-payment-webhook",
         "toss-webhook",
+        # 2026-06-03 dedup: toss-payment-{ready,confirm,webhook} (v2 dead code) 삭제.
+        # 우월 로직은 v1 toss-{confirm,webhook} 으로 병합. tests/test_toss_routing.py 참조.
     ]
 
     def test_edge_functions_dir_exists(self):
         assert self.EDGE_FUNCTIONS_DIR.is_dir(), "supabase/functions/ 디렉토리 없음"
 
     def test_function_count_matches_expected(self):
-        """15 function 디렉토리 전수 존재 검증"""
+        """12 function 디렉토리 전수 존재 검증 (toss v2 dedup 후: 15→12)"""
         actual = sorted(
             d.name for d in self.EDGE_FUNCTIONS_DIR.iterdir()
             if d.is_dir() and not d.name.startswith(("_", "."))
@@ -266,8 +265,6 @@ class TestEdgeFunctionsStructure:
         "push-subscribe",
         "toss-checkout",
         "toss-confirm",
-        "toss-payment-confirm",
-        "toss-payment-ready",
     ]
 
     @pytest.mark.parametrize("func_name", INTERACTIVE_FUNCTIONS)

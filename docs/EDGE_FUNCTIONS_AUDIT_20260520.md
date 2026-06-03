@@ -3,6 +3,18 @@
 **plan**: closing plan `ec15dbb04` Task 3.
 **핵심 발견**: toss-* 6개 = **v1 (legacy) + v2 (신규) 병존 패턴** (중복 아닌 버전 분기).
 
+> **2026-06-03 정리 완료 (dedup)**: 클라이언트 source 전수 grep 결과 — `src/services/pg-toss.js` → `toss-checkout`, `src/services/payment.js` → `toss-confirm` 만 호출.
+> v2 (`toss-payment-ready/confirm/webhook`) 는 **source/html/config 어디에서도 호출 없음 = dead code**. 따라서:
+> 1. v2 의 schema-backed 우월 로직(구독 confirm 시 `users.subscription_tier` 갱신 · 취소 시 tier 초기화 · 빌링 갱신 시 `subscription_renewed` 이벤트)을 **v1 3개로 병합**.
+> 2. v2 3개 함수 **삭제**. (단 v2 webhook 의 `BILLING_KEY_ISSUED` 핸들러는 `billing_keys` 테이블이 마이그레이션에 부재 → 병합 제외.)
+> 3. 회귀 단위테스트 `tests/test_toss_routing.py` 추가 (라우팅 + dedup 불변식 + 뮤테이션 민감도).
+> **결과: toss-* 6 → 3 (단일 결제 라우팅).** 본 §5 권고가 실행됨. 아래 §3·§5·§6 의 일부 옛 판정은 정정됨(§정정 참조).
+
+## §정정 (2026-06-03)
+- (§3·§36) "v1 webhook HMAC 본문 미확인" → 실측: v1 `toss-webhook` 도 **동일 상수시간 HMAC-SHA256 비교 보유**. v2 가 보안상 우월하다는 판정은 webhook 에 한해 **오류**.
+- (§5·§62) "v1 toss-checkout 가격 서버 검증 부재" → 실측: v1 `toss-checkout` 은 `products` 테이블에서 **서버사이드 정본 가격 조회**(L66-80) = v2 의 하드코딩 `PRODUCT_PRICE_MAP` 보다 오히려 견고. 가격 조작 위험 판정은 **오류**.
+- 결론 정정: v2 가 진정 우월한 부분은 confirm/webhook 의 `users` tier 동기화 + `subscription_renewed` 이벤트뿐 → 이것만 v1 으로 병합하고 v2 삭제.
+
 ## §1 전수 매핑 (15개)
 
 | Function | 책임 | Group |

@@ -162,6 +162,12 @@ serve(async (req) => {
             expires_at: expiresAt.toISOString(),
             is_active: true,
           })
+
+          // users 테이블 tier 갱신 (구 toss-payment-confirm v2 에서 통합)
+          await supabaseAdmin.from('users').update({
+            subscription_tier: 'pro',
+            subscription_expires_at: expiresAt.toISOString(),
+          }).eq('id', user.id)
         }
       }
 

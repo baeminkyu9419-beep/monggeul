@@ -82,12 +82,20 @@ serve(async (req) => {
             await supabase.from('entitlements').update({
               is_active: false,
             }).eq('payment_id', payment.id)
+
+            // pro 구독 취소 시 users 테이블 tier 초기화 (구 toss-payment-webhook v2 에서 통합)
+            if (payment.product_id === 'pro_monthly') {
+              await supabase.from('users').update({
+                subscription_tier: 'free',
+                subscription_expires_at: null,
+              }).eq('id', payment.user_id)
+            }
           }
 
           await supabase.from('events').insert({
             user_id: payment.user_id,
             event: 'payment_cancelled',
-            properties: { pg: 'toss', order_id: data.orderId, reason: data.cancels?.[0]?.cancelReason },
+            properties: { pg: 'toss', order_id: data.orderId, reason: data.cancels?.[0]?.cancelReason, status: data.status },
           })
         }
         break
@@ -132,9 +140,31 @@ serve(async (req) => {
           .eq('user_id', userId)
           .eq('type', 'subscription')
           .eq('product_id', product.id)
+
+          // users 테이블 갱신 + 갱신 이벤트 (구 toss-payment-webhook v2 에서 통합)
+          await supabase.from('users').update({
+            subscription_tier: 'pro',
+            subscription_expires_at: expiresAt.toISOString(),
+          }).eq('id', userId)
+
+          await supabase.from('events').insert({
+            user_id: userId,
+            event: 'subscription_renewed',
+            properties: {
+              pg: 'toss',
+              product_id: product.id,
+              order_id: data.orderId,
+              amount: data.totalAmount,
+              expires_at: expiresAt.toISOString(),
+            },
+          })
         }
         break
       }
+
+      default:
+        // 알 수 없는 이벤트는 무시하고 200 반환 (토스 재전송 방지)
+        break
     }
 
     return new Response(JSON.stringify({ received: true }), {
