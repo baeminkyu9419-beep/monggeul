@@ -141,8 +141,9 @@ serve(async (req) => {
       }
     }
 
-    // DB에 pending 결제 레코드 (팩 단건일 때) — amount 는 항상 serverSidePrice 사용
-    if (isPack && orderId) {
+    // DB에 pending 결제 레코드 (팩 + one_time 단건일 때) — amount 는 항상 serverSidePrice 사용
+    // one_time 도 포함: stripe-webhook one_time 분기가 order_id 로 confirmed 처리 (감사 대칭)
+    if ((isPack || isOneTime) && orderId) {
       const supabaseAdmin = createClient(
         Deno.env.get('SUPABASE_URL')!,
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!

@@ -43,6 +43,8 @@ serve(async (req) => {
         const productId = session.metadata?.product_id || ''
         const orderId = session.metadata?.order_id || ''
         const isPack = productId.startsWith('pack_')
+        // 단건 one_time (무의식 프로파일 등) — create-checkout isOneTime 분기와 동기
+        const isOneTime = productId === 'unconscious_profile'
         // starlight 하위호환
         const entitlementKey = tier === 'starlight' ? 'plus' : tier
 
@@ -88,6 +90,27 @@ serve(async (req) => {
               premium_credits: currentCredits + packCount,
               updated_at: new Date().toISOString(),
             })
+          } else if (isOneTime) {
+            // ── 단건 one_time 결제 (무의식 프로파일 등): 영구 1회 권한 ──
+            // 구독/크레딧 아님. toss-payment-confirm grantEntitlement(one_time) 와 동일 처리.
+            // payments 테이블 업데이트 (pending 레코드 있으면 confirmed 처리)
+            if (orderId) {
+              await supabase.from('payments').update({
+                status: 'confirmed',
+                payment_key: session.payment_intent,
+                raw_response: session,
+                confirmed_at: new Date().toISOString(),
+              }).eq('order_id', orderId)
+            }
+
+            // 새 entitlements v2 테이블에 영구 권한 1회 부여
+            await supabase.from('entitlements').insert({
+              user_id: userId,
+              type: 'pack',
+              product_id: productId,
+              remaining: 1,
+              is_active: true,
+            })
           } else {
             // ── 구독 결제 ──
             const expiresAt = new Date()
@@ -129,7 +152,7 @@ serve(async (req) => {
             user_id: userId,
             platform: 'stripe',
             platform_account_ref: session.customer || '',
-            product_key: isPack ? productId : `monggeul_${entitlementKey}_monthly`,
+            product_key: (isPack || isOneTime) ? productId : `monggeul_${entitlementKey}_monthly`,
             transaction_ref: session.id,
             event_type: 'purchased',
             amount: (session.amount_total || 0) / 100,
@@ -145,6 +168,7 @@ serve(async (req) => {
               tier: entitlementKey,
               product_id: productId,
               is_pack: isPack,
+              is_one_time: isOneTime,
               stripe_session_id: session.id,
             },
           })
