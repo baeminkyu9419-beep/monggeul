@@ -11,6 +11,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { buildChatPayload } from "./prompts.ts"
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || ''
@@ -231,7 +232,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
-    const { endpoint, payload, mode } = JSON.parse(rawBody)
+    const { endpoint, payload, mode, task, params } = JSON.parse(rawBody)
 
     // 5. endpoint 화이트리스트
     if (!ALLOWED_ENDPOINTS.has(endpoint)) {
@@ -242,8 +243,25 @@ serve(async (req) => {
     }
 
     // 6. chat = 멀티 LLM (mode 'consensus' → 교차검증, 기본 → fallback 라우팅)
+    //    [보안] 시스템 프롬프트(IP)는 서버에서만 조립한다.
+    //    클라이언트는 task + params 만 전송하고, 서버가 buildChatPayload 로 messages(=시스템
+    //    프롬프트 포함)를 구성한다. 클라가 보낸 raw payload.messages 는 chat 에서 무시(차단)되어
+    //    프롬프트 인젝션·우회 불가.
     if (endpoint === 'chat') {
-      const data = mode === 'consensus' ? await _chatConsensus(payload) : await _chatFallback(payload)
+      if (!task || typeof task !== 'string') {
+        return new Response(JSON.stringify({ error: 'Missing task' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      const builtPayload = buildChatPayload(task, params)
+      if (!builtPayload) {
+        return new Response(JSON.stringify({ error: 'Invalid task' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      const data = mode === 'consensus' ? await _chatConsensus(builtPayload) : await _chatFallback(builtPayload)
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,

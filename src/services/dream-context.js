@@ -190,16 +190,9 @@ window.submitDreamContext = function() {
   }
 };
 
-// ── lifeStage별 프롬프트 분기 ──
-const LIFE_STAGE_PROMPTS = {
-  '학생': '이 사용자는 학생이야. 시험/성적/진로/교우관계 관점에서 해석을 풀어줘. 학업 스트레스, 미래 불안, 자아 정체성 탐색과 연결해서 따뜻하게 조언해줘.',
-  '취준생': '이 사용자는 취준생이야. 취업 불안, 자존감, 면접/합격에 대한 기대와 두려움 관점으로 해석해줘. 현실적이고 용기를 주는 조언을 해줘.',
-  '직장인': '이 사용자는 직장인이야. 직장 내 인간관계, 성과 압박, 번아웃, 승진/이직 고민과 연결해서 해석해줘. 워라밸 관점에서도 조언해줘.',
-  '이직 고민': '이 사용자는 이직을 고민하고 있어. 변화에 대한 두려움, 새로운 시작, 현재 상황에 대한 불만족감 관점으로 해석해줘. 결정에 도움이 되는 따뜻한 관점을 줘.',
-  '연애/결혼': '이 사용자는 연애나 결혼과 관련된 시기를 보내고 있어. 관계의 깊이, 신뢰, 미래 계획, 감정적 교류 관점에서 해석해줘.',
-  '육아': '이 사용자는 육아 중이야. 부모로서의 불안, 아이에 대한 걱정, 개인 시간 부족, 성장하는 가족과 연결해서 해석해줘. 공감과 위로를 담아줘.',
-  '은퇴/쉬는 중': '이 사용자는 쉬는 기간이야. 새로운 정체성 찾기, 여유와 공허함 사이의 감정, 다음 단계에 대한 고민과 연결해서 해석해줘.'
-};
+// [보안] lifeStage별 해석 지시문(LIFE_STAGE_PROMPTS)은 서버(openai-proxy/prompts.ts)로 이관됨.
+// 클라는 lifeStage 키만 보유/전송한다(getLifeStageKey). UI 선택지 키 목록은 아래 getFollowUpQuestions
+// options(학생/취준생/직장인/이직 고민/연애·결혼/육아/은퇴·쉬는 중)에 그대로 유지된다.
 
 // ── GPT 프롬프트에 맥락 주입 ──
 export function getContextForPrompt() {
@@ -220,10 +213,14 @@ export function getContextForPrompt() {
 }
 
 // ── lifeStage 기반 시스템 프롬프트 보강 ──
-export function getLifeStagePrompt() {
+// [보안: 프롬프트 IP 서버 격리]
+// 이전: LIFE_STAGE_PROMPTS 해석 지시문을 클라에서 조립해 LLM 으로 전송 → dist 번들 평문 노출.
+// 이후: 서버(openai-proxy/prompts.ts)가 lifeStage 키 → 지시문 매핑을 보유. 클라는 키만 전송.
+//   getLifeStageKey() 가 키('학생'/'육아' 등)를 반환하고, dream.js 가 params.lifeStage 로 전송한다.
+// LIFE_STAGE_PROMPTS 텍스트는 더 이상 클라에 두지 않는다(서버 격리).
+export function getLifeStageKey() {
   const ctx = getUserContext();
-  if (!ctx.lifeStage) return '';
-  return LIFE_STAGE_PROMPTS[ctx.lifeStage] || '';
+  return ctx.lifeStage || '';
 }
 
 window.showContextQuestions = showContextQuestions;

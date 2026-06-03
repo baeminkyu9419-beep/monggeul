@@ -4,7 +4,7 @@
 import { showToast } from '../components/toast.js';
 import { logEvent } from '../services/analytics.js';
 import { trackFunnelStep } from '../utils/funnel.js';
-import { callOpenAI } from '../services/api.js';
+import { callChat } from '../services/api.js';
 
 export function openMonthlyReport(){
   logEvent('monthly_report_opened');
@@ -134,22 +134,19 @@ export async function generateGPTNarrative(){
   const topEmos=Object.entries(emoCount).sort(function(a,b){return b[1]-a[1];}).slice(0,3).map(function(e){return e[0];});
   const titles=monthLogs.slice(0,5).map(function(l){return l.title||'';}).filter(Boolean);
 
-  const prompt='당신은 따뜻한 꿈 분석가 달이입니다. 아래 데이터를 바탕으로 이번 달 꿈 리포트 내러티브를 3~5문장으로 작성하세요.\n'
-    +'- 이번 달 꿈 수: '+monthLogs.length+'개\n'
-    +'- 길몽: '+(badgeCount['길몽']||0)+', 흉몽: '+(badgeCount['흉몽']||0)+'\n'
-    +'- 주요 키워드: '+topKws.join(', ')+'\n'
-    +'- 주요 감정: '+topEmos.join(', ')+'\n'
-    +'- 최근 꿈 제목: '+titles.join(', ')+'\n\n'
-    +'톤: 탐색적이고 따뜻하게. 단정적 진단 금지. "~일 수 있어요" 어조 사용. 공포 마케팅 금지.';
-
   const el=document.getElementById('reportAiText');
   if(el)el.innerHTML='<span style="color:var(--text-muted)">🤖 AI가 분석 중...</span>';
 
   try{
-    const data=await callOpenAI('chat',{
-      model:'gpt-4o-mini',
-      messages:[{role:'system',content:'당신은 꿈 분석 전문가 달이입니다. 따뜻하고 탐색적인 톤으로 이야기합니다. 진단이 아닌 탐색적 표현만 사용합니다.'},{role:'user',content:prompt}],
-      max_tokens:300,temperature:0.8
+    // [보안] 프롬프트는 서버(openai-proxy/prompts.ts)에서 task='monthly_report' 로 조립.
+    //   클라는 본인 월간 통계 데이터(params)만 전송한다.
+    const data=await callChat('monthly_report',{
+      count:monthLogs.length,
+      good:(badgeCount['길몽']||0),
+      bad:(badgeCount['흉몽']||0),
+      keywords:topKws,
+      emotions:topEmos,
+      titles:titles
     });
     const text=data.choices?.[0]?.message?.content||'';
     if(el&&text)el.innerHTML=text.replace(/\n/g,'<br>');

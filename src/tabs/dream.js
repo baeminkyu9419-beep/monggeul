@@ -1,6 +1,6 @@
 // 몽글몽글 — 해몽 탭
 import { store } from '../store.js';
-import { callOpenAI } from '../services/api.js';
+import { callOpenAI, callChat } from '../services/api.js';
 import { showToast } from '../components/toast.js';
 import { showPaywall, showPremiumPaywall } from '../components/paywall.js';
 import { drawRadar, drawRadarCompare, drawDualRadar } from '../components/radar.js';
@@ -10,7 +10,7 @@ import { logEvent } from '../services/analytics.js';
 import { trackFunnelStep } from '../utils/funnel.js';
 import { esc, sanitize, validateDreamResult } from '../utils/sanitize.js';
 import { addXP, ALL_DICT_REF } from './my.js';
-import { getContextForPrompt, getLifeStagePrompt, showContextQuestions } from '../services/dream-context.js';
+import { getContextForPrompt, getLifeStageKey, showContextQuestions } from '../services/dream-context.js';
 import { demoResult, _evaluateRichness } from './dream-demo.js';
 import { isNonsenseInput } from '../utils/dream-validator.js';
 import { shareResult, generateShareCard, generateDreamThumbnail, generateResultThumbnail } from './dream-share.js';
@@ -187,12 +187,9 @@ export async function analyzeDream(){
   document.getElementById('dreamInput').blur();
   const userContext=getContextForPrompt();
   const emotionContext=getEmotionContext();
-  // 감정 강도 톤 조절: 부정 감정 키워드가 많으면 위로 모드
-  const negWords=['무서','공포','불안','두려','겁','슬프','울','죽','쫓','떨어','악몽','가위'];
-  const negCount=negWords.filter(w=>inp.includes(w)).length;
-  const toneMod=negCount>=3?' 사용자가 매우 무서운 꿈을 꿔서 불안해하고 있어. 위로와 안심을 최우선으로 해석해줘. 긍정적 의미를 반드시 함께 제시하고 따뜻하게 마무리해.'
-    :negCount>=1?' 부정적 감정이 포함된 꿈이야. 공포 마케팅 없이 탐색적 어조로, 긍정적 해석도 균형 있게 제시해줘.':'';
-  const lifeStagePrompt=getLifeStagePrompt();
+  // [보안] 톤 보정(negWords)·lifeStage 해석 지시문은 서버(openai-proxy/prompts.ts)로 이관됨.
+  //   클라는 lifeStage 키만 전송하고, 서버가 입력에서 톤을 산출하고 지시문을 조립한다.
+  const lifeStageKey=getLifeStageKey();
   const fullInput=inp+userContext+emotionContext;
   document.getElementById('resultEl').classList.remove('on');
   document.querySelectorAll('#resultEl > [onclick]').forEach(el=>{if(el.textContent.includes('해금'))el.remove();});
@@ -210,31 +207,15 @@ export async function analyzeDream(){
     const dreamMode=(_dreamTier==='premium'||_dreamTier==='plus')?'consensus':undefined;
     // 1차 해석 (가벼운 호출 — 광고 시청 후 공개)
     // 2단계 1차: 빠른 응답 (제목/뱃지/점수/감정/미리보기만) — 즉시 표시 ~3초
-    const apiCall=callOpenAI('chat',{model:'gpt-4o',messages:[{role:'system',content:`너는 30년 경력 꿈 해석가야. 친구한테 얘기하듯 편하게.${toneMod}
-사용자가 적은 꿈에 실제로 나온 소재(등장인물·장소·사물·행동·감정)에 근거해서만 해석해. 입력에 없는 내용을 지어내지 말고, 누구에게나 들어맞는 일반론·뜬구름 잡는 말 금지. 입력이 짧으면 짧은 대로 그 소재에 집중해.
-영어·학술용어·불릿(■●✦) 금지. 자연스러운 글. 반드시 JSON으로만 응답.
-{
-  "title": "꿈 제목 (이모지+한글, 10자 이내)",
-  "badges": ["길몽","흉몽","태몽","연애운","재물운","건강운" 중 1~3개],
-  "stats": {"길흉":55,"연애운":40,"재물운":70,"건강운":50,"활력":65,"직관":60},
-  "emotions": ["이모지 감정명" 3~5개. 복합감정 가능],
-  "preview": "맛보기 해석 3~4문장. 입력한 꿈에 실제 등장한 구체적 소재(사람·장소·사물·행동)를 반드시 1개 이상 그대로 언급하며 짚어주고 '이 꿈엔 더 깊은 이야기가 숨어있어요...'로 마무리. <strong>강조</strong> 가능"
-}
-stats 규칙(필수): 각 항목은 반드시 0~100 사이의 정수. 위 숫자는 형식 예시일 뿐 그대로 쓰지 말고 꿈 내용에 맞게 0~100 범위로 산출. 보통 30~75 사이, 매우 길하면 80+, 매우 흉하면 20-. 음수·소수·0~10 같은 작은 값 금지.`},{role:'user',content:fullInput}],temperature:.85,max_tokens:700,response_format:{type:'json_object'}},dreamMode);
+    // [보안] 시스템 프롬프트는 서버(openai-proxy/prompts.ts)에서 task='dream_quick' 로 조립.
+    //   클라는 사용자 데이터(input)와 lifeStage 키만 전송한다.
+    const apiCall=callChat('dream_quick',{input:fullInput,lifeStage:lifeStageKey},dreamMode);
     const [data]=await Promise.all([apiCall,minLoadTime]);
     const raw=parseLLMJson(data.choices[0].message.content);
     showResult(validateDreamResult(raw)||demoResult(inp),inp);
     // 2단계 2차: 상세 해석 백그라운드 (전통/심리/조언/깊은해석 — 길고 자세하게)
-    callOpenAI('chat',{model:'gpt-4o',messages:[{role:'system',content:`너는 30년 경력 꿈 해석가야. 한국 할머니가 들려주는 해몽처럼 따뜻하고 자세하게.${toneMod}${lifeStagePrompt ? '\n' + lifeStagePrompt : ''}
-사용자가 적은 꿈에 실제 나온 소재를 각 항목에서 직접 짚어가며 해석해. 입력에 없는 장면을 지어내지 말고, 누구에게나 통하는 일반론은 피해. 그 사람의 그 꿈에만 해당하는 해석을 해.
-균형 규칙(중요): 좋은 의미만 늘어놓지 마. 흉몽·경고·주의가 필요한 꿈이면 그 부정적 의미도 솔직하게 짚어줘(예: 손실·갈등·건강·스트레스 경고). 단 겁주기로 끝내지 말고 반드시 '그래서 무엇을 하면 되는지' 건설적 행동으로 이어줘. 따뜻함 = 무조건 좋게 포장이 아니라, 불편한 진실도 다정하게 전하는 것.
-영어·학술용어·불릿(■●✦) 금지. 반드시 JSON으로만 응답.
-{
-  "traditional": "전통 해몽 이야기 300자 이상. 옛날 해몽책·할머니 민간 해석을 편하게 풀어서.",
-  "psychology": "마음 이야기 300자 이상. 이 꿈이 지금 마음 상태와 어떻게 연결되는지, 무의식이 뭘 말하는지 친구처럼.",
-  "advice": "현실 조언 250자 이상. 일주일 안에 해보면 좋을 것 3가지 구체적·현실적으로.",
-  "fullInterpretation": "깊은 해석 1000자 이상. 에세이처럼 자연스럽게. 꿈에 나온 것들 각각의 의미, 마음 상태, 앞으로의 힌트, 비슷한 꿈을 또 꾸면의 의미, 따뜻한 마무리까지. 목록·번호 금지, 단락만 나눠서."
-}`},{role:'user',content:fullInput}],temperature:.85,max_tokens:3500,response_format:{type:'json_object'}},dreamMode)
+    // [보안] task='dream_detail' — 서버에서 프롬프트+lifeStage 지시문 조립.
+    callChat('dream_detail',{input:fullInput,lifeStage:lifeStageKey},dreamMode)
       .then(d2=>{ const r2=parseLLMJson(d2.choices[0].message.content); if(window.showResultDetail)window.showResultDetail(r2); })
       .catch(()=>{ try{ if(window.showResultDetail)window.showResultDetail(demoResult(inp)); }catch(_){} });
   }catch(e){
