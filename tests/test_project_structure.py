@@ -12,7 +12,11 @@
 import pathlib
 import pytest
 
-ROOT = pathlib.Path(r"C:\JARVIS_NEW\projects\MONGGEUL")
+# [2026-06-03] 독립 repo(C:/Dev/monggeul) self-contained 화 — 하드코딩 외부경로
+#   C:\JARVIS_NEW\projects\MONGGEUL 는 스테일 구버전(git HEAD 불일치)을 가리켜
+#   본 repo 가 아닌 외부 복사본을 검증하던 결함. 다른 테스트 파일과 동일하게
+#   __file__ 기준 상대경로로 정정(이 파일은 tests/ 직하 → repo root = parent.parent).
+ROOT = pathlib.Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
 
 

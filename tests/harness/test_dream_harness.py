@@ -11,7 +11,9 @@ import pathlib
 
 import pytest
 
-ROOT = pathlib.Path(r"C:\JARVIS_NEW\projects\MONGGEUL")
+# [2026-06-03] 독립 repo self-contained 화 — 하드코딩 외부경로(스테일 구버전) 정정.
+#   이 파일은 tests/harness/ 하위 → repo root = parent.parent.parent.
+ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 SRC = ROOT / "src"
 
 
