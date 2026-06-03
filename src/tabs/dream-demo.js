@@ -29,7 +29,13 @@ function _match(k, keys){
   return false;
 }
 
+// 공개 진입점 — 내부 분기 결과를 받아 "깊은 해석 1,000자+" 약속을 충족하도록 보강.
+// 잠금(paywall) 가치스택이 약속한 분량을 데모/오프라인 경로에서도 실제로 지킨다(no-fabrication).
 export function demoResult(i){
+  return enrichInterpretation(_demoDispatch(i), i);
+}
+
+function _demoDispatch(i){
   const k=i.toLowerCase();
 
   // ═══ 신규 카테고리 (specific → generic 순) ═══
@@ -344,6 +350,112 @@ export function demoResult(i){
   if (dictMatch) return dictMatch;
   // 최종 fallback — 입력 키워드 기반 동적
   return _defaultResponse(i);
+}
+
+// ── 깊은 해석 보강 (잠금 가치스택 "1,000자+" 약속 충족) ─────────────────────
+// 분기 응답이 약속 분량에 못 미치면, 그 꿈 자체의 신호(배지·스탯·감정·제목)에서
+// 도출한 실제 해석 섹션을 덧붙여 1,000자 이상으로 채운다. 무의미한 패딩이 아니라
+// 각 응답마다 달라지는 맥락 해석(융 심리·운세 도메인별·반복 시 의미·기록 가이드).
+export const DEEP_MIN_LEN = 1000;
+
+// 스탯 점수(0~100)를 사람이 읽는 강도 라벨로
+function _band(v){
+  if (v >= 80) return '매우 강함';
+  if (v >= 65) return '좋은 편';
+  if (v >= 50) return '평이';
+  if (v >= 35) return '약한 편';
+  return '주의 필요';
+}
+
+// 배지 기반 융 심리학 프레이밍 (그림자/원형/개성화) — 데이터 신호에서 도출
+function _jungLens(badges, title){
+  const b = badges || [];
+  if (b.includes('흉몽')) {
+    return `이런 꿈을 융 심리학에서는 "그림자(shadow)"의 작업으로 봐요. 두렵게 느껴진 장면일수록, 평소 의식이 외면해 온 감정이나 욕구가 형태를 갖고 찾아온 거예요. 무서웠다는 건 그만큼 그 메시지가 중요하다는 뜻이지, 나쁜 일의 예고가 아니에요. 그 장면이 무엇을 "보지 말라" 하고 있었는지 가만히 떠올려보면, 지금 삶에서 미뤄둔 진짜 주제가 보일 거예요.`;
+  }
+  if (b.includes('길몽') || b.includes('태몽') || b.includes('재물운')) {
+    return `융은 좋은 기운의 꿈을 "보상(compensation)"으로 설명했어요. 의식이 불안이나 결핍에 너무 기울어 있을 때, 무의식이 균형을 맞추려 풍요와 가능성의 이미지를 보내준다는 거죠. 이 꿈은 당신 안에 이미 그 좋은 기운을 받을 준비가 되어 있다는 신호예요. 밖에서 무언가 오기를 기다리기보다, 지금 마음의 문을 열어두는 게 핵심이에요.`;
+  }
+  return `융 심리학은 꿈을 "개성화(individuation)" — 진짜 자기 자신이 되어가는 여정의 한 장면으로 봐요. 이 꿈에 등장한 인물·장소·사물은 바깥세상 그대로가 아니라, 당신 내면의 어떤 부분이 잠시 모습을 빌려 나온 거예요. 가장 인상 깊었던 한 장면을 골라, "이건 내 안의 무엇일까" 물어보면 의외로 또렷한 답이 떠오를 때가 많아요.`;
+}
+
+// 스탯에서 도메인별 운세 한 줄 (실제 수치 기반 — 막연한 미사여구 금지)
+function _fortuneByDomain(stats){
+  const s = stats || {};
+  const rows = [
+    ['연애운', s.연애운],
+    ['재물운', s.재물운],
+    ['건강운', s.건강운],
+    ['활력', s.활력],
+  ].filter(([,v]) => typeof v === 'number');
+  if (!rows.length) return '';
+  const tips = {
+    '연애운': { hi:'마음을 표현하기 좋은 시기예요. 부담 없는 안부 한마디가 의외의 흐름을 만들 수 있어요.', mid:'서두르기보다 상대의 속도에 맞춰 천천히 다가가는 게 좋아요.', lo:'지금은 관계보다 자기 자신을 돌보는 데 에너지를 쓰는 게 더 도움이 돼요.' },
+    '재물운': { hi:'작은 기회도 흘려보내지 마세요. 들어온 제안은 거절보다 한 번 검토를.', mid:'큰 결정은 미루고, 새는 지출부터 가볍게 점검해보세요.', lo:'무리한 투자나 큰 지출은 잠시 멈추고 안정을 우선하는 게 좋아요.' },
+    '건강운': { hi:'몸과 마음의 컨디션이 받쳐주는 때예요. 좋은 습관 하나를 시작하기 좋아요.', mid:'피로가 쌓이기 전에 미리 쉬어주는 게 포인트예요.', lo:'충분한 수면이 지금 가장 필요해요. 무리한 일정은 줄여보세요.' },
+    '활력': { hi:'에너지가 차오르는 시기예요. 미뤄둔 일을 시작하기에 좋아요.', mid:'페이스를 일정하게 — 한 번에 하나씩이 비결이에요.', lo:'억지로 끌어올리기보다, 작은 회복부터 챙겨주세요.' },
+  };
+  const lines = rows.map(([name, v]) => {
+    const t = tips[name] || { hi:'', mid:'', lo:'' };
+    // 라벨(_band)과 톤이 어긋나지 않도록 같은 경계 사용: 65↑ 긍정, 50↑ 중립, 미만 보수
+    const tip = v >= 65 ? t.hi : (v >= 50 ? t.mid : t.lo);
+    return `· ${name} (${_band(v)}): ${tip}`;
+  });
+  return lines.join('\n');
+}
+
+// 반복 시 의미 + 기록 가이드 (회귀 사용자 유지 + 진짜 활용법)
+function _recurringNote(badges){
+  const b = badges || [];
+  const tone = b.includes('흉몽')
+    ? '같은 결의 꿈이 반복된다면, 그 주제가 아직 마음속에서 정리되지 않았다는 신호예요. 회피하기보다 한 번 정면으로 들여다볼 때가 됐다는 부드러운 재촉이에요.'
+    : '같은 꿈을 또 꾼다면, 무의식이 "이건 정말 중요하니 놓치지 마"라고 밑줄을 긋는 거예요. 그 꿈이 가리키는 방향으로 한 걸음 내디뎌볼 만해요.';
+  return tone;
+}
+
+// 분량 보강의 핵심 — 분기 응답에 깊이 섹션을 덧붙여 약속 분량 충족
+export function enrichInterpretation(result, input){
+  if (!result || typeof result !== 'object') return result;
+  let full = result.fullInterpretation || '';
+  // 이미 약속 분량을 채운 응답(예: 뱀·이빨 등 깊은 카테고리)은 그대로 둔다.
+  if (full.length >= DEEP_MIN_LEN) return result;
+
+  const badges = result.badges || [];
+  const title = (result.title || '').replace(/^[^가-힣A-Za-z]+/, '').trim();
+  const emotions = (result.emotions || []).map(e => String(e).replace(/[^가-힣A-Za-z ]/g, '').trim()).filter(Boolean);
+
+  const extra = [];
+  // 1) 융 심리학 렌즈 — 배지 기반, 응답마다 다름
+  if (!full.includes('융')) {
+    extra.push(`【융 심리학으로 한 번 더】\n${_jungLens(badges, title)}`);
+  }
+  // 2) 감정 결 — 응답이 담은 감정 라벨을 실제로 활용
+  if (emotions.length) {
+    extra.push(`【이 꿈에 흐른 감정】\n${emotions.join(' · ')} — 이 감정들이 꿈의 바탕 색이에요. 깨어난 직후 가장 오래 남은 감정 하나가, 지금 마음이 가장 하고 싶은 말이에요. 그 감정을 억누르기보다 "그럴 만했지" 하고 한 번 인정해주는 것만으로도 마음이 한결 가벼워져요.`);
+  }
+  // 3) 도메인별 운세 — 스탯 수치 기반(막연한 미사여구 아님)
+  const fortune = _fortuneByDomain(result.stats);
+  if (fortune && !full.includes('영역별 운세')) {
+    extra.push(`【영역별 운세 한눈에】\n${fortune}`);
+  }
+  // 4) 반복 시 의미
+  extra.push(`【또 이 꿈을 꾼다면】\n${_recurringNote(badges)}`);
+  // 5) 오늘의 작은 실천 — 기록/활용 가이드(회귀 유지)
+  extra.push(`【오늘의 작은 실천】\n이 꿈을 한 줄로 적어두세요. "오늘 ○○한 꿈을 꿨고, 깨어나니 ○○한 기분이었다." 이렇게 기록이 쌓이면, 반복되는 상징과 감정의 패턴이 보이기 시작해요. 그 패턴이야말로 당신만의 무의식 지도예요.`);
+
+  let merged = full;
+  for (const block of extra) {
+    if (merged.length >= DEEP_MIN_LEN) break;
+    // 【달이의 한마디】가 마지막에 오도록, 그 앞에 끼워 넣는다.
+    const moonIdx = merged.lastIndexOf('【달이의 한마디】');
+    if (moonIdx > 0) {
+      merged = merged.slice(0, moonIdx) + block + '\n\n' + merged.slice(moonIdx);
+    } else {
+      merged = merged + '\n\n' + block;
+    }
+  }
+  result.fullInterpretation = merged;
+  return result;
 }
 
 // EXTENDED_DICT 매칭 수집 — 196 entry 중 입력 키워드 매칭 list (max 5)
