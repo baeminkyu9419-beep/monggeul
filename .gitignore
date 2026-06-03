@@ -89,3 +89,9 @@ data/snapshots.json
 
 # Shared secrets (Mother sync)
 .env.shared
+
+# SEO build artifacts (generate-seo-pages.js) — 매 실행 timestamp churn 으로 working tree 오염.
+# lastBuildDate/pubDate(feed.xml)·lastmod(sitemap.xml) 가 new Date() 로 매번 갱신되어
+# 내용 변화 없이도 diff 가 발생함. 배포 시 generate 후 산출되는 파생물이므로 git 추적 제외.
+public/feed.xml
+public/sitemap.xml
