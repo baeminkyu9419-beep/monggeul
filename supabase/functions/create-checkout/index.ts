@@ -9,36 +9,50 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY')!
 const SITE_URL = Deno.env.get('SITE_URL') || 'https://baeminkyu9419-beep.github.io/monggeul'
 
+// 정본 SKU 집합 (payment.js PRODUCT_CATALOG + DB migration 20260407_reconcile_products 동기)
+//   구독:  pro_monthly(=plus alias) / plus_monthly / premium_monthly
+//   팩:    pack_1 / pack_5 / pack_15
+//   단건:  unconscious_profile (one_time)
+// 레거시 키(plus/pro/premium/starlight/pack_10)는 SKU_ALIAS 로 정본화 후 조회.
+
+// 레거시 SKU·tier → 정본 SKU 별칭 (payment.js SKU_ALIAS 와 동기)
+const SKU_ALIAS: Record<string, string> = {
+  pro: 'pro_monthly',                 // pg-stripe.js 레거시 tier ('pro')
+  plus: 'plus_monthly',               // checkout.js 레거시 tier
+  premium: 'premium_monthly',
+  starlight: 'plus_monthly',          // 구 Starlight = Plus
+  starlight_monthly: 'plus_monthly',
+}
+const resolveSku = (s: string): string => SKU_ALIAS[s] || s
+
 // 서버측 하드코딩 SKU → 원화 가격 표 (클라이언트 body.amount 신뢰 금지)
-// MONGGEUL CLAUDE.md '수익화 확정' 섹션의 가격 SSOT 와 동기화
+// 키는 정본 SKU 만 사용 (별칭은 resolveSku 로 통일된 뒤 조회)
 const _SKU_PRICE_TABLE: Record<string, number> = {
   // 구독 (월)
-  'plus': 3900,
-  'starlight': 3900,
-  'starlight_monthly': 3900,
-  'pro_monthly': 9900,        // 레거시 호환
-  'premium': 19900,
+  'pro_monthly': 9900,        // 레거시 = Plus 동의어
+  'plus_monthly': 3900,
+  'premium_monthly': 19900,
   // 팩 (단건)
   'pack_1': 1900,
   'pack_5': 7900,
-  'pack_10': 19900,
-  'pack_15': 19900,           // 15팩 SSOT
+  'pack_15': 19900,
+  // 단건 one_time
   'unconscious_profile': 2900,
 }
 
-// 구독 티어별 Stripe Price ID (기존 호환)
+// 구독 SKU별 Stripe Price ID (정본 키)
 const SUBSCRIPTION_PRICE_IDS: Record<string, string> = {
-  plus: Deno.env.get('STRIPE_PLUS_PRICE_ID') || '',
-  premium: Deno.env.get('STRIPE_PREMIUM_PRICE_ID') || '',
-  starlight: Deno.env.get('STRIPE_PLUS_PRICE_ID') || Deno.env.get('STRIPE_STARLIGHT_PRICE_ID') || '',
-  starlight_monthly: Deno.env.get('STRIPE_PLUS_PRICE_ID') || '',
+  pro_monthly: Deno.env.get('STRIPE_PLUS_PRICE_ID') || '',   // pro = plus alias → 동일 Price
+  plus_monthly: Deno.env.get('STRIPE_PLUS_PRICE_ID') || '',
+  premium_monthly: Deno.env.get('STRIPE_PREMIUM_PRICE_ID') || '',
 }
 
-// 팩 상품별 Stripe Price ID
+// 팩·단건 SKU별 Stripe Price ID (정본 키)
 const PACK_PRICE_IDS: Record<string, string> = {
   pack_1: Deno.env.get('STRIPE_PACK1_PRICE_ID') || '',
   pack_5: Deno.env.get('STRIPE_PACK5_PRICE_ID') || '',
-  pack_10: Deno.env.get('STRIPE_PACK10_PRICE_ID') || '',
+  pack_15: Deno.env.get('STRIPE_PACK15_PRICE_ID') || '',
+  unconscious_profile: Deno.env.get('STRIPE_PROFILE_PRICE_ID') || '',
 }
 
 const corsHeaders = {
@@ -78,39 +92,39 @@ serve(async (req) => {
     const orderId = body.order_id || ''
     const tier = body.tier || ''
 
-    // 팩 상품인지 구독인지 판별
-    const isPack = productId.startsWith('pack_')
-    let priceId: string
-    let mode: string
-
-    if (isPack) {
-      priceId = PACK_PRICE_IDS[productId] || ''
-      mode = 'payment'
-    } else if (productId === 'starlight_monthly' || SUBSCRIPTION_PRICE_IDS[tier]) {
-      priceId = SUBSCRIPTION_PRICE_IDS[productId] || SUBSCRIPTION_PRICE_IDS[tier] || ''
-      mode = 'subscription'
-    } else if (tier) {
-      // 하위호환: tier만 전달된 경우
-      priceId = SUBSCRIPTION_PRICE_IDS[tier] || ''
-      mode = 'subscription'
-    } else {
+    // 정본 SKU 결정 (product_id 우선, 없으면 레거시 tier) — 별칭 통일
+    const rawSku = productId || tier
+    if (!rawSku) {
       return new Response(JSON.stringify({ error: 'product_id or tier required' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
+    const sku = resolveSku(rawSku)
+
+    // 팩/단건(one_time) = 1회 결제, 그 외 = 구독
+    const isPack = sku.startsWith('pack_')
+    const isOneTime = sku === 'unconscious_profile'
+    let priceId: string
+    let mode: string
+    if (isPack || isOneTime) {
+      priceId = PACK_PRICE_IDS[sku] || ''
+      mode = 'payment'
+    } else {
+      priceId = SUBSCRIPTION_PRICE_IDS[sku] || ''
+      mode = 'subscription'
+    }
 
     if (!priceId) {
-      return new Response(JSON.stringify({ error: `No Stripe Price configured for: ${productId || tier}` }), {
+      return new Response(JSON.stringify({ error: `No Stripe Price configured for: ${sku}` }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
     // Gen113 iter#9.5 VULN_AUDIT Phase B-3-5 패치 [role-guard-bypass]
     // 서버측 가격 검증 — 클라이언트 body.amount 무시, SKU 테이블 가격으로 덮어쓰기
-    const lookupSku = productId || tier
-    const serverSidePrice = _SKU_PRICE_TABLE[lookupSku]
+    const serverSidePrice = _SKU_PRICE_TABLE[sku]
     if (serverSidePrice === undefined) {
-      return new Response(JSON.stringify({ error: `Unknown product SKU: ${lookupSku}` }), {
+      return new Response(JSON.stringify({ error: `Unknown product SKU: ${sku}` }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
