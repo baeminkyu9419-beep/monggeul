@@ -4,7 +4,7 @@ import { store } from '../store.js';
 import { showToast } from '../components/toast.js';
 import { showPaywall, showUnconsciousPaywall } from '../components/paywall.js';
 import { getUserTier } from '../services/subscription.js';
-import { esc } from '../utils/sanitize.js';
+import { esc, sanitize } from '../utils/sanitize.js';
 import { DICT_DATA, FORTUNES, QUIZ_DATA, REPORT_DATA, FLOW_DEMO } from '../utils/symbols.js';
 import { EXTENDED_DICT } from '../utils/dream-data.js';
 import { logEvent } from '../services/analytics.js';
@@ -709,9 +709,9 @@ export function renderReport(){
 
     narrative+=good>=bad?'꿈의 기운이 좋은 방향으로 흐르고 있어요 🌙':'충분히 쉬면서 마음을 돌봐주세요 🐱';
 
-    document.getElementById('reportAiText').innerHTML=narrative;
+    document.getElementById('reportAiText').innerHTML=sanitize(narrative);
   }else{
-    document.getElementById('reportAiText').innerHTML=data.ai;
+    document.getElementById('reportAiText').innerHTML=sanitize(data.ai||'');
   }
 }
 

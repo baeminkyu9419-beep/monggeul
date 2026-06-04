@@ -9,6 +9,7 @@ import { addXPSilent } from './my.js';
 import { generatePatternReport } from '../services/dream-pattern.js';
 import { canSuggestPremium, markPremiumSuggested } from '../services/subscription.js';
 import { detectSuggestionContext, pickSuggestionMessage } from '../utils/dali-premium-prompts.js';
+import { detectCrisis, CRISIS_HTML } from '../utils/crisis.js';
 
 // ── 달이 이해도 ──
 function getDaliStats(){
@@ -575,6 +576,14 @@ export async function sendChat(){
   inp.value='';addBubble(msg,'me');
   store.chatHist.push({role:'user',content:msg});
   localStorage.setItem('mg_chat_hist',JSON.stringify(store.chatHist.slice(-20)));
+
+  // [정신건강 안전망] 1인칭 자기위해/자살 사고 감지 시 전문 상담 안내 우선 노출.
+  //   꿈 서술은 detectCrisis 내부에서 제외 → 정상 해몽 가로채기 0.
+  if(detectCrisis(msg)){
+    logEvent('crisis_guidance_shown',{len:msg.length});
+    const _m=document.getElementById('chatMsgs');
+    if(_m){const _c=document.createElement('div');_c.className='cbbl crisis';_c.innerHTML=CRISIS_HTML;_m.appendChild(_c);_m.scrollTop=_m.scrollHeight;}
+  }
 
   document.getElementById('daliFollowup').style.display='none';
 

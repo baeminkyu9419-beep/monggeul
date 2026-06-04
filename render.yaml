@@ -7,6 +7,19 @@ services:
     envVars:
       - key: DEPLOY_BASE
         value: "/"
+      # 아래는 공개값(시크릿 아님) — Render 대시보드에서 값 입력 시 dist/config.js 로 자동 주입(scripts/gen-config.js)
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: ADSENSE_CLIENT
+        sync: false
+      - key: ADSENSE_SLOT
+        sync: false
+      - key: GA_ID
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
     routes:
       - type: rewrite
         source: /*
