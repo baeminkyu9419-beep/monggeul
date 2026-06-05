@@ -82,14 +82,20 @@ async function _withRetry(url, options) {
           await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]));
           continue;
         }
-        throw new Error('요청이 너무 많아요. 잠시 후 다시 시도해 주세요.');
+        throw _fbErr('rate_limited', '요청이 너무 많아요. 잠시 후 다시 시도해 주세요.');
       }
       // 503 = 기능 비활성(예: image 생성 OFF) → 복구 불가, retry 무의미. 즉시 throw.
       if (res.status >= 500 && res.status !== 503 && attempt < MAX_RETRIES) {
         await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]));
         continue;
       }
-      throw new Error('API 요청 실패: ' + res.status);
+      // HTTP 상태별 정확한 폴백 사유 — '왜 LLM 이 아닌지'를 구체적으로 남긴다.
+      const _reason = res.status === 401 || res.status === 403 ? 'invalid_anon_key'
+        : res.status === 404 ? 'edge_function_not_found'
+        : res.status === 503 ? 'llm_provider_unavailable'
+        : res.status >= 500 ? 'llm_provider_error'
+        : 'http_' + res.status;
+      throw _fbErr(_reason, 'API 요청 실패: ' + res.status);
     } catch (e) {
       lastError = e;
       if (e.name === 'AbortError') {
