@@ -212,15 +212,17 @@ export async function analyzeDream(){
     const apiCall=callChat('dream_quick',{input:fullInput,lifeStage:lifeStageKey},dreamMode);
     const [data]=await Promise.all([apiCall,minLoadTime]);
     const raw=parseLLMJson(data.choices[0].message.content);
-    showResult(validateDreamResult(raw)||demoResult(inp),inp);
+    const valid=validateDreamResult(raw);
+    if(valid){ valid.engine='llm'; valid.isFallback=false; valid.model=data.model||data._provider||'llm'; showResult(valid,inp); }
+    else { showResult(demoResult(inp,'invalid_llm_response'),inp); }  // LLM 응답했으나 형식 무효 → 명시적 폴백
     // 2단계 2차: 상세 해석 백그라운드 (전통/심리/조언/깊은해석 — 길고 자세하게)
     // [보안] task='dream_detail' — 서버에서 프롬프트+lifeStage 지시문 조립.
     callChat('dream_detail',{input:fullInput,lifeStage:lifeStageKey},dreamMode)
       .then(d2=>{ const r2=parseLLMJson(d2.choices[0].message.content); if(window.showResultDetail)window.showResultDetail(r2); })
-      .catch(()=>{ try{ if(window.showResultDetail)window.showResultDetail(demoResult(inp)); }catch(_){} });
+      .catch(()=>{ try{ if(window.showResultDetail)window.showResultDetail(demoResult(inp,'detail_llm_failed')); }catch(_){} });
   }catch(e){
     await new Promise(r=>setTimeout(r,2000));
-    showResult(demoResult(inp),inp);
+    showResult(demoResult(inp, e&&e.fallbackReason ? e.fallbackReason : 'llm_call_failed'),inp);
     // 오프라인/API 실패 시 안내 + 입력 풍부도 평가
     setTimeout(()=>{
       const richness = _evaluateRichness ? _evaluateRichness(inp) : null;
@@ -440,6 +442,20 @@ export function showResult(data,inp){
     let _first=(_src.split(/(?<=[.!?…])\s+/)[0]||_src).trim();
     if(_first.length>62)_first=_first.slice(0,60)+'…';
     if(_first){_catch.textContent=_first;_catch.style.display='block';}else{_catch.style.display='none';}
+  }
+  // [엔진 표시] LLM 해석 vs 데모 폴백 명시 — '왜 이렇게 단순하지'가 AI 탓이 아니라 'AI 가 안 돌고 있음'임을 알린다
+  const _eng=document.getElementById('engineStatus');
+  if(_eng){
+    if(data.isFallback){
+      const _rm={no_supabase_url:'백엔드 미연결',offline:'오프라인',llm_call_failed:'백엔드 연결 실패',invalid_llm_response:'AI 응답 오류',detail_llm_failed:'백엔드 연결 실패',no_backend:'백엔드 미연결'};
+      _eng.className='engine-status fallback';
+      _eng.textContent='⚠️ 데모 해석 ('+(_rm[data.fallbackReason]||'임시')+') — 키워드 기반 임시 해석이에요. AI 해석이 아니에요.';
+      _eng.style.display='block';
+    } else if(data.engine==='llm'){
+      _eng.className='engine-status llm';
+      _eng.textContent='🌙 AI 해석'+(data.model?' · '+String(data.model).replace('-latest',''):'');
+      _eng.style.display='block';
+    } else { _eng.style.display='none'; }
   }
   // 길몽/흉몽 오라 효과
   const resultEl=document.getElementById('resultEl');

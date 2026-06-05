@@ -16,14 +16,20 @@ async function fetchWithTimeout(url, options, timeoutMs) {
   }
 }
 
+// 폴백 사유를 error 에 태깅 — 호출부(dream.js)가 demoResult(inp, reason) 로 명시 전달해
+// 결과 객체에 engine/fallbackReason 을 박는다. "왜 LLM 이 아니라 폴백인지"를 절대 숨기지 않는다.
+function _fbErr(reason, msg) { const e = new Error(msg); e.fallbackReason = reason; return e; }
+
 // 내부 공통 전송기. body 는 호출자가 구성(chat=task/params, image=payload).
+// [라우팅 원칙] window.SUPABASE_URL '유무'로 LLM 가능 여부를 추측하지 않는다.
+//   endpoint 가 없으면 그것 자체가 명시적 실패(no_supabase_url)로 태깅돼 폴백되고,
+//   있으면 실제 호출 결과(성공=LLM / 실패=태깅된 폴백)로만 판단한다.
 async function _proxyFetch(body) {
   if (!window.SUPABASE_URL) {
-    throw new Error('해몽 기능을 준비 중이에요. 기본 해석을 보여드릴게요 🌙');
+    throw _fbErr('no_supabase_url', '해몽 백엔드(SUPABASE_URL)가 설정되지 않았어요.');
   }
-  // offline 즉시 fallback (retry 4초 대기 없이 — demoResult 로 바로)
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-    throw new Error('인터넷 연결을 확인해 주세요.');
+    throw _fbErr('offline', '인터넷 연결을 확인해 주세요.');
   }
   const url = window.SUPABASE_URL + '/functions/v1/openai-proxy';
   // openai-proxy 는 user JWT(auth.getUser) 필수 → 익명/로그인 세션의 access_token 우선, 없으면 anon key
@@ -94,7 +100,7 @@ async function _withRetry(url, options) {
         }
       }
       if (!navigator.onLine) {
-        throw new Error('인터넷 연결을 확인해 주세요.');
+        throw _fbErr('offline', '인터넷 연결을 확인해 주세요.');
       }
       if (attempt < MAX_RETRIES) {
         await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]));
@@ -102,6 +108,8 @@ async function _withRetry(url, options) {
       }
     }
   }
+  // 모든 재시도 소진 — 사유 미태깅이면 일반 호출실패로 표시(네트워크/CORS/함수부재/타임아웃 등)
+  if (lastError && !lastError.fallbackReason) lastError.fallbackReason = 'llm_call_failed';
   throw lastError;
 }
 

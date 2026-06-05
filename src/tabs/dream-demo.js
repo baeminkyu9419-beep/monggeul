@@ -29,10 +29,16 @@ function _match(k, keys){
   return false;
 }
 
-// 공개 진입점 — 내부 분기 결과를 받아 "깊은 해석 1,000자+" 약속을 충족하도록 보강.
-// 잠금(paywall) 가치스택이 약속한 분량을 데모/오프라인 경로에서도 실제로 지킨다(no-fabrication).
-export function demoResult(i){
-  return enrichInterpretation(_demoDispatch(i), i);
+// ⚠️ [폴백 사전 엔진 — 의미 추론(LLM) 엔진이 아님]
+//   _demoDispatch = 정규식 키워드 substring 매칭의 first-match-wins 캐스케이드로 카테고리를 골라
+//   미리 써둔 고정 해석을 반환한다. 이해/추론/상징조합/맥락반영 없음(매칭만).
+//   LLM 호출 실패·오프라인·백엔드 부재 시에만 쓰는 '최소 품질 보장' 폴백이다.
+//   → 결과에 engine:'fallback_dictionary', isFallback:true 를 부착해 LLM 결과와 절대 혼동되지 않게 한다.
+//   (이 엔진을 더 고도화하려 하지 말 것: first-match-wins 카테고리 충돌은 끝없는 순서조정 함정.
+//    진짜 품질은 LLM 경로[engine:'llm']에서 해결한다.)
+export function demoResult(i, fallbackReason){
+  const r = enrichInterpretation(_demoDispatch(i), i);
+  return { ...r, engine: 'fallback_dictionary', isFallback: true, fallbackReason: fallbackReason || 'no_backend' };
 }
 
 function _demoDispatch(i){

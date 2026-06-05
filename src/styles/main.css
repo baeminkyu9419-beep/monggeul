@@ -1196,3 +1196,8 @@ body::before{content:'';position:fixed;inset:0;background:var(--night);z-index:-
 
 /* 결과 핵심 한 줄 후킹 — 제목 아래, 분석 차트보다 먼저 */
 .result-catch{font-size:17px;line-height:1.55;color:var(--moon);text-align:center;font-weight:600;margin:4px 14px 16px;padding:0 4px;text-shadow:0 0 18px rgba(245,230,178,.12)}
+
+/* 엔진 상태 배지 — AI 해석 vs 데모 폴백 명시 */
+.engine-status{font-size:10.5px;line-height:1.5;text-align:center;border-radius:9px;padding:5px 10px;margin:0 14px 12px}
+.engine-status.llm{color:var(--teal,#5bbfba);background:rgba(91,191,186,.08);border:1px solid rgba(91,191,186,.2)}
+.engine-status.fallback{color:#f3b34a;background:rgba(248,201,76,.08);border:1px solid rgba(248,201,76,.28)}

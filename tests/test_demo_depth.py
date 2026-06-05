@@ -88,7 +88,10 @@ class TestDemoInterpretationDepth:
         """enrichInterpretation 이 demoResult 의 단일 출구에 배선됐는지(소스 레벨)."""
         text = DEMO.read_text(encoding="utf-8")
         assert "export function enrichInterpretation" in text, "enrichInterpretation 누락"
-        assert "return enrichInterpretation(_demoDispatch(i), i);" in text, (
+        # (2026-06-05: 결과에 engine 태그 부착 위해 'const r = enrichInterpretation(...); return {...r,...}'
+        #  형태로 래핑됨 — return 한 줄 형태에 의존하지 않고 호출 배선 자체를 잠근다. 런타임 1,000자
+        #  검증은 test_every_demo_meets_promised_length 가 별도 보호.)
+        assert "enrichInterpretation(_demoDispatch(i), i)" in text, (
             "demoResult 가 enrichInterpretation 으로 보강하지 않음 — 약속-산출물 괴리 위험"
         )
 
