@@ -15,11 +15,18 @@ async function verifyStripeSignature(payload: string, sigHeader: string, secret:
     const timestamp = parts['t']
     const signature = parts['v1']
     if (!timestamp || !signature) return false
+    // [보안] replay 방지 — 타임스탬프 허용오차 5분(Stripe 권장)
+    const tsSec = parseInt(timestamp, 10)
+    if (!Number.isFinite(tsSec) || Math.abs(Date.now() / 1000 - tsSec) > 300) return false
     const signedPayload = `${timestamp}.${payload}`
     const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
     const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(signedPayload))
     const expectedSig = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('')
-    return expectedSig === signature
+    // [보안] 상수시간 비교 — 타이밍 공격 방지(toss-webhook 패턴과 동일)
+    if (expectedSig.length !== signature.length) return false
+    let mismatch = 0
+    for (let i = 0; i < expectedSig.length; i++) mismatch |= expectedSig.charCodeAt(i) ^ signature.charCodeAt(i)
+    return mismatch === 0
   } catch { return false }
 }
 
