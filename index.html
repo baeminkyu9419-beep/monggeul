@@ -145,24 +145,19 @@ html,body{height:100%;margin:0;background:#0e0c1a;color:#f0ecff;font-family:'Not
       <div style="text-align:center;padding:20px 0 16px;">
         <h1 style="font-family:'Gowun Dodum',serif;font-size:var(--fs-h1);color:var(--moon);line-height:1.4;margin-bottom:6px;text-shadow:0 0 20px rgba(245,230,178,.15),0 0 40px rgba(166,124,239,.1);">오늘 꾼 꿈,<br>몽글몽글이 해석해드려요</h1>
         <p style="font-size:var(--fs-body);color:var(--text-secondary);line-height:1.5;margin-bottom:6px;">길몽·흉몽·연애운·재물운까지 한눈에</p>
-        <p style="font-size:var(--fs-caption);color:var(--text-muted);display:flex;align-items:center;justify-content:center;gap:4px;">지금까지 <strong style="color:var(--amber)" id="heroCounter">1,331</strong>명이 해몽했어요</p>
-        <div id="liveCounter" style="margin-top:6px;display:flex;align-items:center;justify-content:center;gap:5px;font-size:10px;color:var(--teal);">
-          <span style="width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pl 2s ease-in-out infinite;"></span>
-          <span id="liveCountText"></span>
-        </div>
+        <p id="heroStat" style="font-size:var(--fs-caption);color:var(--text-muted);min-height:18px;"></p>
       </div>
       <script>
+      // [정직] 날조 소셜프루프('1,331명'·랜덤 '지금 N명 해몽 중') 제거 — 사용자 본인의 실제 기록 수만 노출
       (function(){
-        const h=new Date().getHours();
-        const base=h>=22||h<6?340:h>=6&&h<9?880:h>=9&&h<12?1280:h>=12&&h<18?980:660;
-        const jitter=Math.floor(Math.random()*150);
-        const el=document.getElementById('liveCountText');
-        if(el)el.textContent='지금 '+(base+jitter)+'명이 해몽 중';
-        // 30초마다 약간씩 변동
-        setInterval(()=>{
-          const n=base+Math.floor(Math.random()*150);
-          if(el)el.textContent='지금 '+n+'명이 해몽 중';
-        },30000);
+        try{
+          const logs=JSON.parse(localStorage.getItem('mg_logs')||'[]');
+          const el=document.getElementById('heroStat');
+          if(!el)return;
+          el.innerHTML = logs.length>0
+            ? `지금까지 <strong style="color:var(--amber)">${logs.length}</strong>개의 꿈을 기록했어요`
+            : '오늘 꾼 꿈을 기록하고 의미를 찾아보세요 🌙';
+        }catch(e){}
       })();
       </script>
 
