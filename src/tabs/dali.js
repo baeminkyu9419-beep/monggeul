@@ -612,6 +612,7 @@ export async function sendChat(){
     }
 
     // [해몽: 제목|길몽/흉몽|핵심상징] 추출 → 해몽 카드 + 꿈 기록 저장
+    let cardHtml='';
     const interpMatch=reply.match(/\[해몽:\s*(.+?)\|(.+?)\|(.+?)\]/);
     if(interpMatch){
       reply=reply.replace(interpMatch[0],'').trim();
@@ -631,10 +632,10 @@ export async function sendChat(){
       logs.unshift(newLog);
       localStorage.setItem('mg_logs',JSON.stringify(logs));
 
-      // 해몽 카드를 응답 뒤에 붙임
-      reply+=`\n<div class="dali-interp-card">
-        <div class="dali-interp-header"><span>${dreamType==='길몽'?'☀️':'🌧️'}</span> <b>${dreamTitle}</b></div>
-        <div class="dali-interp-badges"><span class="badge ${dreamType==='길몽'?'bl':'bb'}">${dreamType}</span> <span class="badge bl">${dreamSymbol}</span></div>
+      // 해몽 카드 — LLM 값은 esc 로 무해화, 카드는 신뢰 HTML 로 렌더(replaceTypingBubble 3번째 인자)
+      cardHtml=`\n<div class="dali-interp-card">
+        <div class="dali-interp-header"><span>${dreamType==='길몽'?'☀️':'🌧️'}</span> <b>${esc(dreamTitle)}</b></div>
+        <div class="dali-interp-badges"><span class="badge ${dreamType==='길몽'?'bl':'bb'}">${esc(dreamType)}</span> <span class="badge bl">${esc(dreamSymbol)}</span></div>
         <div class="dali-interp-saved">📖 꿈 기록에 저장됐어요</div>
         <div class="dali-dream-img" id="dreamImg${Date.now()}"><div class="dali-img-loading">🎨 꿈을 그려보는 중...</div></div>
       </div>`;
@@ -674,7 +675,7 @@ export async function sendChat(){
 
     store.chatHist.push({role:'assistant',content:reply});
     localStorage.setItem('mg_chat_hist',JSON.stringify(store.chatHist.slice(-20)));
-    replaceTypingBubble(tid,reply);
+    replaceTypingBubble(tid,reply,cardHtml);
   }catch(e){
     const logs=getDreamLogs();
     const lastDream=logs.length>0?logs[0]:null;
@@ -765,11 +766,11 @@ export function addTypingBubble(){
   return id;
 }
 
-export function replaceTypingBubble(id,text){
+export function replaceTypingBubble(id,text,trustedHtml){
   const el=document.getElementById(id);
   if(el){
     el.classList.remove('typing-bubble');
-    el.innerHTML=esc(text).replace(/\n/g,'<br>');
+    el.innerHTML=esc(text).replace(/\n/g,'<br>')+(trustedHtml||'');
     el.style.animation='bi .3s ease';
     document.getElementById('chatMsgs').scrollTop=99999;
   }
