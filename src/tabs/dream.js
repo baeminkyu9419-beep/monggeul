@@ -433,6 +433,14 @@ export function showResult(data,inp){
   }
   document.getElementById('rTitle').textContent=data.title;
   document.getElementById('rDate').textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
+  // [후킹] 핵심 한 줄 — preview 첫 문장을 제목 바로 아래 크게(분석 차트보다 먼저 '의미'를 전달)
+  const _catch=document.getElementById('rCatch');
+  if(_catch){
+    const _src=(data.preview||data.interpretation||'').replace(/<[^>]+>/g,'').trim();
+    let _first=(_src.split(/(?<=[.!?…])\s+/)[0]||_src).trim();
+    if(_first.length>62)_first=_first.slice(0,60)+'…';
+    if(_first){_catch.textContent=_first;_catch.style.display='block';}else{_catch.style.display='none';}
+  }
   // 길몽/흉몽 오라 효과
   const resultEl=document.getElementById('resultEl');
   let aura=resultEl.querySelector('.result-aura');

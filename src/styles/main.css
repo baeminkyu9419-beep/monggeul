@@ -1193,3 +1193,6 @@ body::before{content:'';position:fixed;inset:0;background:var(--night);z-index:-
 .crisis-foot a{color:#ff8a8a;font-weight:700;text-decoration:none}
 .chat-safety{font-size:10.5px;line-height:1.5;color:var(--text-muted);text-align:center;padding:6px 12px 2px}
 .chat-safety a{color:var(--text-secondary);text-decoration:none}
+
+/* 결과 핵심 한 줄 후킹 — 제목 아래, 분석 차트보다 먼저 */
+.result-catch{font-size:17px;line-height:1.55;color:var(--moon);text-align:center;font-weight:600;margin:4px 14px 16px;padding:0 4px;text-shadow:0 0 18px rgba(245,230,178,.12)}
