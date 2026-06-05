@@ -29,7 +29,10 @@ interface Provider { name: string; key: string | undefined; model: string; compa
 const PROVIDERS: Provider[] = [
   // [2026-05-28] Mistral 추가 — JARVIS_NEW 메모리 박제: Mistral 키 살아있음(F-* providers 실측).
   //   Gemini 키 부재 시 단독으로도 chat 동작. OpenAI 호환 API.
-  { name: 'mistral',  key: Deno.env.get('MISTRAL_API_KEY'),  model: 'mistral-small-latest', compatible: true,  url: 'https://api.mistral.ai/v1/chat/completions', enabled: true },
+  // [2026-06-05] small→large: 실측(scripts/engine_test.mjs)서 small은 제목 이모지만·영어누출·서식깨짐,
+  //   large는 제목 정상·영어0·해석 깊이↑. 해몽 품질이 핵심가치라 large 채택. (운영: 무료티어 RPM 제한 시
+  //   paid 전환 또는 gemini 키 복구로 분산. gemini-2.5-flash 도 무료+고품질 대안)
+  { name: 'mistral',  key: Deno.env.get('MISTRAL_API_KEY'),  model: 'mistral-large-latest', compatible: true,  url: 'https://api.mistral.ai/v1/chat/completions', enabled: true },
   { name: 'gemini',   key: Deno.env.get('GEMINI_API_KEY'),   model: 'gemini-2.5-flash-lite', compatible: false, url: 'https://generativelanguage.googleapis.com/v1beta/models', enabled: true },
   { name: 'deepseek', key: Deno.env.get('DEEPSEEK_API_KEY'), model: 'deepseek-chat',    compatible: true,  url: 'https://api.deepseek.com/v1/chat/completions', enabled: true },
   { name: 'openai',   key: Deno.env.get('OPENAI_API_KEY'),   model: 'gpt-4o',           compatible: true,  url: 'https://api.openai.com/v1/chat/completions', enabled: false }, // 무효 키 — 복구 시 true
