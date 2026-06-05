@@ -753,6 +753,16 @@ export function saveToDreamlog(){
 
   logs.unshift({id:Date.now(),text:inp,title:data.title,badges:data.badges,emotions:data.emotions||[],stats:data.stats||{},date:new Date().toLocaleDateString('ko-KR'),thumbnail:window._last?.thumbnail||null});
   localStorage.setItem('mg_logs',JSON.stringify(logs.slice(0,50)));
+  // [리텐션] 꿈 저장 = 오늘 활동 → 날짜기반 연속기록(출석 doCheckin 과 mg_cin 공유해 중복 카운트 방지)
+  (function(){
+    const today=new Date().toDateString();
+    if(store.lastCin===today)return;
+    const y=new Date(Date.now()-864e5).toDateString();
+    store.streak=(store.lastCin===y)?(store.streak||0)+1:1;
+    store.lastCin=today;
+    localStorage.setItem('mg_streak',String(store.streak));
+    localStorage.setItem('mg_cin',today);
+  })();
 
   // 반복꿈이면 특별 메시지
   if(prevSimilar.length>0){
