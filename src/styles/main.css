@@ -449,6 +449,10 @@ button:active,.abtn:active,.qbtn:active,.chip:active,.rbtn:active{transform:scal
 .lock-btn:active{transform:scale(.97);}
 /* [2026-06-03] 전환 고도화: 잠금 = 가치 스택 모먼트 (맥락 후킹 + 4종 가치 + 가격 앵커 + 신뢰선) */
 .lock-hook{font-size:12px;color:var(--moon,#f5e6b2);font-weight:700;line-height:1.5;text-align:center;margin-bottom:2px;}
+.lock-teaser{width:100%;margin:2px 0 4px;}
+.lock-teaser-lead{font-size:10px;color:var(--text-muted);text-align:center;margin-bottom:5px;letter-spacing:.2px;}
+.lock-teaser-chips{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;}
+.lock-teaser-chip{font-size:10px;color:var(--text-secondary);background:rgba(166,124,239,.1);border:1px solid rgba(166,124,239,.22);border-radius:11px;padding:3px 9px;line-height:1.3;white-space:nowrap;}
 .lock-value-stack{display:flex;flex-direction:column;gap:5px;width:100%;margin:2px 0 6px;}
 .lock-vitem{display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--text-secondary);line-height:1.45;text-align:left;}
 .lock-vitem .vchk{color:var(--teal,#7de8d8);flex-shrink:0;font-size:11px;line-height:1.45;}
@@ -1175,3 +1179,17 @@ body::before{content:'';position:fixed;inset:0;background:var(--night);z-index:-
 @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.1);opacity:.8}}
 @keyframes splashBar{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
 @keyframes xpFloat{0%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-80px)}}
+
+/* ── 정신건강 위기 안전망 ── */
+.cbbl.crisis{background:transparent;padding:0;max-width:100%;align-self:stretch}
+.crisis-card{background:linear-gradient(135deg,rgba(125,232,216,.10),rgba(166,124,239,.08));border:1px solid rgba(125,232,216,.38);border-radius:14px;padding:14px 16px;margin:6px 0}
+.crisis-title{font-weight:700;font-size:14px;margin-bottom:6px;color:var(--text-primary)}
+.crisis-body{font-size:13px;line-height:1.6;color:var(--text-secondary);margin-bottom:10px}
+.crisis-lines{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.crisis-lines li{font-size:13px;color:var(--text-secondary)}
+.crisis-lines a{color:var(--purple-bright);font-weight:700;text-decoration:none}
+.crisis-lines span{color:var(--text-muted);font-size:11px}
+.crisis-foot{margin-top:10px;font-size:12px;color:var(--text-muted)}
+.crisis-foot a{color:#ff8a8a;font-weight:700;text-decoration:none}
+.chat-safety{font-size:10.5px;line-height:1.5;color:var(--text-muted);text-align:center;padding:6px 12px 2px}
+.chat-safety a{color:var(--text-secondary);text-decoration:none}

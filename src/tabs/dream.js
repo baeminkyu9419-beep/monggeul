@@ -261,6 +261,62 @@ function _splitFullToBranches(full){
   return { traditional, psychology, advice };
 }
 
+// ── 잠금 미리보기 = 클리프행어(Zeigarnik 효과) ──
+// 벤치(WebSearch 2026-06): Blick "Cliffhanger Effect" — 임의 글자수 자르기 대신
+//   유용한 통찰 직전에서 끊으면 미완결감(Zeigarnik)이 업그레이드를 유도.
+//   Tinder blur-to-reveal — "특정 답이 존재한다"고 알리되 답 자체는 잠금 → ~8% 결제.
+// 동작: 첫 섹션(꿈의 핵심 상징 = 정확도 증명 구간)은 통째로 보여 가치를 입증하고,
+//   그 다음 섹션들(무의식 메시지/운세 시기/실천)은 "잠겨 있다"는 제목만 노출해 궁금증 갭을 만든다.
+// 무근거 조작 아님: 잠긴 제목/내용은 실제 fullInterpretation 에서만 추출(없으면 폴백).
+function _parseInterpSections(full){
+  const out=[]; if(!full)return out;
+  const re=/【([^】]+)】\s*([\s\S]*?)(?=【|$)/g; let m;
+  while((m=re.exec(full))){ out.push({title:(m[1]||'').trim(),body:(m[2]||'').trim()}); }
+  return out;
+}
+// 잠금 안에서 풀리는 "답"의 제목 라벨(궁금증 갭) — 실제 섹션에서만 도출.
+const _LOCK_SECTION_LABELS={
+  '무의식의 메시지':'무의식이 보내는 진짜 메시지',
+  '무의식':'무의식이 보내는 진짜 메시지',
+  '운세 분석':'영역별 운세와 시기',
+  '앞으로의 흐름':'앞으로의 흐름과 결정 타이밍',
+  '달이의 한마디':'달이가 건네는 마지막 한마디',
+  '융 심리학으로 한 번 더':'융 심리학 무의식 분석',
+  '오늘의 작은 실천':'오늘부터 할 수 있는 실천'
+};
+// full → {previewHtml, lockedLabels[]}. 미리보기는 첫 섹션 본문 + 다음 섹션 도입 한 줄에서 끊김.
+export function _buildCliffhangerPreview(full){
+  const secs=_parseInterpSections(full);
+  if(secs.length<2){
+    // 섹션 구조 없음 → 첫 단락 보여주고 문장 경계에서 클리프행어로 절단(임의 자르기 회피)
+    const txt=(full||'').trim();
+    const cut=Math.min(260,txt.length);
+    let slice=txt.slice(0,cut);
+    const lastStop=Math.max(slice.lastIndexOf('. '),slice.lastIndexOf('.\n'),slice.lastIndexOf('요 '),slice.lastIndexOf('요.'));
+    if(lastStop>120)slice=slice.slice(0,lastStop+1);
+    return { previewHtml:slice, lockedLabels:[] };
+  }
+  // 첫 섹션은 통째(가치 입증), 두 번째 섹션은 제목+도입 한 문장까지만(클리프행어)
+  const first=secs[0];
+  const second=secs[1];
+  let html=`<b>【${esc(first.title)}】</b><br>${first.body}`;
+  if(second){
+    // 두 번째 섹션 본문 첫 문장만 노출 → 핵심 직전에서 끊김
+    const firstSentence=(second.body.split(/(?<=[.!?])\s|\n/)[0]||'').trim();
+    const teaser=firstSentence.length>10?firstSentence.replace(/[.…]*$/,'')+'…':second.body.slice(0,40)+'…';
+    html+=`<br><br><b>【${esc(second.title)}】</b><br>${teaser}`;
+  }
+  // 잠긴 답 라벨: 두 번째 이후 섹션 제목을 사용자 친화 라벨로(달이의 한마디 제외하면 더 강하지만, 있으면 마지막에)
+  const lockedLabels=[];
+  for(let i=1;i<secs.length;i++){
+    const t=secs[i].title;
+    const label=_LOCK_SECTION_LABELS[t]|| (t&&t.length<=14? t : null);
+    if(label&&!lockedLabels.includes(label))lockedLabels.push(label);
+  }
+  return { previewHtml:html, lockedLabels:lockedLabels.slice(0,4) };
+}
+window._buildCliffhangerPreview=_buildCliffhangerPreview;
+
 // 2단계 응답의 2차: 상세 해석(전통/심리/조언/깊은해석)을 백그라운드로 받아 DOM 채움
 export function showResultDetail(data){
   const full=data.fullInterpretation||data.interpretation||'';
@@ -285,7 +341,12 @@ export function showResultDetail(data){
     }
   }
   if(full){
-    document.getElementById('lockPreview').innerHTML=sanitize(full.substring(0,250).replace(/\n/g,'<br>'))+'...';
+    // 클리프행어 미리보기: 첫 섹션 통째(가치 입증) + 다음 섹션 도입에서 절단(Zeigarnik).
+    const cliff=_buildCliffhangerPreview(full);
+    document.getElementById('lockPreview').innerHTML=sanitize(cliff.previewHtml.replace(/\n/g,'<br>'));
+    // 잠긴 "답" 라벨을 전환 잠금 후킹이 쓰도록 보관(궁금증 갭 = Tinder blur-to-reveal)
+    window._lockedAnswerLabels=cliff.lockedLabels||[];
+    if(typeof window._renderLockTeaser==='function')window._renderLockTeaser();
     document.getElementById('interpFull').innerHTML=linkSymbols(sanitize(full.replace(/\n/g,'<br>')));
     document.getElementById('detailLock').style.display='block';
     document.getElementById('detailFull').style.display='none';
@@ -306,6 +367,19 @@ const _LOCK_HOOKS={
   '건강운':'몸과 마음이 보내는 메시지, 더 자세히 들여다볼게요.',
   '중립':'겉으론 평범해 보여도, 무의식은 분명한 말을 하고 있어요.'
 };
+// 궁금증 갭 라인 렌더 — 잠긴 답의 "제목"만 노출(답 자체는 잠금).
+// detail 응답 전에는 기본 라벨, 응답 후엔 이 꿈에서 실제 추출된 라벨로 갱신(re-paint).
+export function _renderLockTeaser(){
+  const el=document.getElementById('lockTeaser');
+  if(!el)return;
+  let labels=(typeof window!=='undefined'&&window._lockedAnswerLabels)||[];
+  // 폴백(detail 미수신 시) — 항상 제공되는 보편 섹션. 조작 아님: 실제 산출물에 존재.
+  if(!labels.length)labels=['무의식이 보내는 진짜 메시지','영역별 운세와 시기','앞으로의 흐름과 결정 타이밍'];
+  const chips=labels.slice(0,3).map(l=>`<span class="lock-teaser-chip">🔒 ${esc(l)}</span>`).join('');
+  el.innerHTML=`<div class="lock-teaser-lead">이 잠금 안에서 풀리는 것</div><div class="lock-teaser-chips">${chips}</div>`;
+  el.style.display='block';
+}
+window._renderLockTeaser=_renderLockTeaser;
 export function renderConversionLock(data,inp,credits){
   const hookEl=document.getElementById('lockHook');
   const stackEl=document.getElementById('lockValueStack');
@@ -316,6 +390,9 @@ export function renderConversionLock(data,inp,credits){
   // 맥락 후킹 — 이 꿈의 대표 배지 기준 (욕구 제조)
   const badge=(data.badges&&data.badges[0])||'중립';
   if(hookEl)hookEl.textContent=_LOCK_HOOKS[badge]||_LOCK_HOOKS['중립'];
+  // 궁금증 갭(Tinder blur-to-reveal): "이 답이 잠겨 있다"고 구체적으로 알림.
+  // 라벨은 실제 해석 섹션에서만 도출 → cliffhanger 가 채운 window._lockedAnswerLabels 사용.
+  _renderLockTeaser();
   // 가치 스택 — 실제로 받는 것 4종 (껍데기 아님: 3분기 탭+깊은해석이 실제 산출물)
   if(stackEl){
     const items=[
