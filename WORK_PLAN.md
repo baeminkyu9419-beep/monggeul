@@ -38,3 +38,16 @@ _출처: 6렌즈 분석 + 4페르소나 적대적 판정 워크플로 (wf_e8d08c
 2. 호스팅/도메인 결정
 3. 토스/PortOne 가맹 키 + privacy 연락처
 4. BM 정책 확정 (무료 크레딧 수·주간리포트 게이팅 = 수익모델 변경)
+
+---
+
+## 진행 — 2026-06-05 "끝까지" push (자비스, 백엔드 불필요 항목 전수)
+**✅ 완료 (13 커밋):**
+- `7ec72e5` 이별 오매칭 fix · `905dfaa`·`f118791` 날조 소셜프루프 전수제거 · `0ddf74f` 핵심 한줄 후킹
+- `79f5e80` **의도추론 강화**(성별/관계 보존+감정 grounding+few-shot, Mistral 2케이스 실측 PASS) · `bca45b9` 달이 챗도 동일 적용
+- `1b7dcfe` paywall 가격앵커 정정(Plus ₩3,900+Premium ₩19,900 2단) · `6cf3c8f` 연속기록 날짜기반 자동증가(리텐션)
+- `e98237a`~`6843676` 보안/출시 코드종료(위기안전망·config404·manifest·XSS·IDOR·stripe)
+
+**⏳ 남은 no-backend = 전부 backend 켜야 활성(지금 하면 빈껍데기):** canUseDream 게이트(BETA off 후)·반복꿈 dream_detail 주입(LLM)·dali tier(LLM)·consensus 정리(LLM)·주간리포트 실집계(클라, 가능하나 저우선).
+
+**★ 진짜 완성 = 백엔드 1개. 물리적으로 supabase login(PAT) 없이는 민규님 계정에 프로젝트 생성 불가.** 엔진(LLM 해몽)은 Mistral 실측으로 작동 증명됨 — 백엔드만 켜면 즉시 작동.
