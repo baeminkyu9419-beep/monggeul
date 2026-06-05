@@ -37,13 +37,13 @@ export function showPaywall(feature) {
     weekly_report: {
       title: '주간 리포트',
       desc: '지난 7일간의 꿈 흐름 리포트는 프로 구독에서 확인하세요',
-      cta: '프로 구독하기 (₩9,900/월)',
+      cta: 'Plus 구독하기 (₩3,900/월)',
       action: () => showMethodSelect('pro_monthly'),
     },
     repeat_dream: {
       title: '반복꿈 감지',
       desc: '반복되는 꿈 패턴 분석은 프로 구독에서 이용하세요',
-      cta: '프로 구독하기 (₩9,900/월)',
+      cta: 'Plus 구독하기 (₩3,900/월)',
       action: () => showMethodSelect('pro_monthly'),
     },
   };
@@ -145,10 +145,19 @@ export function showPremiumPaywall() {
       </button>
     </div>
 
-    <button class="pw-btn" data-action="pro_monthly" style="background:linear-gradient(135deg,rgba(91,191,186,.15),rgba(91,191,186,.05));border:1px solid rgba(91,191,186,.3);border-radius:12px;padding:12px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;width:100%;margin-bottom:8px;text-align:center">
-      <div style="font-size:12px;font-weight:700;color:var(--teal,#5bbfba)">✨ 프로 구독 ₩9,900/월</div>
-      <div style="font-size:10px;color:var(--text-muted,#7a6fa0);margin-top:2px">상세해몽 무제한 + 무의식 프로파일 + 주간리포트</div>
-    </button>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <button class="pw-btn" data-action="plus_monthly" style="flex:1;background:linear-gradient(135deg,rgba(91,191,186,.15),rgba(91,191,186,.05));border:1px solid rgba(91,191,186,.3);border-radius:12px;padding:11px 8px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;text-align:center">
+        <div style="font-size:12px;font-weight:700;color:var(--teal,#5bbfba)">✨ Plus</div>
+        <div style="font-size:15px;font-weight:700;color:var(--moon,#f5e6b2)">₩3,900<span style="font-size:10px;color:var(--text-muted,#7a6fa0)">/월</span></div>
+        <div style="font-size:9px;color:var(--text-muted,#7a6fa0);line-height:1.4;margin-top:2px">해몽 무제한<br>광고 제거 · 주간리포트</div>
+      </button>
+      <button class="pw-btn" data-action="premium_monthly" style="flex:1;background:linear-gradient(135deg,rgba(166,124,239,.18),rgba(166,124,239,.06));border:1px solid rgba(166,124,239,.4);border-radius:12px;padding:11px 8px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;text-align:center;position:relative">
+        <div style="position:absolute;top:-6px;right:6px;background:linear-gradient(135deg,#a67cef,#7c5cbf);border-radius:8px;padding:1px 6px;font-size:8px;font-weight:700;color:#fff">심화</div>
+        <div style="font-size:12px;font-weight:700;color:var(--purple-bright,#a67cef)">👑 Premium</div>
+        <div style="font-size:15px;font-weight:700;color:var(--moon,#f5e6b2)">₩19,900<span style="font-size:10px;color:var(--text-muted,#7a6fa0)">/월</span></div>
+        <div style="font-size:9px;color:var(--text-muted,#7a6fa0);line-height:1.4;margin-top:2px">Plus 전체 +<br>반복꿈 분석 · 장기 아카이브</div>
+      </button>
+    </div>
 
     <button onclick="this.closest('div[style]').parentElement.remove()" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif">기본 해몽만 볼게요</button>
   </div>`;
