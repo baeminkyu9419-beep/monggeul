@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>몽글몽글 — 해몽 결과 (디자인 톤 목업)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+/* ════════════ 디자인 시스템: 다크 신비 · 고급 (design tokens) ════════════ */
+:root{
+  /* 밤하늘 베이스 */
+  --bg-0:#070512; --bg-1:#0c0a1f; --bg-2:#141132;
+  /* 표면(글래스) */
+  --surface:rgba(255,255,255,.045); --surface-2:rgba(255,255,255,.07);
+  --stroke:rgba(255,255,255,.09); --stroke-glow:rgba(166,124,239,.30);
+  /* 잉크 */
+  --ink:#f3eefe; --ink-2:#c5bce0; --ink-3:#8a82ad;
+  /* 신비 액센트 */
+  --moon:#f5e6b2; --moon-soft:#e9d6a0;
+  --aura-violet:#a67cef; --aura-teal:#7de8d8; --aura-rose:#f0a8c8;
+  /* 모션 */
+  --ease:cubic-bezier(.22,.61,.36,1);
+  /* 간격 8pt */
+  --s1:6px; --s2:12px; --s3:18px; --s4:26px; --s5:38px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+html,body{background:var(--bg-0)}
+body{
+  font-family:'Pretendard','Gowun Dodum',-apple-system,sans-serif;
+  color:var(--ink);
+  display:flex;justify-content:center;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #1c1746 0%, transparent 60%),
+    radial-gradient(900px 500px at 15% 30%, rgba(125,232,216,.06) 0%, transparent 55%),
+    radial-gradient(900px 600px at 90% 70%, rgba(166,124,239,.10) 0%, transparent 55%),
+    linear-gradient(180deg,var(--bg-1),var(--bg-0) 70%);
+  min-height:100vh;
+}
+/* 별 */
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0}
+.star{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;opacity:.5;
+  box-shadow:0 0 4px rgba(255,255,255,.5);animation:tw 4s var(--ease) infinite}
+@keyframes tw{0%,100%{opacity:.18}50%{opacity:.7}}
+
+.app{position:relative;z-index:1;width:100%;max-width:412px;padding:0 20px 40px}
+
+/* 상단 바 */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:22px 2px 8px}
+.brand{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);letter-spacing:.3px}
+.brand .moon{width:22px;height:22px;border-radius:50%;
+  background:radial-gradient(circle at 34% 32%,#fff6d8,var(--moon) 45%,#cbab63);
+  box-shadow:0 0 18px rgba(245,230,178,.45)}
+.share{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;
+  background:var(--surface);border:1px solid var(--stroke);color:var(--ink-2);font-size:15px;backdrop-filter:blur(8px)}
+
+/* AI 엔진 배지 */
+.engine{display:inline-flex;align-items:center;gap:6px;margin:14px 0 4px;padding:6px 12px;border-radius:999px;
+  font-size:11px;font-weight:600;color:var(--aura-teal);
+  background:rgba(125,232,216,.07);border:1px solid rgba(125,232,216,.22)}
+.engine .dot{width:6px;height:6px;border-radius:50%;background:var(--aura-teal);box-shadow:0 0 8px var(--aura-teal);animation:tw 2s infinite}
+
+/* 히어로: 제목 + 핵심 한 줄 */
+.hero{padding:6px 0 4px}
+.hero .date{font-size:11px;color:var(--ink-3);letter-spacing:.4px;margin-bottom:10px}
+.hero h1{font-family:'Gowun Batang',serif;font-weight:700;font-size:34px;line-height:1.25;
+  background:linear-gradient(180deg,#fff7e0,var(--moon) 60%,#d8b974);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 38px rgba(245,230,178,.18)}
+.hero .catch{margin-top:14px;font-size:17px;line-height:1.6;color:var(--ink);font-weight:500;
+  max-width:32ch}
+.hero .catch b{color:var(--moon-soft);font-weight:700}
+
+/* 글래스 카드 공통 */
+.card{position:relative;margin-top:18px;padding:20px;border-radius:20px;
+  background:linear-gradient(180deg,var(--surface-2),var(--surface));
+  border:1px solid var(--stroke);backdrop-filter:blur(14px);
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 18px 50px -30px rgba(0,0,0,.8)}
+.card::before{content:"";position:absolute;inset:0;border-radius:20px;padding:1px;
+  background:linear-gradient(135deg,var(--stroke-glow),transparent 40%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;opacity:.7}
+.card .label{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-3);
+  letter-spacing:.6px;margin-bottom:16px;text-transform:none}
+.card .label .ic{color:var(--aura-violet)}
+
+/* 감정 칩 */
+.emotions{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+.chip{font-size:12.5px;padding:7px 13px;border-radius:999px;color:var(--ink);
+  background:rgba(166,124,239,.10);border:1px solid rgba(166,124,239,.24)}
+
+/* 꿈 에너지 — 오브 게이지 (레이더 대체, 더 고급) */
+.energy{display:grid;grid-template-columns:1fr 1fr;gap:11px 16px;margin-top:4px}
+.metric{display:flex;flex-direction:column;gap:7px}
+.metric .mhead{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;color:var(--ink-2)}
+.metric .mhead b{font-family:'Gowun Batang',serif;font-size:15px;color:var(--moon-soft)}
+.bar{height:6px;border-radius:99px;background:rgba(255,255,255,.06);overflow:hidden}
+.bar>i{display:block;height:100%;border-radius:99px;
+  background:linear-gradient(90deg,var(--aura-violet),var(--aura-teal));
+  box-shadow:0 0 10px rgba(125,232,216,.4)}
+
+/* 해석 본문 */
+.interp .label .ic{color:var(--moon)}
+.interp p{font-size:14.5px;line-height:1.85;color:var(--ink-2);margin-bottom:13px}
+.interp p:last-child{margin-bottom:0}
+.interp b{color:var(--ink);font-weight:600}
+.interp .quote{margin:4px 0 14px;padding:13px 16px;border-radius:14px;
+  background:rgba(245,230,178,.05);border-left:2px solid var(--moon);
+  font-family:'Gowun Batang',serif;font-size:15px;line-height:1.7;color:var(--moon-soft)}
+
+/* 잠금 CTA */
+.unlock{margin-top:18px;padding:22px 20px;border-radius:20px;text-align:center;
+  background:radial-gradient(120% 100% at 50% 0%,rgba(166,124,239,.18),rgba(20,17,50,.4));
+  border:1px solid rgba(166,124,239,.3)}
+.unlock .u-ic{font-size:24px}
+.unlock .u-t{font-family:'Gowun Batang',serif;font-size:17px;color:var(--ink);margin:8px 0 4px}
+.unlock .u-s{font-size:12.5px;color:var(--ink-3);margin-bottom:16px;line-height:1.6}
+.u-teaser{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:16px}
+.u-teaser span{font-size:11px;color:var(--ink-2);padding:5px 11px;border-radius:99px;
+  background:rgba(255,255,255,.04);border:1px solid var(--stroke)}
+.u-teaser span::before{content:"🔒 ";opacity:.7}
+.btn{display:block;width:100%;padding:15px;border-radius:15px;border:none;cursor:pointer;
+  font-family:inherit;font-size:15px;font-weight:700;color:#1a1330;
+  background:linear-gradient(135deg,#fff2c8,var(--moon) 55%,#e3bf72);
+  box-shadow:0 12px 30px -12px rgba(245,230,178,.5)}
+.btn-sub{margin-top:9px;font-size:12px;color:var(--ink-3)}
+
+/* 하단 탭바 (톤 미리보기) */
+.tabbar{position:fixed;bottom:0;left:0;right:0;z-index:2;display:flex;justify-content:center;
+  background:linear-gradient(180deg,transparent,var(--bg-0) 40%);padding:10px 0 14px}
+.tabs{display:flex;gap:6px;padding:7px;border-radius:20px;
+  background:rgba(12,10,31,.7);border:1px solid var(--stroke);backdrop-filter:blur(16px)}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;width:60px;padding:7px 0;
+  border-radius:13px;font-size:10px;color:var(--ink-3)}
+.tab.on{color:var(--moon);background:rgba(245,230,178,.08)}
+.tab .ti{font-size:18px}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="app">
+  <div class="topbar">
+    <div class="brand"><span class="moon"></span> 몽글몽글</div>
+    <div class="share">↗</div>
+  </div>
+
+  <div class="engine"><span class="dot"></span> AI 해석 · 달이</div>
+
+  <div class="hero">
+    <div class="date">2026년 6월 5일 · 오늘의 꿈</div>
+    <h1>지나간 마음의<br>잔상</h1>
+    <p class="catch">마음 한켠에 아직 정리되지 않은 감정이 남아 있나 봐요. <b>그 사람이 아니라, 그때의 나</b>를 다시 보는 중일 수 있어요.</p>
+  </div>
+
+  <div class="card">
+    <div class="label"><span class="ic">✦</span> 마음의 결</div>
+    <div class="emotions">
+      <span class="chip">🌙 그리움</span>
+      <span class="chip">🍂 아쉬움</span>
+      <span class="chip">💗 회복</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label"><span class="ic">◈</span> 꿈 에너지</div>
+    <div class="energy">
+      <div class="metric"><div class="mhead">길흉 <b>55</b></div><div class="bar"><i style="width:55%"></i></div></div>
+      <div class="metric"><div class="mhead">연애운 <b>52</b></div><div class="bar"><i style="width:52%"></i></div></div>
+      <div class="metric"><div class="mhead">건강운 <b>58</b></div><div class="bar"><i style="width:58%"></i></div></div>
+      <div class="metric"><div class="mhead">직관 <b>82</b></div><div class="bar"><i style="width:82%"></i></div></div>
+    </div>
+  </div>
+
+  <div class="card interp">
+    <div class="label"><span class="ic">🌙</span> 달이의 해석</div>
+    <div class="quote">"지나간 것이 꿈에 오는 건, 마음이 그걸 잘 보내주려는 과정일 수 있어요."</div>
+    <p>헤어진 사람이 꿈에 나오는 건 그 사람을 다시 원한다기보다, <b>그 시절의 감정과 미처 못 한 말</b>이 떠오르고 있다는 신호예요. 꿈 속 인물은 종종 '그때의 나'를 비추는 거울이거든요.</p>
+    <p>요즘의 외로움이나 변화가 과거의 안정감을 떠올리게 했을 수 있어요. 미련이 남았다고 자책하지 않아도 괜찮아요 — <b>마음이 정리되는 자연스러운 과정</b>이니까요.</p>
+  </div>
+
+  <div class="unlock">
+    <div class="u-ic">📜</div>
+    <div class="u-t">이 꿈, 더 깊은 이야기가 있어요</div>
+    <div class="u-s">전통 해몽 · 심리 분석 · 반복 패턴까지<br>달이가 1,000자로 풀어드려요</div>
+    <div class="u-teaser"><span>전통 해몽</span><span>무의식 메시지</span><span>반복꿈 연결</span></div>
+    <button class="btn">상세 해몽 보기 · ₩1,900</button>
+    <div class="btn-sub">또는 Plus 구독 ₩3,900/월 · 무제한</div>
+  </div>
+</div>
+
+<div class="tabbar"><div class="tabs">
+  <div class="tab"><span class="ti">🌌</span>커뮤니티</div>
+  <div class="tab"><span class="ti">🐱</span>달이</div>
+  <div class="tab on"><span class="ti">🌙</span>해몽</div>
+  <div class="tab"><span class="ti">📖</span>기록</div>
+</div></div>
+
+<script>
+const s=document.getElementById('stars');
+for(let i=0;i<46;i++){const d=document.createElement('div');d.className='star';
+  d.style.left=Math.random()*100+'%';d.style.top=Math.random()*88+'%';
+  d.style.animationDelay=(Math.random()*4)+'s';d.style.opacity=(.2+Math.random()*.5);
+  const sz=Math.random()<.2?2.5:1.4;d.style.width=d.style.height=sz+'px';s.appendChild(d);}
+</script>
+</body>
+</html>

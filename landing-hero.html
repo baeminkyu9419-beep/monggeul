@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>몽글몽글 — 랜딩 히어로</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--moon:#ffe9a8;--moon2:#ffd56b;--violet:#a67cef;--teal:#7de8d8;--rose:#ffb3d1;--ink:#fdf6ff;--ink2:#cdbfe6}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Jua','Pretendard',sans-serif;color:var(--ink);overflow:hidden;
+ background:
+  radial-gradient(120% 80% at 50% 8%, #2a2160 0%, transparent 55%),
+  radial-gradient(90% 70% at 80% 75%, rgba(166,124,239,.28) 0%, transparent 55%),
+  radial-gradient(80% 60% at 12% 80%, rgba(125,232,216,.16) 0%, transparent 55%),
+  linear-gradient(180deg,#171042 0%,#0c0922 70%,#070512 100%);
+ display:flex;justify-content:center}
+.frame{position:relative;width:100%;max-width:412px;height:100vh;overflow:hidden}
+.sky{position:absolute;inset:0;z-index:0}
+.star{position:absolute;border-radius:50%;background:#fff;box-shadow:0 0 6px #fff;animation:tw 3.5s ease-in-out infinite}
+@keyframes tw{0%,100%{opacity:.2;transform:scale(.7)}50%{opacity:.95;transform:scale(1)}}
+.shoot{position:absolute;top:14%;left:-10%;width:120px;height:2px;border-radius:2px;
+ background:linear-gradient(90deg,transparent,#fff7d6,transparent);transform:rotate(18deg);
+ filter:blur(.3px);animation:shoot 6s ease-in 1.5s infinite}
+@keyframes shoot{0%{left:-20%;top:8%;opacity:0}8%{opacity:1}22%{left:110%;top:26%;opacity:0}100%{opacity:0}}
+.stage{position:absolute;top:13%;left:0;right:0;display:flex;flex-direction:column;align-items:center;z-index:2}
+.dali{position:relative;width:178px;height:178px;animation:float 5s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+.halo{position:absolute;inset:-26px;border-radius:50%;
+ background:radial-gradient(circle,rgba(255,233,168,.45),transparent 62%);filter:blur(8px);animation:tw 4s ease-in-out infinite}
+.moon{position:absolute;inset:0;border-radius:50%;
+ background:radial-gradient(circle at 36% 32%,#fff7df 0%,var(--moon) 42%,var(--moon2) 78%,#e0a94e 100%);
+ box-shadow:0 0 50px rgba(255,213,107,.55),inset -14px -16px 34px rgba(193,138,52,.4)}
+.ear{position:absolute;top:-12px;width:40px;height:40px;background:linear-gradient(180deg,var(--moon),var(--moon2));
+ border-radius:50% 50% 4px 50%;box-shadow:inset -4px -4px 10px rgba(193,138,52,.4)}
+.ear.l{left:24px;transform:rotate(-22deg)}.ear.r{right:24px;transform:rotate(202deg)}
+.ear i{position:absolute;inset:9px 11px;background:var(--rose);border-radius:50% 50% 3px 50%;opacity:.7}
+.face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.eyes{display:flex;gap:34px;margin-top:14px}
+.eye{width:15px;height:22px;background:#5b3a1f;border-radius:50%;position:relative;animation:blink 4.5s infinite}
+.eye::after{content:"";position:absolute;top:3px;left:3px;width:5px;height:5px;border-radius:50%;background:#fff;opacity:.9}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
+.blush{position:absolute;top:96px;width:20px;height:11px;background:var(--rose);border-radius:50%;filter:blur(1px);opacity:.65}
+.blush.l{left:34px}.blush.r{right:34px}
+.mouth{width:18px;height:9px;border:2.5px solid #5b3a1f;border-top:none;border-radius:0 0 14px 14px;margin-top:2px}
+.zzz{position:absolute;top:-6px;right:-2px;font-size:18px;color:#fff;opacity:.85;animation:rise 3s ease-in-out infinite}
+@keyframes rise{0%{opacity:0;transform:translateY(6px)}40%{opacity:.9}100%{opacity:0;transform:translateY(-14px)}}
+.spark{position:absolute;font-size:15px;animation:tw 2.8s ease-in-out infinite}
+.cloud{margin-top:18px;width:150px;height:34px;background:rgba(255,255,255,.10);border-radius:40px;
+ box-shadow:0 0 30px rgba(255,255,255,.06);filter:blur(.5px)}
+.copy{position:absolute;left:0;right:0;bottom:0;z-index:3;padding:0 26px 30px;text-align:center}
+.kick{font-size:13px;color:var(--teal);margin-bottom:12px;letter-spacing:.5px}
+.kick b{color:var(--moon)}
+h1{font-family:'Gowun Batang',serif;font-weight:700;font-size:33px;line-height:1.32;text-shadow:0 0 30px rgba(255,233,168,.25)}
+h1 .g{background:linear-gradient(180deg,#fff7df,var(--moon) 70%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{margin-top:14px;font-family:'Pretendard',sans-serif;font-size:14px;line-height:1.6;color:var(--ink2)}
+.cta{margin-top:22px;width:100%;padding:17px;border:none;border-radius:18px;cursor:pointer;font-family:'Jua',sans-serif;font-size:17px;color:#3a1d00;
+ background:linear-gradient(135deg,#fff3c9,var(--moon) 50%,var(--moon2));
+ box-shadow:0 16px 38px -14px rgba(255,213,107,.6),0 0 0 1px rgba(255,255,255,.25) inset;animation:pulse 2.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.free{margin-top:11px;font-family:'Pretendard';font-size:12px;color:var(--ink2)}
+.free b{color:var(--moon)}
+.scroll{position:absolute;bottom:9px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink2);opacity:.6;z-index:3}
+</style></head>
+<body>
+<div class="frame">
+  <div class="sky" id="sky"></div>
+  <div class="shoot"></div>
+  <div class="stage">
+    <div class="dali">
+      <div class="halo"></div>
+      <div class="ear l"><i></i></div><div class="ear r"><i></i></div>
+      <div class="moon"></div>
+      <div class="face">
+        <div class="eyes"><div class="eye"></div><div class="eye"></div></div>
+        <div class="blush l"></div><div class="blush r"></div>
+        <div class="mouth"></div>
+      </div>
+      <div class="zzz">z</div>
+      <div class="spark" style="top:-6px;left:-12px">✦</div>
+      <div class="spark" style="bottom:6px;right:-14px;animation-delay:.8s">✧</div>
+      <div class="spark" style="top:40px;right:-22px;animation-delay:1.4s">⋆</div>
+    </div>
+    <div class="cloud"></div>
+  </div>
+  <div class="copy">
+    <div class="kick">🌙 AI 꿈 동반자 · <b>달이</b></div>
+    <h1>어젯밤 그 꿈,<br><span class="g">달이가 읽어줄게요</span></h1>
+    <div class="sub">'뱀＝재물' 사전 말고 — <b style="color:#fff">당신이 적은 그 꿈</b>을<br>달이가 다정하게 풀어드려요.</div>
+    <button class="cta">내 꿈 해몽하기 🌙</button>
+    <div class="free">매일 <b>2회 무료</b> · 회원가입 없이 바로</div>
+  </div>
+  <div class="scroll">아래로 ↓ 달이가 하는 일</div>
+</div>
+<script>
+const sky=document.getElementById('sky');
+for(let i=0;i<54;i++){const s=document.createElement('div');s.className='star';
+ const z=Math.random()<.18?3:1.5;s.style.width=s.style.height=z+'px';
+ s.style.left=Math.random()*100+'%';s.style.top=Math.random()*62+'%';
+ s.style.animationDelay=(Math.random()*3.5)+'s';s.style.opacity=(.2+Math.random()*.6);sky.appendChild(s);}
+</script>
+</body></html>
