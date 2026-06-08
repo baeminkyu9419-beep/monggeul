@@ -180,6 +180,13 @@ export async function analyzeDream(){
   const inp=document.getElementById('dreamInput').value.trim();
   if(!inp){showToast('꿈 내용을 입력해주세요 🌙');return;}
   if(isNonsenseInput(inp)){showToast('꿈 내용을 알아볼 수 있게 적어주세요 🌙');return;}
+  // [paywall 게이트] canUseDream() — 무료 한도 초과 / 비로그인 체험 소진 시 결제 유도
+  const _gate=await canUseDream();
+  if(!_gate.allowed){
+    trackFunnelStep('paywall_shown',{reason:_gate.reason});
+    showPaywall(_gate.reason||'daily_limit');
+    return;
+  }
   analyzeDream._busy=true;
   logEvent('dream_started',{length:inp.length,emotionTags:store.selectedEmotions});
   trackFunnelStep('dream_input_complete',{length:inp.length});trackFunnelStep('interpretation_loading');
