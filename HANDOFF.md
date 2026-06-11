@@ -1,3 +1,5 @@
+> 2026-06-11 리빌딩 P2: AGENTS.md INTERFACE(T1 기계판독) 도입 + 루트 위생. SPEC=C:/JARVIS_NEW/evidence/workspace_census/rebuild_spec_20260611.md
+
 # MONGGEUL HANDOFF
 
 ## 현 상태 (2026-06-11)
