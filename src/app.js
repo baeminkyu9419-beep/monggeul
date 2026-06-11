@@ -24,7 +24,6 @@ import { drawRadar, drawDetailRadar } from './components/radar.js';
 
 // Utils
 import './utils/symbols.js';
-import './utils/emotion.js';
 import './utils/sanitize.js';
 
 // 기능 플래그 (가역적 군더더기 숨김)

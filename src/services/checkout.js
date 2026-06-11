@@ -40,7 +40,4 @@ export async function startCheckout(tier = 'plus') {
   }
 }
 
-// 하위호환: handleCheckoutReturn은 handlePaymentReturn이 대체
-export function handleCheckoutReturn() {}
-
 window.startCheckout = startCheckout;

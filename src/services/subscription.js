@@ -1,25 +1,27 @@
 // 몽글몽글 — 구독/결제 시스템 (v4: CLAUDE.md 스펙 통일)
 import { store } from '../store.js';
 import { esc } from '../utils/sanitize.js';
+import { PRODUCT_CATALOG } from './payment.js';
 
 // ═══════════════════════════════════════
 // BM 구조
 // ═══════════════════════════════════════
 // 무료(비로그인): 기본 해몽 1회 체험
 // 무료(로그인): 기본 해몽 2회/일, 꿈 저장 10개
-// 상세 해몽 1회: ₩1,900
-// 상세 해몽 5회 팩: ₩7,900
-// 상세 해몽 15회 팩: ₩19,900
-// 무의식 프로파일: ₩2,900
-// 프로 구독: ₩9,900/월
+// 상세 해몽 1회: ₩1900
+// 상세 해몽 5회 팩: ₩7900
+// 상세 해몽 15회 팩: ₩19900
+// 무의식 프로파일: ₩2900
+// 프로 구독: ₩9900/월
 // ═══════════════════════════════════════
 
-// ── 상품 정의 ──
+// ── 상품 정의 (PRODUCT_CATALOG 정본 파생 — 금액 중복 정의 금지) ──
+// PRODUCT_CATALOG 키: pack_1 / pack_5 / pack_15 / unconscious_profile / pro_monthly / plus_monthly / premium_monthly
 export const PRODUCTS = {
-  single:   { key: 'monggeul_single',    price: 1900, label: '상세 해몽 1회',     count: 1 },
-  pack5:    { key: 'monggeul_pack5',     price: 7900, label: '상세 해몽 5회 팩',  count: 5 },
-  pack15:   { key: 'monggeul_pack15',    price: 19900, label: '상세 해몽 15회 팩', count: 15 },
-  profile:  { key: 'monggeul_profile',   price: 2900, label: '무의식 프로파일' },
+  single:   { key: 'monggeul_single',  price: PRODUCT_CATALOG.pack_1.price,              label: PRODUCT_CATALOG.pack_1.name,   count: PRODUCT_CATALOG.pack_1.count },
+  pack5:    { key: 'monggeul_pack5',   price: PRODUCT_CATALOG.pack_5.price,              label: PRODUCT_CATALOG.pack_5.name,   count: PRODUCT_CATALOG.pack_5.count },
+  pack15:   { key: 'monggeul_pack15',  price: PRODUCT_CATALOG.pack_15.price,             label: PRODUCT_CATALOG.pack_15.name,  count: PRODUCT_CATALOG.pack_15.count },
+  profile:  { key: 'monggeul_profile', price: PRODUCT_CATALOG.unconscious_profile.price, label: PRODUCT_CATALOG.unconscious_profile.name },
 };
 
 export const SKU_MAP = {
