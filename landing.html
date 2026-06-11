@@ -207,6 +207,77 @@ section{padding:100px 0;}
 .reveal-delay-3{transition-delay:.36s;}
 .reveal-delay-4{transition-delay:.48s;}
 
+/* ── 해몽 과정 워크스루 ──────────────────────────────────────── */
+.walkthrough{max-width:600px;margin:0 auto;}
+
+/* 3-탭 스텝 선택기 */
+.wt-tabs{display:flex;gap:0;border:1px solid rgba(166,124,239,.2);border-radius:16px;overflow:hidden;margin-bottom:32px;position:relative;background:rgba(14,12,26,.5);}
+.wt-tab{flex:1;padding:12px 8px;text-align:center;font-size:13px;font-weight:600;color:var(--text-muted);cursor:pointer;transition:all .3s;position:relative;z-index:1;user-select:none;-webkit-tap-highlight-color:transparent;border:none;background:transparent;}
+.wt-tab.active{color:var(--purple-bright);}
+.wt-tab-indicator{position:absolute;top:4px;bottom:4px;border-radius:12px;background:rgba(124,92,191,.2);border:1px solid rgba(166,124,239,.25);transition:left .35s cubic-bezier(.2,0,.2,1),width .35s cubic-bezier(.2,0,.2,1);}
+.wt-tab-num{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:rgba(166,124,239,.12);border:1px solid rgba(166,124,239,.2);font-size:11px;font-weight:700;margin-right:6px;color:var(--text-muted);transition:all .3s;}
+.wt-tab.active .wt-tab-num{background:rgba(124,92,191,.35);border-color:rgba(166,124,239,.5);color:var(--purple-bright);}
+
+/* 패널 컨테이너 */
+.wt-panels{position:relative;min-height:280px;}
+.wt-panel{position:absolute;inset:0;opacity:0;transform:translateY(12px);transition:opacity .35s ease,transform .35s cubic-bezier(.2,0,.2,1);pointer-events:none;}
+.wt-panel.active{opacity:1;transform:translateY(0);position:relative;pointer-events:auto;}
+
+/* 패널 1 — 입력 */
+.wt-input-box{background:rgba(45,40,88,.4);backdrop-filter:blur(12px);border:1px solid rgba(166,124,239,.15);border-radius:20px;padding:24px;overflow:hidden;}
+.wt-input-label{font-size:12px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.wt-input-label::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--purple-bright);opacity:.6;}
+.wt-textarea-mock{background:rgba(255,255,255,.04);border:1px solid rgba(166,124,239,.15);border-radius:14px;padding:16px;font-size:15px;color:var(--text-primary);line-height:1.7;font-family:'Noto Sans KR',sans-serif;min-height:80px;}
+.wt-cursor{display:inline-block;width:2px;height:1em;background:var(--purple-bright);margin-left:2px;vertical-align:text-bottom;animation:wt-blink .8s steps(1) infinite;}
+@keyframes wt-blink{0%,100%{opacity:1}50%{opacity:0}}
+.wt-submit-row{display:flex;justify-content:flex-end;margin-top:14px;}
+.wt-submit-btn{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#7c5cbf,#a67cef);border:none;border-radius:20px;color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;padding:10px 22px;cursor:default;box-shadow:0 2px 12px rgba(124,92,191,.35);}
+
+/* 패널 2 — 분석 중 */
+.wt-analyzing{background:rgba(45,40,88,.4);backdrop-filter:blur(12px);border:1px solid rgba(166,124,239,.15);border-radius:20px;padding:32px;text-align:center;}
+.wt-spinner{width:48px;height:48px;border-radius:50%;border:2px solid rgba(166,124,239,.15);border-top-color:var(--purple-bright);animation:wt-spin 1s linear infinite;margin:0 auto 20px;}
+@keyframes wt-spin{to{transform:rotate(360deg)}}
+.wt-analyzing-title{font-family:'Gowun Dodum',serif;font-size:18px;color:var(--text-primary);margin-bottom:8px;}
+.wt-analyzing-sub{font-size:14px;color:var(--text-muted);line-height:1.7;}
+.wt-steps-row{display:flex;flex-direction:column;gap:10px;margin-top:24px;text-align:left;}
+.wt-step-item{display:flex;align-items:center;gap:10px;font-size:13px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(166,124,239,.06);}
+.wt-step-item.done{color:var(--text-secondary);}
+.wt-step-item.active{color:var(--purple-bright);border-color:rgba(166,124,239,.2);background:rgba(124,92,191,.08);}
+.wt-step-icon{width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:11px;}
+.wt-step-item.done .wt-step-icon{background:rgba(125,232,216,.15);color:var(--teal);}
+.wt-step-item.active .wt-step-icon{background:rgba(124,92,191,.25);color:var(--purple-bright);}
+.wt-step-item.pending .wt-step-icon{background:rgba(255,255,255,.04);color:var(--text-muted);}
+.wt-step-item.pending{color:var(--text-muted);}
+.wt-step-spin{width:12px;height:12px;border-radius:50%;border:1.5px solid rgba(166,124,239,.2);border-top-color:var(--purple-bright);animation:wt-spin .7s linear infinite;display:inline-block;}
+
+/* 패널 3 — 결과 (기존 demo 데이터 재사용) */
+.wt-result{background:rgba(45,40,88,.4);backdrop-filter:blur(12px);border:1px solid rgba(166,124,239,.18);border-radius:20px;padding:24px;overflow:hidden;position:relative;}
+.wt-result::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--purple),var(--purple-bright),var(--teal));opacity:.6;}
+.wt-result-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.wt-result-title{font-family:'Gowun Dodum',serif;font-size:20px;color:var(--moon);text-shadow:0 0 12px rgba(245,230,178,.2);}
+.wt-result-badge{display:inline-block;background:rgba(248,201,76,.12);color:var(--amber);border:1px solid rgba(248,201,76,.25);border-radius:14px;padding:3px 11px;font-size:12px;font-weight:700;}
+.wt-result-text{font-size:14px;color:var(--text-secondary);line-height:1.9;margin-bottom:18px;}
+.wt-result-text strong{color:var(--text-primary);}
+.wt-scores{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.wt-score{text-align:center;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.04);border-radius:10px;padding:12px 6px;}
+.wt-score-label{font-size:11px;color:var(--text-muted);margin-bottom:5px;}
+.wt-score-value{font-family:'Gowun Dodum',serif;font-size:22px;font-weight:700;}
+.wt-score-bar{width:55%;height:3px;border-radius:2px;margin:5px auto 0;opacity:.5;}
+.wt-score-value.good{color:var(--amber);}
+.wt-score-value.neutral{color:var(--teal);}
+.wt-score-value.love{color:var(--pink);}
+.wt-score .wt-score-bar.good{background:var(--amber);}
+.wt-score .wt-score-bar.neutral{background:var(--teal);}
+.wt-score .wt-score-bar.love{background:var(--pink);}
+.wt-try-row{margin-top:16px;text-align:center;}
+.wt-try-link{font-size:13px;color:var(--purple-bright);text-decoration:none;display:inline-flex;align-items:center;gap:4px;opacity:.85;transition:opacity .2s;}
+.wt-try-link:hover{opacity:1;}
+
+/* 진행 도트 */
+.wt-dots{display:flex;justify-content:center;gap:6px;margin-top:20px;}
+.wt-dot{width:6px;height:6px;border-radius:50%;background:rgba(166,124,239,.2);transition:all .3s;cursor:pointer;}
+.wt-dot.active{background:var(--purple-bright);width:18px;border-radius:3px;}
+
 /* 반응형 */
 @media (max-width:640px){
   .landing{padding:0 16px;}
@@ -255,6 +326,15 @@ section{padding:100px 0;}
   .review-grid{grid-template-columns:1fr;}
   .review-card{padding:20px;}
   .review-text{font-size:14px;}
+  /* 워크스루 모바일 */
+  .wt-tab{font-size:12px;padding:10px 4px;}
+  .wt-tab-num{display:none;}
+  .wt-panels{min-height:260px;}
+  .wt-analyzing{padding:24px 16px;}
+  .wt-result{padding:18px 14px;}
+  .wt-result-title{font-size:17px;}
+  .wt-scores{grid-template-columns:repeat(3,1fr);gap:6px;}
+  .wt-score-value{font-size:18px;}
   .cta-section{padding:60px 0 80px;}
   .cta-title{font-size:clamp(22px,5.5vw,28px);}
   .cta-desc{font-size:14px;}
@@ -443,6 +523,108 @@ section{padding:100px 0;}
           <div class="pattern-title">주간 리포트</div>
           <div class="pattern-desc">지난 7일간의 꿈을 종합 분석한 <br class="pc-br">리포트를 받아보세요.</div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 해몽 과정 미리보기 — 워크스루 -->
+  <section>
+    <div class="section-label reveal">Process</div>
+    <h2 class="section-title reveal">해몽이 이렇게 진행돼요</h2>
+    <p class="section-desc reveal">입력부터 결과까지 — 실제 해몽 흐름을 미리 살펴보세요.</p>
+
+    <div class="walkthrough reveal">
+      <!-- 탭 선택기 -->
+      <div class="wt-tabs" id="wtTabs" role="tablist" aria-label="해몽 과정 단계">
+        <div class="wt-tab-indicator" id="wtIndicator"></div>
+        <button class="wt-tab active" data-step="0" role="tab" aria-selected="true" aria-controls="wt-panel-0">
+          <span class="wt-tab-num">1</span>꿈 입력
+        </button>
+        <button class="wt-tab" data-step="1" role="tab" aria-selected="false" aria-controls="wt-panel-1">
+          <span class="wt-tab-num">2</span>AI 분석
+        </button>
+        <button class="wt-tab" data-step="2" role="tab" aria-selected="false" aria-controls="wt-panel-2">
+          <span class="wt-tab-num">3</span>해몽 결과
+        </button>
+      </div>
+
+      <!-- 패널 래퍼 -->
+      <div class="wt-panels">
+
+        <!-- 패널 0: 입력 -->
+        <div class="wt-panel active" id="wt-panel-0" role="tabpanel">
+          <div class="wt-input-box">
+            <div class="wt-input-label">꿈 내용 입력</div>
+            <div class="wt-textarea-mock" id="wtTyped" aria-label="꿈 내용 예시"></div>
+            <div class="wt-submit-row">
+              <div class="wt-submit-btn">해몽하기 🌙</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 패널 1: 분석 중 -->
+        <div class="wt-panel" id="wt-panel-1" role="tabpanel">
+          <div class="wt-analyzing">
+            <div class="wt-spinner" aria-hidden="true"></div>
+            <div class="wt-analyzing-title">AI가 꿈을 해석하고 있어요</div>
+            <div class="wt-analyzing-sub">전통 해몽과 심리학적 해석을<br>결합해 분석하고 있어요.</div>
+            <div class="wt-steps-row" aria-label="분석 진행 단계">
+              <div class="wt-step-item done" id="wtA1">
+                <span class="wt-step-icon">✓</span>꿈 속 핵심 상징 감지 완료
+              </div>
+              <div class="wt-step-item active" id="wtA2">
+                <span class="wt-step-icon"><span class="wt-step-spin" aria-hidden="true"></span></span>전통 해몽 · 심리 해석 교차 분석 중
+              </div>
+              <div class="wt-step-item pending" id="wtA3">
+                <span class="wt-step-icon">·</span>운세 점수 및 감정 키워드 산출
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 패널 2: 결과 — 기존 demo 데이터(하늘을 나는 꿈) 재사용 -->
+        <div class="wt-panel" id="wt-panel-2" role="tabpanel">
+          <div class="wt-result">
+            <div class="wt-result-header">
+              <div class="wt-result-title">☁️ 자유와 해방</div>
+              <div class="wt-result-badge">길몽 ✨</div>
+            </div>
+            <div class="wt-result-text">
+              하늘을 나는 꿈은 <strong>자유와 해방</strong>을 상징해요.<br>
+              현재 억눌려 있던 상황에서 벗어나거나,<br>
+              새로운 가능성이 열리고 있다는 신호예요.<br>
+              구름 위를 걷는 것은 <strong>높은 목표 달성</strong>의 의미가 있어요.
+            </div>
+            <div class="wt-scores">
+              <div class="wt-score">
+                <div class="wt-score-label">재물운</div>
+                <div class="wt-score-value good" data-wt-count="55">0</div>
+                <div class="wt-score-bar good"></div>
+              </div>
+              <div class="wt-score">
+                <div class="wt-score-label">건강운</div>
+                <div class="wt-score-value neutral" data-wt-count="80">0</div>
+                <div class="wt-score-bar neutral"></div>
+              </div>
+              <div class="wt-score">
+                <div class="wt-score-label">활력</div>
+                <div class="wt-score-value love" data-wt-count="92">0</div>
+                <div class="wt-score-bar love"></div>
+              </div>
+            </div>
+            <div class="wt-try-row">
+              <a href="./index.html?ref=landing-wt" class="wt-try-link">내 꿈도 해몽해보기 →</a>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /wt-panels -->
+
+      <!-- 진행 도트 -->
+      <div class="wt-dots" role="tablist" aria-label="단계 이동">
+        <div class="wt-dot active" data-step="0" role="tab" aria-label="1단계: 꿈 입력" tabindex="0"></div>
+        <div class="wt-dot" data-step="1" role="tab" aria-label="2단계: AI 분석" tabindex="0"></div>
+        <div class="wt-dot" data-step="2" role="tab" aria-label="3단계: 해몽 결과" tabindex="0"></div>
       </div>
     </div>
   </section>
@@ -683,6 +865,165 @@ const observer=new IntersectionObserver((entries)=>{
   });
 },{threshold:0.15,rootMargin:'0px 0px -40px 0px'});
 document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+
+// ── 해몽 과정 워크스루 ─────────────────────────────────────────
+(function(){
+  const DREAM_TEXT = '높은 하늘을 자유롭게 날아다니는 꿈을 꿨어요. 구름 위를 걸으며 아래를 내려다보니 도시가 작게 보였어요.';
+  let currentStep = 0;
+  let autoTimer = null;
+  let typingTimer = null;
+  let countTimers = [];
+  let typingDone = false;
+
+  const tabs = document.querySelectorAll('#wtTabs .wt-tab');
+  const indicator = document.getElementById('wtIndicator');
+  const panels = document.querySelectorAll('.wt-panel');
+  const dots = document.querySelectorAll('.wt-dot');
+  const typed = document.getElementById('wtTyped');
+
+  // 탭 인디케이터 위치 업데이트
+  function updateIndicator(idx) {
+    const tab = tabs[idx];
+    if (!tab || !indicator) return;
+    indicator.style.left = tab.offsetLeft + 'px';
+    indicator.style.width = tab.offsetWidth + 'px';
+  }
+
+  // 패널 전환
+  function goTo(step, fromAuto) {
+    if (step < 0 || step > 2) return;
+    currentStep = step;
+    // 탭 상태
+    tabs.forEach((t, i) => {
+      t.classList.toggle('active', i === step);
+      t.setAttribute('aria-selected', i === step ? 'true' : 'false');
+    });
+    // 패널 상태
+    panels.forEach((p, i) => p.classList.toggle('active', i === step));
+    // 도트 상태
+    dots.forEach((d, i) => d.classList.toggle('active', i === step));
+    updateIndicator(step);
+    // 단계별 초기화
+    if (step === 0 && !typingDone) startTyping();
+    if (step === 2) runCounters();
+    // 자동 진행 리셋 (수동 클릭 시)
+    if (!fromAuto) resetAuto();
+  }
+
+  // 타이핑 애니메이션 (패널 0)
+  function startTyping() {
+    if (!typed) return;
+    typed.innerHTML = '<span class="wt-cursor"></span>';
+    let i = 0;
+    typingTimer && clearInterval(typingTimer);
+    typingTimer = setInterval(() => {
+      if (i >= DREAM_TEXT.length) {
+        clearInterval(typingTimer);
+        typingDone = true;
+        return;
+      }
+      typed.innerHTML = DREAM_TEXT.slice(0, ++i) + '<span class="wt-cursor"></span>';
+    }, 38);
+  }
+
+  // 결과 숫자 카운터 (패널 2 — 기존 demoResult 데이터 값 재사용)
+  function runCounters() {
+    countTimers.forEach(t => cancelAnimationFrame(t));
+    countTimers = [];
+    document.querySelectorAll('[data-wt-count]').forEach(el => {
+      const target = parseInt(el.dataset.wtCount);
+      const start = performance.now();
+      const dur = 900;
+      function tick(now) {
+        const p = Math.min((now - start) / dur, 1);
+        const ease = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * ease);
+        if (p < 1) countTimers.push(requestAnimationFrame(tick));
+      }
+      countTimers.push(requestAnimationFrame(tick));
+    });
+  }
+
+  // 분석 단계 애니메이션 (패널 1)
+  function runAnalyzeAnim() {
+    const a1 = document.getElementById('wtA1');
+    const a2 = document.getElementById('wtA2');
+    const a3 = document.getElementById('wtA3');
+    if (!a1 || !a2 || !a3) return;
+    // 초기화
+    a1.className = 'wt-step-item done';
+    a2.className = 'wt-step-item active';
+    a3.className = 'wt-step-item pending';
+    setTimeout(() => {
+      a2.className = 'wt-step-item done';
+      a2.querySelector('.wt-step-icon').textContent = '✓';
+      a3.className = 'wt-step-item active';
+      a3.querySelector('.wt-step-icon').innerHTML = '<span class="wt-step-spin"></span>';
+    }, 1200);
+    setTimeout(() => {
+      a3.className = 'wt-step-item done';
+      a3.querySelector('.wt-step-icon').textContent = '✓';
+    }, 2400);
+  }
+
+  // 자동 진행 타이머 (step0→1→2, 각 3.5초)
+  function startAuto() {
+    autoTimer && clearTimeout(autoTimer);
+    autoTimer = setTimeout(() => {
+      const next = (currentStep + 1) % 3;
+      if (currentStep === 1) runAnalyzeAnim();
+      goTo(next, true);
+      if (currentStep !== 0) startAuto(); // 루프
+    }, currentStep === 0 ? 4000 : 3500);
+  }
+
+  function resetAuto() {
+    autoTimer && clearTimeout(autoTimer);
+    startAuto();
+  }
+
+  // 탭 클릭
+  tabs.forEach(t => t.addEventListener('click', () => {
+    const step = parseInt(t.dataset.step);
+    if (step === 1) runAnalyzeAnim();
+    goTo(step);
+  }));
+
+  // 도트 클릭/키보드
+  dots.forEach(d => {
+    d.addEventListener('click', () => {
+      const step = parseInt(d.dataset.step);
+      if (step === 1) runAnalyzeAnim();
+      goTo(step);
+    });
+    d.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        d.click();
+      }
+    });
+  });
+
+  // IntersectionObserver — 섹션 뷰포트 진입 시 자동 시작
+  const wtSection = document.querySelector('.walkthrough');
+  if (wtSection) {
+    const wtObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          updateIndicator(0);
+          startTyping();
+          startAuto();
+          wtObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.3 });
+    wtObserver.observe(wtSection);
+  }
+
+  // 초기 인디케이터 위치 (레이아웃 후)
+  requestAnimationFrame(() => updateIndicator(0));
+  window.addEventListener('resize', () => updateIndicator(currentStep));
+})();
 </script>
 
 </body>
