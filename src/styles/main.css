@@ -6,12 +6,45 @@
   --tab-h:64px; --r-sm:12px; --r-md:20px; --r-lg:26px;
   /* 타이포 위계 */
   --fs-h1:22px; --fs-h2:16px; --fs-h3:14px; --fs-body:13px; --fs-caption:11px; --fs-tiny:10px;
+
+  /* ── aurora-* 네임스페이스 (Huly midnight aurora 토큰 — 기존 변수 불변) ── */
+  /* 출처: Huly style 토큰 실측값 + 기존 monggeul 팔레트 rgba 환산 */
+  --aurora-iris:       #5683da;                      /* Huly Electric Iris — aurora cool stop */
+  --aurora-ember:      #ff8964;                      /* Huly Ember Pulse — aurora warm stop */
+  --aurora-void:       #090a0c;                      /* Huly Void — 최심층 배경 */
+  --aurora-card:       #111111;                      /* Huly Charcoal Card — 보이드 카드 */
+  --aurora-canvas:     #303236;                      /* Huly Obsidian Canvas — 페이지 표면 */
+  --aurora-edge:       #4a4b50;                      /* Huly Slate Edge — 헤어라인 */
+  --aurora-iris-dim:   rgba(86,131,218,0.18);        /* --aurora-iris @ 18% — 카드 틴트 */
+  --aurora-iris-glow:  rgba(86,131,218,0.08);        /* --aurora-iris @ 8% — 미세 ambient */
+  --aurora-ember-dim:  rgba(255,137,100,0.15);       /* --aurora-ember @ 15% — warm 액센트 */
+  --aurora-ember-glow: rgba(255,137,100,0.07);       /* --aurora-ember @ 7% — 미세 warm */
+  /* 오로라 세로 빔 (Huly: iris→ember 2색, 좁은 세로 방향만 허용) */
+  --aurora-beam: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(86,131,218,0.13) 20%,
+    rgba(166,124,239,0.10) 45%,
+    rgba(255,137,100,0.09) 70%,
+    transparent 100%
+  );
+  /* 보이드 배경 레이어 (hero upper + page 표면 블렌드) */
+  --aurora-bg-layer: radial-gradient(
+    ellipse 60% 40% at 50% 0%,
+    rgba(9,10,12,0.72) 0%,
+    transparent 100%
+  );
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;overflow:hidden;scrollbar-width:none;background:var(--night);color:var(--text-primary);font-family:'Noto Sans KR',sans-serif;font-size:15px;}
 
-/* 배경 — 너의 이름 스타일 밤하늘 */
-#sky{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;background:radial-gradient(ellipse at 30% 20%,rgba(25,18,60,.8) 0%,transparent 50%),radial-gradient(ellipse at 70% 80%,rgba(40,15,50,.6) 0%,transparent 50%);}
+/* 배경 — 너의 이름 스타일 밤하늘 + 미드나잇 오로라 레이어 */
+#sky{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;background:
+  /* aurora 세로 빔: iris(cool) → ember(warm) — 오로라는 좁은 세로 빔으로만(Huly Do) */
+  linear-gradient(170deg,rgba(86,131,218,0.09) 0%,rgba(166,124,239,0.07) 40%,rgba(255,137,100,0.07) 70%,transparent 100%),
+  /* 기존 밤하늘 radial 레이어 불변 */
+  radial-gradient(ellipse at 30% 20%,rgba(25,18,60,.8) 0%,transparent 50%),
+  radial-gradient(ellipse at 70% 80%,rgba(40,15,50,.6) 0%,transparent 50%);}
 .bg-star{position:absolute;border-radius:50%;animation:twinkle var(--d,4s) ease-in-out infinite var(--dl,0s);}
 .star-s{width:1px;height:1px;background:rgba(255,255,255,.6);}
 .star-m{width:2px;height:2px;background:rgba(255,250,220,.8);box-shadow:0 0 3px rgba(255,250,220,.4);}
@@ -25,6 +58,31 @@ html,body{height:100%;overflow:hidden;scrollbar-width:none;background:var(--nigh
 .meteor-trail{width:var(--len,100px);background:linear-gradient(90deg,rgba(255,240,200,.9) 0%,rgba(200,180,255,.6) 30%,transparent 100%);border-radius:1px;}
 .meteor-big{width:var(--len,140px);height:2px;background:linear-gradient(90deg,rgba(255,220,150,1) 0%,rgba(255,180,100,.8) 20%,rgba(180,160,255,.4) 50%,transparent 100%);border-radius:2px;box-shadow:0 0 8px rgba(255,200,120,.4);}
 @keyframes shoot{0%{opacity:0;transform:translate(0,0) rotate(var(--angle,-35deg))}1%{opacity:1}6%{opacity:.8}10%{opacity:0;transform:translate(var(--dx,-350px),var(--dy,200px)) rotate(var(--angle,-35deg))}100%{opacity:0}}
+
+/* ── 오로라 히어로 레이어 (Huly midnight aurora — 세로 빔, JS 없음) ── */
+.aurora-hero {
+  position: relative;
+  border-radius: var(--r-lg);
+  /* 오로라 세로 빔: iris → violet → ember, 좁은 세로 방향 고정 그라디언트 */
+  background:
+    linear-gradient(170deg,
+      rgba(86,131,218,0.10) 0%,
+      rgba(166,124,239,0.08) 42%,
+      rgba(255,137,100,0.07) 78%,
+      transparent 100%
+    );
+}
+/* 헤드라인 대비 유지: text-shadow는 기존 inline 값 사용, 여기서는 미터치 */
+@media (prefers-reduced-motion: reduce) {
+  .aurora-hero { background: none; }
+}
+
+/* ── 카드 영역: 보이드 계열 배경 통일 (기존 rgba 값과 블렌드, 충돌 시 기존 우선) ── */
+/* .card 는 기존 rgba(45,40,88,.5) 유지 — aurora-card-void 로 opt-in 클래스만 준비 */
+.aurora-card-void {
+  background: rgba(17,17,17,0.72) !important;
+  border-color: rgba(74,75,80,0.35) !important;
+}
 
 /* 앱 래퍼 */
 #app{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;max-width:480px;margin:0 auto;overflow:hidden;}

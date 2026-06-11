@@ -27,6 +27,16 @@
   /* 타이포 통일 변수 */
   --fs-label:13px; --fs-body:15px; --fs-card-title:20px; --fs-card-desc:15px;
   --fs-tag:12px; --fs-small:13px; --fs-btn:18px;
+
+  /* ── aurora-* 네임스페이스 (Huly midnight aurora — 기존 변수 불변) ── */
+  --aurora-iris:       #5683da;
+  --aurora-ember:      #ff8964;
+  --aurora-void:       #090a0c;
+  --aurora-card:       #111111;
+  --aurora-canvas:     #303236;
+  --aurora-edge:       #4a4b50;
+  --aurora-iris-dim:   rgba(86,131,218,0.18);
+  --aurora-ember-dim:  rgba(255,137,100,0.15);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;scrollbar-color:rgba(124,92,191,.3) rgba(14,12,26,.5);scrollbar-width:thin;}
@@ -36,10 +46,12 @@ body{background:var(--night);color:var(--text-primary);font-family:'Noto Sans KR
 ::-webkit-scrollbar-thumb{background:rgba(124,92,191,.3);border-radius:4px;}
 ::-webkit-scrollbar-thumb:hover{background:rgba(124,92,191,.5);}
 
-/* 밤하늘 배경 */
+/* 밤하늘 배경 + 미드나잇 오로라 레이어 */
 #sky{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;
-  background:radial-gradient(ellipse at 30% 20%,rgba(25,18,60,.8) 0%,transparent 50%),
-  radial-gradient(ellipse at 70% 80%,rgba(40,15,50,.6) 0%,transparent 50%);}
+  background:
+    linear-gradient(170deg,rgba(86,131,218,0.09) 0%,rgba(166,124,239,0.07) 40%,rgba(255,137,100,0.07) 70%,transparent 100%),
+    radial-gradient(ellipse at 30% 20%,rgba(25,18,60,.8) 0%,transparent 50%),
+    radial-gradient(ellipse at 70% 80%,rgba(40,15,50,.6) 0%,transparent 50%);}
 .bg-star{position:absolute;border-radius:50%;animation:twinkle var(--d,4s) ease-in-out infinite var(--dl,0s);}
 .star-s{width:1px;height:1px;background:rgba(255,255,255,.6);}
 .star-m{width:2px;height:2px;background:rgba(255,250,220,.8);box-shadow:0 0 3px rgba(255,250,220,.4);}
@@ -61,8 +73,9 @@ body{background:var(--night);color:var(--text-primary);font-family:'Noto Sans KR
 .nav-cta{background:rgba(124,92,191,.25);border:1px solid rgba(166,124,239,.35);border-radius:24px;color:var(--purple-bright);font-family:'Noto Sans KR',sans-serif;font-size:var(--fs-body);font-weight:600;padding:8px 22px;cursor:pointer;transition:all .3s;text-decoration:none;}
 .nav-cta:hover{background:rgba(124,92,191,.4);transform:translateY(-1px);}
 
-/* 히어로 */
-.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 0 80px;position:relative;}
+/* 히어로 — 오로라 세로 빔 배경 레이어 추가 (텍스트 대비 불변) */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 0 80px;position:relative;background:linear-gradient(170deg,rgba(86,131,218,0.08) 0%,rgba(166,124,239,0.06) 42%,rgba(255,137,100,0.06) 78%,transparent 100%);}
+@media(prefers-reduced-motion:reduce){.hero{background:none;}}
 .hero-moon{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#f5e6b2,#e8d5a0,#d4c08a);box-shadow:0 0 60px rgba(245,230,178,.3),0 0 120px rgba(245,230,178,.15),0 0 200px rgba(245,230,178,.08);margin-bottom:40px;animation:moonFloat 6s ease-in-out infinite;position:relative;}
 .hero-moon::after{content:'';position:absolute;width:25px;height:25px;border-radius:50%;background:rgba(200,180,140,.3);top:30px;left:60px;}
 .hero-moon::before{content:'';position:absolute;width:15px;height:15px;border-radius:50%;background:rgba(200,180,140,.25);bottom:35px;left:25px;}
