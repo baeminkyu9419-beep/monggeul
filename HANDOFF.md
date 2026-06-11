@@ -1,5 +1,14 @@
 # MONGGEUL HANDOFF
 
+## 현 상태 (2026-06-11)
+
+- **LIVE 다운 원인**: repo private 전환(baeminkyu9419-beep/monggeul HTTP 404) + Supabase `mskwqlqpcsfvgvhhilma.supabase.co` pause — 인간 영역(민규 P0).
+- **실 가용 LLM**: Mistral 1개만 LIVE (ping 실측: evidence/secrets_ping_matrix.json). OpenAI 401 / Gemini expired / DeepSeek 부재. providers.js 멀티LLM 정규화 코드 완성 — 키 충전 시 즉시 작동 (미검증).
+- **코드 커밋 실측**: 멀티LLM 폴백(15226c5) / 키워드 버그 2건(6e7dffc) / paywall canUseDream() 배선(a780530) — git log 확인. 실행 E2E는 Supabase+키 복구 후 가능.
+- **외부 blocker (민규 P0)**: Supabase unpause 1-click / repo public 또는 CDN 전환 / OpenAI·Gemini 키 충전 / AdSense·Play Store.
+
+---
+
 > **Gen107 Recovery Gen** — 2026-04-17 야간 자율 작성
 > 세대 교체 시 덮어쓴다. 이전 갱신: Gen98 (2026-04-16 21:33).
 
