@@ -48,3 +48,7 @@ config 빈값 상태면 LLM 없이 키워드 매칭 demoResult로 폴백 — 의
 - `config.js`는 `.gitignore`에 포함 — 커밋 시 `config.example.js` 참조.
 - 결제 경로 수정 시 중복 webhook / idempotency 처리 필수.
 - `src/tabs/dream.js` 등 모듈 경계 변경 시 import 체인 전수 확인.
+
+## PURPOSE LOCK
+- 목적 잠금 정본 = `PURPOSE.lock.yaml` (프로젝트·폴더·파일 목적/보호 분류). 구조 변경 시 함께 갱신.
+- 검증: `PYTHONUTF8=1 python C:/JARVIS_NEW/tools/purpose_lock.py` (drift = 실패)

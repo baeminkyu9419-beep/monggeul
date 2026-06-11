@@ -1,0 +1,229 @@
+project: monggeul
+project_purpose: >
+  꿈 해몽 & 꿈 기록 PWA + Android/iOS 하이브리드 앱. Free(광고) / Plus(구독) /
+  Premium(구독) 3티어 + 단건 팩 결제(Stripe + 토스페이먼츠 + Apple IAP + Google Play Billing)로
+  수익을 만든다.
+jarvis_role: >
+  external_revenue_stream — 스토어 제출 대기 중인 수익화 앱 (revenue_generation,
+  project_roles.yaml MONGGEUL 항목 기준). Supabase unpause·repo public·LLM 키 등 외부
+  blocker 해소 후 수익 전환 가능.
+
+# ── 주의: project_roles.yaml의 description("반려동물 관리 하이브리드 앱")은 STALE 오기입.
+# 실제 제품 정체는 CLAUDE.md manifest.json 근거("꿈 해몽 & 꿈 기록")로 판정.
+# 이 모순은 conflicts 항목에도 기재됨.
+
+root_files:
+  - name: index.html
+    purpose: PWA 메인 HTML 진입점 (AdSense placeholder 포함)
+  - name: landing.html
+    purpose: 마케팅 랜딩 페이지
+  - name: manifest.json
+    purpose: PWA 매니페스트 (앱 이름·아이콘·시작 URL 정의)
+  - name: capacitor.config.json
+    purpose: Capacitor 네이티브 빌드 설정 (SplashScreen·WebDir 등)
+  - name: vite.config.js
+    purpose: Vite 번들러 설정 (빌드 파이프라인 진입점)
+  - name: package.json
+    purpose: npm 의존성·빌드·배포 스크립트 정의
+  - name: config.js
+    purpose: 런타임 환경변수 주입 파일 (Supabase URL·anon·AdSense 등, .gitignore 제외)
+  - name: config.example.js
+    purpose: config.js 키 목록 참조용 예시 (커밋 가능)
+  - name: netlify.toml
+    purpose: Netlify 배포 설정 (SPA 리다이렉트 포함)
+  - name: vercel.json
+    purpose: Vercel 배포 설정
+  - name: render.yaml
+    purpose: Render 배포 설정
+  - name: wrangler.toml
+    purpose: Cloudflare Workers/Pages 배포 설정
+  - name: AGENTS.md
+    purpose: 에이전트 진입 규약 (빌드·테스트·배포·LLM 현실·Blocker 정의)
+  - name: CLAUDE.md
+    purpose: 프로젝트 정체·수익화 구조·절대 규칙(기능추가금지·정신건강경계) 정의
+  - name: HANDOFF.md
+    purpose: 세대 간 인수인계 — 현 상태·blocker·마일스톤 전수 기록
+  - name: CHANGELOG.md
+    purpose: 기능 변경 이력
+  - name: DEPLOY_GUIDE.md
+    purpose: 배포 절차 가이드
+  - name: ROLLBACK.md
+    purpose: 롤백 절차 가이드
+  - name: EVOLUTION.md
+    purpose: 프로젝트 진화 이력 (커밋·마일스톤)
+  - name: LAUNCH_BLOCKERS.md
+    purpose: 출시 blocker 목록 현황
+  - name: LAUNCH_CHECKLIST.md
+    purpose: 출시 전 체크리스트
+  - name: SECURITY_REDEPLOY.md
+    purpose: 보안 패치(R4 LLM 프롬프트 서버 격리) 재배포 가이드
+  - name: releases.html
+    purpose: 릴리스 노트 페이지
+  - name: design-preview.html
+    purpose: 디자인 목업 미리보기 HTML
+  - name: design-preview.png
+    purpose: 디자인 목업 스크린샷
+  - name: landing-full.png
+    purpose: 랜딩 페이지 전체 스크린샷
+  - name: landing-hero.html
+    purpose: 히어로 섹션 랜딩 페이지
+  - name: landing-hero.png
+    purpose: 히어로 섹션 스크린샷
+
+folders:
+  - name: src
+    purpose: 앱 ES모듈 소스 루트 — 엔트리포인트·전역스토어·컴포넌트·서비스·탭·유틸·스타일·피처플래그
+    protect: P0
+    status: active
+
+  - name: supabase
+    purpose: Supabase 로컬 설정·Edge Functions(결제/AI프록시/푸시) 15개·DB 마이그레이션 8개
+    protect: P0
+    status: active
+
+  - name: bots
+    purpose: 꿈 패턴 분석·콘텐츠 모더레이션·프리미엄 업셀 트리거 자동화 봇 3종
+    protect: normal
+    status: active
+
+  - name: contracts
+    purpose: SSOT 계약 문서 보관 (project_manifest.yaml — MONGGEUL 진실 공급원)
+    protect: P0
+    status: active
+
+  - name: data
+    purpose: 에이전트·루프 런타임 상태 저장소 (세션락·체크포인트 등 임시 파일, .gitignore 제외)
+    protect: normal
+    status: stale
+
+  - name: assets
+    purpose: 앱 브랜딩 정적 이미지 자산 (아이콘·스플래시·OG 이미지)
+    protect: normal
+    status: active
+
+  - name: docs
+    purpose: 세션 감사 보고서 아카이브 + 마케팅 카피 SSOT (copy.md 활성, 나머지 stale)
+    protect: normal
+    status: stale
+
+  - name: ops
+    purpose: Supabase DB 운영 SQL (빌링 스키마 DDL·RLS·RPC·상품 카탈로그, 수동 적용)
+    protect: P0
+    status: active
+
+  - name: android
+    purpose: Capacitor 기반 Android 네이티브 래퍼 (Gradle 빌드·MainActivity·아이콘·스플래시)
+    protect: normal
+    status: active
+
+  - name: ios
+    purpose: Capacitor 기반 iOS 네이티브 래퍼 (Xcode 스캐폴드, 미출시·빌드환경 미설정)
+    protect: normal
+    status: stale
+
+  - name: public
+    purpose: Vite 빌드 정적 서빙 루트 (SEO·PWA·법률·광고·꿈 키워드 66개 SEO 페이지)
+    protect: P0
+    status: active
+
+  - name: resources
+    purpose: Capacitor 모바일 빌드용 원본 아이콘·스플래시 이미지 (iOS·Android 생성 소스)
+    protect: normal
+    status: active
+
+  - name: screenshots
+    purpose: 앱스토어 제출용 기기별 스크린샷 (android·iphone-5.5·iphone-6.7 × 5 화면)
+    protect: normal
+    status: active
+
+  - name: scripts
+    purpose: 빌드·배포·LLM 테스트·SEO 생성·보안 패치·아키텍처 검사 도구 모음
+    protect: P0
+    status: active
+
+  - name: shared
+    purpose: Mother 공유 Python 유틸리티 레이어 (AI·DB·인증·결제·리텐션·예산·리스크 공통 모듈)
+    protect: P0
+    status: active
+
+  - name: store
+    purpose: 앱스토어·플레이스토어 제출용 브랜드 가이드·설명·법률 문서 모음
+    protect: normal
+    status: active
+
+  - name: meta
+    purpose: 프로젝트 메타 운영 레지스트리 (훅·MCP·스킬·매니페스트·조직도 5종 JSON)
+    protect: normal
+    status: active
+
+  - name: tests
+    purpose: pytest 기반 비즈니스로직·결제·LLM라우팅·Paywall 게이트 회귀·뮤테이션 테스트 모음
+    protect: normal
+    status: active
+
+  - name: _project_brief
+    purpose: 특정 세션 시점 컨텍스트 스냅샷 (git상태·커밋·폴더맵·환경, 1회성 참조)
+    protect: normal
+    status: stale
+
+  - name: dist
+    purpose: Vite 빌드 산출물 (4.5MB, 빌드 재생성 가능, .gitignore 제외)
+    protect: normal
+    status: stale
+
+  - name: node_modules
+    purpose: npm 의존성 설치 디렉토리 (.gitignore 제외)
+    protect: normal
+    status: active
+
+protected_assets:
+  # CLAUDE.md 명시 수정금지
+  - "src/utils/crisis.js — 위기 신호 안전망 (P0, 정신건강 경계 절대 규칙)"
+  - "src/services/auth.js — Supabase 소셜 로그인 처리 (P0)"
+  - "src/services/api.js — OpenAI 프록시 클라이언트 (P0)"
+  - "src/services/payment.js — 결제 추상화 레이어 Stripe+토스 (P0)"
+  - "src/services/pg-stripe.js — Stripe PG 모듈 (P0)"
+  - "src/services/pg-toss.js — 토스페이먼츠 PG 모듈 (P0)"
+  - "src/services/subscription.js — 구독·결제·paywall 연동 (P0)"
+  - "src/tabs/dream.js — 해몽 탭 핵심 (P0)"
+  - "src/app.js — ES모듈 엔트리포인트 (P0)"
+  - "src/store.js — 전역 공유 상태 저장소 (P0)"
+  - "supabase/functions/openai-proxy/prompts.ts — 서버 측 시스템 프롬프트 (IP 서버 격리, P0)"
+  - "contracts/ssot/project_manifest.yaml — SSOT 매니페스트 (P0)"
+  - "ops/APPLY_BILLING_SCHEMA.sql — 빌링 스키마 DDL·RLS·RPC (P0)"
+  - "scripts/gen-config.js — 배포 config.js 생성기 (P0)"
+  - "shared/payment_core.py — Stripe+Toss 범용 결제 코어 (P0)"
+  - "shared/retention_engine.py — 범용 리텐션 엔진 (P0)"
+  - "public/privacy-policy.html + public/store/privacy-policy.html — 법률 문서 (P0)"
+  - "public/terms-of-service.html + public/store/terms-of-service.html — 법률 문서 (P0)"
+
+conflicts:
+  - id: C01
+    description: >
+      project_roles.yaml MONGGEUL.description = "반려동물 관리 하이브리드 앱"이나
+      실제 제품은 CLAUDE.md·manifest.json·AGENTS.md 모두 "꿈 해몽 & 꿈 기록 앱"으로 확정.
+      project_roles.yaml이 Gen107 이전 오기입 상태로 미갱신됨.
+    severity: high
+    resolution: 임의 해소 금지 — project_roles.yaml 갱신은 민규 또는 명시 지시 후 수행.
+
+  - id: C02
+    description: >
+      CLAUDE.md의 LLM 경로 기술("OpenAI API 프록시 클라이언트" = services/api.js)과
+      AGENTS.md·HANDOFF.md의 현실("작동 키 0/3, Mistral 1개뿐") 간 괴리.
+      코드는 멀티 LLM 정규화 완성 상태이나 실 가용 LLM은 Mistral 단 1개.
+    severity: medium
+    resolution: 임의 해소 금지 — 키 충전 또는 Mistral 단일 라우팅 명시적 결정 후 반영.
+
+  - id: C03
+    description: >
+      HANDOFF.md §0.2 "Edge Functions 15개"와 supabase.yaml 실측 함수 목록 간
+      toss-* 중복(v1 5개 / v2 3개 병존) 정리 여부 불명. 현재 유효 버전 카운트가 조각마다 다름.
+    severity: low
+    resolution: 임의 해소 금지 — supabase.yaml은 v1 기준 기술, 정리 방향은 민규 결정 대기.
+
+  - id: C04
+    description: >
+      data/ 디렉토리는 에이전트 런타임 상태 저장소로 기술됐으나 실제 내용이
+      .gitignore 제외로 빈 상태(items_count=0). 런타임 가동 여부 미검증.
+    severity: low
+    resolution: 임의 해소 금지 — 실제 런타임 가동 시 상태 재확인 필요.
