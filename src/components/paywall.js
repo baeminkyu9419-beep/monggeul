@@ -206,9 +206,9 @@ export function showUnconsciousPaywall() {
 
     <button class="pw-btn" data-action="unconscious_profile" style="background:linear-gradient(135deg,#5bbfba,#3d9e99);border:none;border-radius:12px;color:white;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;width:100%;margin-bottom:6px">🧠 프로파일 열기 ₩2,900</button>
 
-    <button class="pw-btn" data-action="pro_monthly" style="background:rgba(91,191,186,.1);border:1px solid rgba(91,191,186,.2);border-radius:12px;padding:10px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;width:100%;margin-bottom:8px;text-align:center">
-      <div style="font-size:11px;font-weight:700;color:var(--teal,#5bbfba)">프로 구독이면 무료! ₩9,900/월</div>
-      <div style="font-size:9px;color:var(--text-muted,#7a6fa0)">상세해몽 무제한 + 프로파일 + 주간리포트</div>
+    <button class="pw-btn" data-action="plus_monthly" style="background:rgba(91,191,186,.1);border:1px solid rgba(91,191,186,.2);border-radius:12px;padding:10px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;width:100%;margin-bottom:8px;text-align:center">
+      <div style="font-size:11px;font-weight:700;color:var(--teal,#5bbfba)">✨ Plus 구독 ₩3,900/월</div>
+      <div style="font-size:9px;color:var(--text-muted,#7a6fa0)">해몽 무제한 + 광고 제거 + 주간 리포트</div>
     </button>
 
     <button onclick="this.closest('div[style]').parentElement.remove()" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif">다음에 할게요</button>
