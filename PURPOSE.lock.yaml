@@ -141,10 +141,8 @@ folders:
     protect: P0
     status: active
 
-  - name: shared
-    purpose: Mother 공유 Python 유틸리티 레이어 (AI·DB·인증·결제·리텐션·예산·리스크 공통 모듈)
-    protect: P0
-    status: active
+  # shared/ — 2026-06-12 deadcode 전수에서 참조 0 실측(from shared|import shared = 0건)
+  # → _archive/deadcode_20260612_shared_python/ 격리 (commit 6f309d1). 복원 = git mv 역방향.
 
   - name: store
     purpose: 앱스토어·플레이스토어 제출용 브랜드 가이드·설명·법률 문서 모음
