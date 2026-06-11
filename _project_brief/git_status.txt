@@ -1,0 +1,6 @@
+ M tests/test_project_structure.py
+?? _archive_shot_full.png
+?? _project_brief/
+?? design-preview.png
+?? landing-full.png
+?? landing-hero.png

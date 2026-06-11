@@ -1,0 +1,20 @@
+a90ede4 design(landing): 달이 캐릭터 디자인 시스템 + 완성 랜딩 목업 (카피→디자인)
+15226c5 feat(llm): 실 LLM 경로 end-to-end 증명(로컬 프록시) + granular 폴백 사유
+c66599c fix(routing): LLM 경로 vs fallback 사전 경로 명시 분리 (engine 태깅)
+4c96ee9 feat(engine): 해몽 품질 도약 — Mistral large + 출력규칙 강화 (실측 검증)
+f89a13d docs(plan): 끝까지 push 진행 박제 — 13커밋 no-backend 완료, 백엔드만 잔여
+bca45b9 feat(llm): 달이 챗 프롬프트도 의도추론 강화 (성별/관계 보존 + 깨어난 감정)
+6cf3c8f feat(retention): 꿈 저장 시 날짜기반 연속기록 자동증가 (mg_streak)
+1b7dcfe fix(paywall): 가격 앵커 정정 — '프로 ₩9,900' → Plus ₩3,900 + Premium ₩19,900 2단 카드
+79f5e80 feat(llm): 의도추론 강화 — 성별/관계 보존 + 깨어난 감정 grounding + few-shot
+0ddf74f feat(hook): 결과 핵심 한 줄 캐치프레이즈 — 제목 아래, 분석차트보다 먼저 '의미' 전달
+a6ec420 docs(plan): 결제매력도 작업계획 SSOT — 판정 0/4·Phase0~3·민규 unblock
+f118791 fix(honesty): 커뮤니티 배너 날조 engagement 수치 제거 (162명 공감·189명)
+905dfaa fix(honesty): 날조 소셜프루프 제거 — '1,331명'·랜덤 '지금 N명 해몽 중' → 본인 실기록 수
+151ac75 feat(funnel): 전환 잠금 teaser(이전 진행작업) + 위기 안전망 footer/CSS 통합
+7ec72e5 fix(dream): '전 남자친구' 이별 꿈 오매칭 수정 — 연애운88→그리움/회복 해석
+6843676 fix(dali): 해몽 카드 렌더 깨짐 + 잠복 XSS 수정
+b81fe42 fix(security): 커뮤니티 IDOR 차단 + stripe 웹훅 하드닝
+e98237a fix(launch): 출시 차단요인 코드측 종료 — 위기 안전망·config 404·manifest·XSS
+98c476e feat(deploy): Render Static Site(무료, SPA rewrite)
+2e4ae99 fix(payment): toss Edge Function 6→3 dedup + 무료→유료 퍼널 회귀 테스트

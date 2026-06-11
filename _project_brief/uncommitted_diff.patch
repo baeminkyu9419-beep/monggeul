@@ -1,0 +1,67 @@
+diff --git a/tests/test_project_structure.py b/tests/test_project_structure.py
+index 669a518..b63a01f 100644
+--- a/tests/test_project_structure.py
++++ b/tests/test_project_structure.py
+@@ -374,3 +374,62 @@ class TestConversionLock:
+         assert "priceEl.style.display='none'" in self.DREAM_JS, (
+             "크레딧 보유 경로에서 가격 숨김 누락 — 마찰 0 경로 깨짐"
+         )
++
++
++class TestCliffhangerPreview:
++    """잠금 미리보기 = 클리프행어(Zeigarnik) + 궁금증 갭(Tinder blur-to-reveal).
++
++    벤치(WebSearch 2026-06): Blick "Cliffhanger Effect" — 임의 글자수 자르기(substring)
++    대신 유용한 통찰 직전에서 끊으면 미완결감이 업그레이드를 유도. Tinder — "특정 답이
++    존재한다"고 알리되 답은 잠금 → 결제. 이 단언이 존재하는 이유: 과거 lockPreview 는
++    full.substring(0,250)+'...' 로 첫 섹션 중간을 아무 데서나 잘라(가치 입증 실패 + 클리프행어
++    효과 0) 전환 동력이 약했다. 다음 세션이 무심코 substring 으로 되돌리면 FAIL 하게 결합한다.
++    """
++
++    DREAM_JS = (ROOT / "src" / "tabs" / "dream.js").read_text(encoding="utf-8")
++    INDEX = (ROOT / "index.html").read_text(encoding="utf-8")
++    CSS = (ROOT / "src" / "styles" / "main.css").read_text(encoding="utf-8")
++
++    def test_cliffhanger_builder_exists(self):
++        """클리프행어 미리보기 빌더 함수 존재."""
++        assert "function _buildCliffhangerPreview" in self.DREAM_JS, (
++            "_buildCliffhangerPreview 빌더 누락 — 클리프행어 미리보기 미구현"
++        )
++
++    def test_arbitrary_substring_cut_removed(self):
++        """회귀 방어: lockPreview 가 임의 글자수 자르기(substring(0,250))로 되돌아가면 FAIL.
++
++        mutation-sensitive: 이 라인이 부활하면 클리프행어가 죽고 첫 섹션 중간이 잘린다.
++        """
++        assert "full.substring(0,250)" not in self.DREAM_JS, (
++            "lockPreview 가 임의 substring(0,250) 자르기로 회귀 — 클리프행어 무력화"
++        )
++
++    def test_cliffhanger_wired_into_lock_preview(self):
++        """showResultDetail 가 lockPreview 를 클리프행어 빌더로 채우는지 배선 확인."""
++        assert "_buildCliffhangerPreview(full)" in self.DREAM_JS, (
++            "showResultDetail 가 _buildCliffhangerPreview 를 호출하지 않음 — 미배선"
++        )
++
++    def test_curiosity_gap_teaser_exists(self):
++        """궁금증 갭(잠긴 답의 제목만 노출) 렌더 함수 + 호출 배선."""
++        assert "function _renderLockTeaser" in self.DREAM_JS, "_renderLockTeaser 누락"
++        assert "_renderLockTeaser()" in self.DREAM_JS, (
++            "renderConversionLock 가 _renderLockTeaser 를 호출하지 않음 — 궁금증 갭 미배선"
++        )
++
++    def test_locked_answer_labels_derived_from_real_sections(self):
++        """무근거 조작 금지: 잠긴 답 라벨이 실제 해석 섹션 제목에서 도출됨."""
++        # cliffhanger 가 window._lockedAnswerLabels 를 채우고 teaser 가 소비
++        assert "_lockedAnswerLabels" in self.DREAM_JS, (
++            "잠긴 답 라벨 파이프(_lockedAnswerLabels) 누락 — 실제 섹션 기반 도출 끊김"
++        )
++        assert "_LOCK_SECTION_LABELS" in self.DREAM_JS, (
++            "섹션→라벨 매핑(_LOCK_SECTION_LABELS) 누락"
++        )
++
++    def test_teaser_dom_slot_and_css_exist(self):
++        """index.html 에 lockTeaser 슬롯 + main.css 에 칩 스타일 존재."""
++        assert 'id="lockTeaser"' in self.INDEX, "잠금 티저 DOM 슬롯(lockTeaser) 누락"
++        for cls in (".lock-teaser", ".lock-teaser-chip"):
++            assert cls in self.CSS, f"잠금 티저 CSS 누락: {cls}"

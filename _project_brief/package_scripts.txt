@@ -1,0 +1,34 @@
+[scripts]
+dev: vite
+generate:seo: node scripts/generate-seo-pages.js
+generate:blog: node scripts/generate-blog-content.js
+build: node scripts/generate-seo-pages.js && vite build && node scripts/gen-config.js
+preview: vite preview
+build:root: node scripts/generate-seo-pages.js && node -e "process.env.DEPLOY_BASE='/';require('child_process').execSync('npx vite build',{stdio:'inherit',env:process.env})" && node scripts/gen-config.js
+deploy:cf: npm run build:root && npx wrangler@latest pages deploy dist --project-name=monggeul --branch=main
+deploy:vercel: npm run build:root && npx vercel@latest --prod ./dist --yes
+deploy:netlify: npm run build:root && npx netlify-cli@latest deploy --dir=dist --prod
+cap:sync: vite build && npx cap sync
+cap:android: vite build && npx cap sync android && npx cap open android
+cap:ios: vite build && npx cap sync ios && npx cap open ios
+
+[dependencies]
+@capacitor-community/admob
+@capacitor/android
+@capacitor/app
+@capacitor/cli
+@capacitor/core
+@capacitor/haptics
+@capacitor/ios
+@capacitor/keyboard
+@capacitor/splash-screen
+@capacitor/status-bar
+@supabase/supabase-js
+html5-qrcode
+jspdf
+qrcode
+
+[devDependencies]
+puppeteer
+sharp
+vite
