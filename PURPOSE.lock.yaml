@@ -215,6 +215,7 @@ conflicts:
     resolution: 임의 해소 금지 — 키 충전 또는 Mistral 단일 라우팅 명시적 결정 후 반영.
 
   - id: C03
+    resolved_20260612: "실측 — supabase/functions 12개(billing-apple 2·billing-google 2·create-checkout·openai-proxy·push 2·stripe-webhook·toss 3). v1/v2 병존 없음, HANDOFF '15개'가 오기"
     description: >
       HANDOFF.md §0.2 "Edge Functions 15개"와 supabase.yaml 실측 함수 목록 간
       toss-* 중복(v1 5개 / v2 3개 병존) 정리 여부 불명. 현재 유효 버전 카운트가 조각마다 다름.
