@@ -95,3 +95,5 @@ data/snapshots.json
 # 내용 변화 없이도 diff 가 발생함. 배포 시 generate 후 산출되는 파생물이므로 git 추적 제외.
 public/feed.xml
 public/sitemap.xml
+
+evidence/
