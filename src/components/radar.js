@@ -28,7 +28,32 @@ export function drawRadar(stats){
   const m1=document.createElementNS(ns,'feMergeNode');m1.setAttribute('in','blur');
   const m2=document.createElementNS(ns,'feMergeNode');m2.setAttribute('in','SourceGraphic');
   merge.appendChild(m1);merge.appendChild(m2);filter.appendChild(blur);filter.appendChild(merge);defs.appendChild(filter);
+  // 보이드 천구 그라데이션 (radarSvg 단일 마운트라 id 고정 안전)
+  const vGrad=document.createElementNS(ns,'radialGradient');
+  vGrad.setAttribute('id','radarVoid');vGrad.setAttribute('cx','42%');vGrad.setAttribute('cy','36%');vGrad.setAttribute('r','78%');
+  [['0%','#181430'],['55%','#100d22'],['100%','#0a0816']].forEach(([o,c])=>{
+    const st=document.createElementNS(ns,'stop');st.setAttribute('offset',o);st.setAttribute('stop-color',c);vGrad.appendChild(st);
+  });
+  defs.appendChild(vGrad);
   svg.appendChild(defs);
+
+  // ── 보이드 천구 배경 — 꿈 에너지가 떠 있는 밤하늘. 별은 stats 합 시드 결정론(같은 꿈=같은 하늘) ──
+  const voidDisk=document.createElementNS(ns,'circle');
+  voidDisk.setAttribute('cx',cx);voidDisk.setAttribute('cy',cy);voidDisk.setAttribute('r',r+13);
+  voidDisk.setAttribute('fill','url(#radarVoid)');
+  voidDisk.setAttribute('stroke','rgba(166,124,239,.14)');voidDisk.setAttribute('stroke-width','1');
+  svg.appendChild(voidDisk);
+  let _t=(labels.reduce((s,k)=>s+(stats[k]|0),0)*7919+n*131)>>>0;
+  const _rnd=()=>{_t+=0x6D2B79F5;let q=Math.imul(_t^_t>>>15,1|_t);q^=q+Math.imul(q^q>>>7,61|q);return((q^q>>>14)>>>0)/4294967296;};
+  for(let i=0;i<26;i++){
+    const a=_rnd()*Math.PI*2, rr=Math.sqrt(_rnd())*(r+9);
+    const star=document.createElementNS(ns,'circle');
+    star.setAttribute('cx',(cx+rr*Math.cos(a)).toFixed(1));star.setAttribute('cy',(cy+rr*Math.sin(a)).toFixed(1));
+    star.setAttribute('r',(0.4+_rnd()*0.6).toFixed(2));star.setAttribute('fill','#e9e4fb');
+    if(i%5===0){star.setAttribute('class','radar-star');star.setAttribute('style','animation-delay:'+(_rnd()*3).toFixed(1)+'s');}
+    else star.setAttribute('opacity',(0.18+_rnd()*0.4).toFixed(2));
+    svg.appendChild(star);
+  }
 
   // 배경 링 (4단계, 점선)
   for(let ring=1;ring<=4;ring++){
