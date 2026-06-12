@@ -464,40 +464,7 @@ export function updateCommunityTab() {
 
 export function adoptComment() {}
 
-// "나와 비슷한 꿈" 매칭 (Phase 2-3)
-export function renderSimilarDreamsSection() {
-  const el = document.getElementById('similarDreamsSection');
-  if (!el) return;
-
-  const logs = JSON.parse(localStorage.getItem('mg_logs') || '[]');
-  if (logs.length === 0) { el.style.display = 'none'; return; }
-
-  const myKws = new Set();
-  logs.slice(0, 5).forEach(function (l) {
-    (l.badges || []).forEach(function (b) { myKws.add(b); });
-    (l.text || '').split(/\s+/).forEach(function (w) { if (w.length >= 2) myKws.add(w); });
-  });
-
-  const scored = cachedFeed.map(function (post) {
-    var score = 0;
-    myKws.forEach(function (k) {
-      if (post.body && post.body.includes(k)) score += 2;
-      if (post.tag && post.tag.includes(k)) score += 3;
-      if (post.title && post.title.includes(k)) score += 1;
-    });
-    return { post: post, score: score };
-  }).filter(function (s) { return s.score > 0; }).sort(function (a, b) { return b.score - a.score; }).slice(0, 3);
-
-  if (scored.length === 0) { el.style.display = 'none'; return; }
-
-  var e = function (s) { return String(s).replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
-  el.innerHTML = '<div style="font-size:13px;font-weight:700;color:var(--purple-bright);margin-bottom:10px;display:flex;align-items:center;gap:6px"><span>🔗</span>나와 비슷한 꿈</div>'
-    + scored.map(function (s) {
-      var p = s.post;
-      return '<div style="background:rgba(166,124,239,.05);border:1px solid rgba(166,124,239,.12);border-radius:12px;padding:10px;margin-bottom:6px;cursor:pointer" onclick="goToStoryTag(\'' + e(p.tag || '') + '\')"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:12px;font-weight:600;color:var(--moon)">' + e(p.title || '') + '</div><span class="badge bl" style="font-size:8px;padding:1px 5px">' + e(p.tag || '') + '</span></div><div style="font-size:10px;color:var(--text-secondary);margin-top:4px;line-height:1.5">' + e((p.body || '').substring(0, 60)) + '...</div><div style="font-size:9px;color:var(--text-muted);margin-top:4px">유사도 ' + Math.min(s.score * 10, 95) + '%</div></div>';
-    }).join('');
-  el.style.display = 'block';
-}
+// renderSimilarDreamsSection 제거 — dead export, 호출부 없음 (2026-06-12)
 
 // ═══ 유틸 ═══
 
@@ -516,11 +483,7 @@ function formatTimeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString('ko-KR');
 }
 
-// ═══ 클린업 ═══
-export function destroyCommunity() {
-  unsubscribePosts();
-  realtimeActive = false;
-}
+// destroyCommunity 제거 — dead export, 호출부 없음 (2026-06-12)
 
 // ═══ window 노출 ═══
 window.renderFeed = renderFeed;

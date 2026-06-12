@@ -118,12 +118,7 @@ export async function addCredits(count) {
   updateCreditInfo();
 }
 
-// ── 1차 해석 잠금 해제 (광고 시청 후) ──
-export function hasWatchedAd() {
-  const today = new Date().toDateString();
-  const data = JSON.parse(localStorage.getItem('mg_ad_unlock') || '{}');
-  return data.date === today && data.unlocked;
-}
+// hasWatchedAd 제거 — dead export, 호출부 없음 (2026-06-12)
 
 export function markAdWatched() {
   const today = new Date().toDateString();

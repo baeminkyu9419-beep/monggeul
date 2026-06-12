@@ -298,10 +298,7 @@ export function addBubble(text,who){
   return id;
 }
 
-export function updBubble(id,text){
-  const el=document.getElementById(id);
-  if(el){el.textContent=text;el.style.opacity='1';document.getElementById('chatMsgs').scrollTop=99999;}
-}
+// updBubble 제거 — dead export, 호출부 없음 (2026-06-12)
 
 export function updateDariLevel(){
   // 뱃지 제거됨 — 호출부 호환용으로 빈 함수 유지

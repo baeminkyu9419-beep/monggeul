@@ -27,14 +27,7 @@ export const PRODUCT_CATALOG = {
   premium_monthly:     { id: 'premium_monthly', name: 'Premium 월간 구독', type: 'subscription', price: 19900, entitlement: 'premium' },
 };
 
-// 레거시 키 → 정본 키 매핑 (Gen113 SKU 통일)
-export const SKU_ALIAS = {
-  pro_monthly: 'plus_monthly',   // pro_monthly = plus_monthly (레거시 하위호환)
-};
-
-export function resolveCanonicalSku(productId) {
-  return SKU_ALIAS[productId] || productId;
-}
+// SKU_ALIAS + resolveCanonicalSku 제거 — dead exports, 호출부 없음 (2026-06-12)
 
 // ── 결제수단 → PG 매핑 ──
 const METHOD_PG_MAP = {
@@ -97,20 +90,7 @@ export async function checkEntitlement() {
   }
 }
 
-// ── 팩 크레딧 차감 ──
-export async function usePackCredit() {
-  if (!store.supabase || !store.currentUser) return false;
-
-  try {
-    const { data, error } = await store.supabase.rpc('use_pack_credit', {
-      p_user_id: store.currentUser.id,
-    });
-    if (error) throw error;
-    return data === true;
-  } catch (e) {
-    return false;
-  }
-}
+// usePackCredit 제거 — dead export, 호출부 없음 (2026-06-12)
 
 // ── 결제 리턴 처리 (URL 파라미터) ──
 export function handlePaymentReturn() {
