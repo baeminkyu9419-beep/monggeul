@@ -30,6 +30,7 @@ import { drawRadar, drawDetailRadar } from './components/radar.js';
 // Utils
 import './utils/symbols.js';
 import './utils/sanitize.js';
+import { initAuroraScroll } from './utils/aurora-scroll.js';
 
 // 기능 플래그 (가역적 군더더기 숨김)
 import { FEATURES } from './config/feature-flags.js';
@@ -352,6 +353,7 @@ window.addEventListener("load",async()=>{
   try{ initAds(); }catch(e){ void('ads init:',e); }
   try{ initGrowth(); }catch(e){ void('growth init:',e); }
   trackFunnelStep('app_open');
+  try{ initAuroraScroll(); }catch(e){ void('aurora scroll init:',e); }
   try{ initWebPush(); }catch(e){}
   try{ initNotificationScheduler(); }catch(e){}
   // SW 알림 클릭 딥링크

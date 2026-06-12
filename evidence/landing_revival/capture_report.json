@@ -1,0 +1,19 @@
+{
+  "landing": {
+    "title": "몽글몽글 🌙 AI 꿈 해몽 & 패턴 분석",
+    "hasNav": true,
+    "hasHeroCTA": true,
+    "walkthroughEls": 54,
+    "lenisActive": true,
+    "bodyText": "🌙 몽글몽글 시작하기 간밤의 꿈, 무슨 의미일까? AI가 당신의 꿈을 해석하고 패턴을 분석해드려요 꿈을 입력하면 AI가 길몽·흉몽을 판별하고, 감정·상징·운세까지 깊이 있게 해몽해드려요. 무료로 꿈 해몽하기 \ud83c"
+  },
+  "app": {
+    "hasSky": true,
+    "skyTransform": "matrix(1, 0, 0, 1, 0, -6.4)",
+    "skyYAfterScroll": "-6.4px",
+    "hasDreamInput": true,
+    "hasAuroraHero": true,
+    "activePage": "page-dream",
+    "skyYBefore": "0.0px"
+  }
+}
