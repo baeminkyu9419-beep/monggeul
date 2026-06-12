@@ -107,6 +107,28 @@ serve(async (req) => {
         const userId = data.metadata?.user_id
         if (!userId) break
 
+        // [멱등성] 토스 재전송 시 payments insert 충돌(order_id unique)·events 중복 row·
+        // 만료일 재연장(expiresAt 가 매 처리마다 now+duration 재계산) 방지 —
+        // (orderId, paymentKey) 자연키를 billing_events 원장(stripe/apple/google 과 공용)에 선기록.
+        // PK 원자 claim: 중복이면 23505 → 200 + duplicate (2xx = 토스 재전송 중단).
+        const { error: dedupError } = await supabase.from('billing_events').insert({
+          event_id: `toss_billing_${data.orderId}_${data.paymentKey || ''}`,
+          platform: 'toss',
+          event_type: eventType,
+          payload: data,
+          processed: true,
+          processed_at: new Date().toISOString(),
+        })
+        if (dedupError) {
+          if (dedupError.code === '23505') {
+            return new Response(JSON.stringify({ received: true, duplicate: true }), {
+              headers: { 'Content-Type': 'application/json' }
+            })
+          }
+          // dedup 원장 기록 실패인데 진행하면 중복 가드 소실 → 500 으로 토스 재시도 유도 (fail-closed)
+          throw new Error(`billing_events dedup insert failed: ${dedupError.message}`)
+        }
+
         const { data: product } = await supabase
           .from('products')
           .select('*')

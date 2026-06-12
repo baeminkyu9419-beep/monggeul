@@ -42,6 +42,29 @@ serve(async (req) => {
     const event = JSON.parse(body)
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
+    // [멱등성] Stripe 는 at-least-once 전송(정규 재전송 존재) — 서명 검증 직후 event.id 선기록.
+    // 서명·5분 tolerance 는 위조만 막고 정규 재전송은 못 막는다(크레딧 이중 적립 GAP).
+    // 원장은 기존 billing_events(20260321_billing_schema, apple/google 웹훅과 공용) 재사용 — 신규 테이블 재발명 금지.
+    // PK(event_id) 원자 claim(insert 선행): 중복이면 23505 → 200 + duplicate (2xx = Stripe 재전송 중단 조건).
+    // select-후-insert(TOCTOU)가 아니라 insert 가 곧 검사 — 동시 중복 전송도 한쪽만 통과.
+    if (event.id) {
+      const { error: dedupError } = await supabase.from('billing_events').insert({
+        event_id: `stripe_${event.id}`,
+        platform: 'stripe',
+        event_type: event.type || '',
+        payload: event,
+        processed: true,
+        processed_at: new Date().toISOString(),
+      })
+      if (dedupError) {
+        if (dedupError.code === '23505') {
+          return new Response(JSON.stringify({ received: true, duplicate: true }), { headers: { 'Content-Type': 'application/json' } })
+        }
+        // dedup 원장 기록 실패인데 진행하면 이중 적립 가드 소실 → 500 으로 Stripe 재시도 유도 (fail-closed)
+        throw new Error(`billing_events dedup insert failed: ${dedupError.message}`)
+      }
+    }
+
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object
