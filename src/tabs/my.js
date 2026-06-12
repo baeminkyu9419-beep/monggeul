@@ -976,7 +976,14 @@ export function claimOnboarding(){
 export function showOnboarding(){
   if(localStorage.getItem('mg_onboarded'))return;
   const overlay=document.getElementById('onboardingOverlay');
-  if(overlay)overlay.style.display='flex';
+  if(!overlay)return;
+  // [2026-06-12] 첫 진입 hero를 ~1.2s 보여준 뒤 모달을 은은히 페이드인 (첫인상 가림 완화). 기능·내용 불변.
+  // CSS #onboardingOverlay{animation:fadeIn}이 display 전환 즉시 발동 → 지연을 무력화하므로 JS 타이밍이 단일 소스가 되도록 끔.
+  overlay.style.animation='none';
+  overlay.style.opacity='0';
+  overlay.style.transition='opacity .45s ease';
+  overlay.style.display='flex';
+  setTimeout(()=>{ requestAnimationFrame(()=>{ overlay.style.opacity='1'; }); }, 1200);
 }
 
 export function getFreeUnlocks(){return parseInt(localStorage.getItem('mg_free_unlocks')||'0');}

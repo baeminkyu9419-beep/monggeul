@@ -324,16 +324,16 @@ window.addEventListener("load",async()=>{
   // 탭 청크 + Supabase 초기화 병렬 로드
   await Promise.allSettled([_loadTabs, initSupabase()]);
   // [2026-05-28] DEMO 모드 명시 — SUPABASE 미설정 시 사용자에게 명확히 알림 (저장/계정/AI 비활성 = 데모 해석만)
+  // [2026-06-12] 시각 침습 완화 — hero 상단 풀폭 황금 띠 → 우하단 은은한 코너 칩. 정직 표시·SUPABASE 감지 로직 불변.
   try{
     if(!window.SUPABASE_URL || !store.supabase){
-      const bar=document.createElement('div');
-      bar.id='demoModeBanner';
-      bar.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,#FFD194,#D1913C);color:#3a2410;padding:8px 12px;font-size:12px;text-align:center;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.15)';
-      bar.innerHTML='🌙 데모 모드 — 로컬에 저장돼요(계정/AI 해몽 미연결). 해석은 기본 사전 기반이에요.';
-      document.body.appendChild(bar);
-      // 본문 위쪽 여백 보정
-      const root=document.querySelector('.app-shell')||document.body.firstElementChild;
-      if(root && root.style) root.style.paddingTop=(parseInt(getComputedStyle(root).paddingTop)||0)+34+'px';
+      const chip=document.createElement('div');
+      chip.id='demoModeBanner';
+      chip.setAttribute('role','status');
+      chip.style.cssText='position:fixed;left:14px;bottom:max(14px,env(safe-area-inset-bottom));z-index:9999;max-width:min(320px,calc(100vw - 28px));display:flex;align-items:flex-start;gap:7px;background:rgba(26,21,53,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(248,201,76,.32);border-radius:13px;padding:9px 12px;font-size:11.5px;line-height:1.45;text-align:left;color:#e9e2ff;box-shadow:0 6px 22px rgba(0,0,0,.32);opacity:0;transform:translateY(8px);transition:opacity .4s ease,transform .4s ease;cursor:default';
+      chip.innerHTML='<span aria-hidden="true" style="font-size:13px;line-height:1.2;flex:none">🌙</span><span><b style="color:#f8c94c;font-weight:700">데모 모드</b> — 로컬에 저장돼요(계정/AI 해몽 미연결). 해석은 기본 사전 기반이에요.</span>';
+      document.body.appendChild(chip);
+      requestAnimationFrame(()=>{ chip.style.opacity='1'; chip.style.transform='translateY(0)'; });
     }
   }catch(e){ void('demo banner:',e); }
   // 로그인 모달: 온보딩 끝난 뒤에 표시 (겹침 방지). 데모 모드(Supabase 없음) = 로그인 무의미 → 차단.
