@@ -12,8 +12,13 @@ import { trackFunnelStep } from './utils/funnel.js';
 // Components
 import { showToast } from './components/toast.js';
 import { showPaywall, showPremiumModal, closePremiumModal, closePremiumModalDirect, subscribePlan } from './components/paywall.js';
-import { startCheckout } from './services/checkout.js';
-import { handlePaymentReturn } from './services/payment.js';
+import { handlePaymentReturn, startPayment } from './services/payment.js';
+// checkout.js 제거 (M3): startCheckout → startPayment 직접 호출로 통합
+// window.startCheckout 하위호환 — 외부에서 호출 시 plus_monthly 로 라우팅
+window.startCheckout = function startCheckout(tier = 'plus') {
+  const productId = tier === 'plus' ? 'plus_monthly' : (tier === 'premium' ? 'premium_monthly' : 'plus_monthly');
+  return startPayment({ productId, method: 'card' });
+};
 import './services/iap.js';
 import { initAds, showInterstitialIfReady } from './services/ads.js';
 import './services/dream-context.js';
