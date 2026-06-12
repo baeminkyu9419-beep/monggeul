@@ -52,38 +52,37 @@ body{background:var(--night);color:var(--text-primary);font-family:'Noto Sans KR
     linear-gradient(170deg,rgba(86,131,218,0.09) 0%,rgba(166,124,239,0.07) 40%,rgba(255,137,100,0.07) 70%,transparent 100%),
     radial-gradient(ellipse at 30% 20%,rgba(25,18,60,.8) 0%,transparent 50%),
     radial-gradient(ellipse at 70% 80%,rgba(40,15,50,.6) 0%,transparent 50%);}
-/* ── 오로라 커튼 (21st/Aceternity 문법 vanilla 이식) — 드리프트는 transform 전용, layout 0 ── */
-.aurora{position:absolute;left:-35%;width:170%;top:-22%;height:92vh;pointer-events:none;
-  mix-blend-mode:screen;will-change:transform;
-  -webkit-mask-image:linear-gradient(to bottom,#000 28%,transparent 82%);
-  mask-image:linear-gradient(to bottom,#000 28%,transparent 82%);}
-.aurora-a{
-  background:repeating-linear-gradient(100deg,
-    transparent 0%,rgba(86,131,218,.55) 6%,rgba(166,124,239,.5) 11%,
-    transparent 16%,transparent 21%,rgba(125,232,216,.4) 26%,transparent 31%);
-  filter:blur(58px) saturate(1.25);opacity:.5;
-  animation:auroraDrift 26s ease-in-out infinite alternate;}
-.aurora-b{
-  background:repeating-linear-gradient(94deg,
-    transparent 0%,rgba(240,168,200,.4) 7%,transparent 13%,
-    rgba(255,137,100,.28) 18%,transparent 24%);
-  height:70vh;filter:blur(72px) saturate(1.15);opacity:.34;
-  animation:auroraDrift 34s ease-in-out -9s infinite alternate-reverse;}
-/* 커튼 "결" 레이어 — 저블러·좁은 주기로 오로라 특유의 수직 결을 살림 (a/b=무드 글로우, c=결) */
-.aurora-c{
-  background:repeating-linear-gradient(102deg,
-    transparent 0%,rgba(125,232,216,.16) 1.6%,rgba(86,131,218,.3) 3.4%,
-    rgba(166,124,239,.26) 5.2%,transparent 7.4%,transparent 9.5%);
-  height:78vh;filter:blur(26px) saturate(1.3);opacity:.32;
-  animation:auroraSway 19s ease-in-out -4s infinite alternate;}
-@keyframes auroraDrift{
-  0%{transform:translate3d(-5.5%,-1.5%,0) skewY(-2.4deg) scaleY(1)}
-  100%{transform:translate3d(5.5%,1.5%,0) skewY(2.4deg) scaleY(1.12)}
+/* ── Aurora Background — 21st(Aceternity) 정본 1:1 이식, dark variant 고정 ──
+   원본: ui.aceternity.com aurora-background. 그라디언트 정의·사이즈·blur 10px·
+   difference 블렌드·60s background-position 애니·우상단 ellipse 마스크 전부 정본 값 그대로. */
+.aurora-bg{
+  --black:#000; --transparent:transparent;
+  --blue-500:#3b82f6; --indigo-300:#a5b4fc; --blue-300:#93c5fd; --violet-200:#ddd6fe; --blue-400:#60a5fa;
+  --dark-gradient:repeating-linear-gradient(100deg,var(--black) 0%,var(--black) 7%,var(--transparent) 10%,var(--transparent) 12%,var(--black) 16%);
+  --aurora:repeating-linear-gradient(100deg,var(--blue-500) 10%,var(--indigo-300) 15%,var(--blue-300) 20%,var(--violet-200) 25%,var(--blue-400) 30%);
+  position:absolute;inset:-10px;pointer-events:none;
+  background-image:var(--dark-gradient),var(--aurora);
+  background-size:300%,200%;
+  background-position:50% 50%,50% 50%;
+  filter:blur(10px);
+  opacity:.5;
+  will-change:transform;
+  -webkit-mask-image:radial-gradient(ellipse at 100% 0%,black 10%,var(--transparent) 70%);
+  mask-image:radial-gradient(ellipse at 100% 0%,black 10%,var(--transparent) 70%);
 }
-@keyframes auroraSway{
-  0%{transform:translate3d(-3.2%,0,0) skewY(1.6deg) scaleY(1.04)}
-  100%{transform:translate3d(3.2%,-1%,0) skewY(-1.8deg) scaleY(1)}
+.aurora-bg::after{
+  content:"";position:absolute;inset:0;
+  background-image:var(--dark-gradient),var(--aurora);
+  background-size:200%,100%;
+  background-attachment:fixed;
+  mix-blend-mode:difference;
+  animation:aurora 60s linear infinite;
 }
+@keyframes aurora{
+  from{background-position:50% 50%,50% 50%}
+  to{background-position:350% 50%,350% 50%}
+}
+@media(prefers-reduced-motion:reduce){.aurora-bg::after{animation:none;}}
 
 .bg-star{position:absolute;border-radius:50%;animation:twinkle var(--d,4s) ease-in-out infinite var(--dl,0s);}
 /* 별 색 변주 — JS가 주입하던 star-warm/star-blue 클래스의 CSS 정의 신설(기존 미정의=죽은 코드) */
@@ -110,7 +109,7 @@ body{background:var(--night);color:var(--text-primary);font-family:'Noto Sans KR
 .nav-cta:hover{background:rgba(124,92,191,.4);transform:translateY(-1px);}
 
 /* 히어로 — 오로라 세로 빔 배경 레이어 추가 (텍스트 대비 불변) */
-.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 0 80px;position:relative;background:linear-gradient(170deg,rgba(86,131,218,0.08) 0%,rgba(166,124,239,0.06) 42%,rgba(255,137,100,0.06) 78%,transparent 100%);}
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 0 80px;position:relative;overflow:hidden;background:linear-gradient(170deg,rgba(86,131,218,0.08) 0%,rgba(166,124,239,0.06) 42%,rgba(255,137,100,0.06) 78%,transparent 100%);}
 @media(prefers-reduced-motion:reduce){.hero{background:none;}}
 .hero-moon{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#f5e6b2,#e8d5a0,#d4c08a);box-shadow:0 0 60px rgba(245,230,178,.3),0 0 120px rgba(245,230,178,.15),0 0 200px rgba(245,230,178,.08);margin-bottom:40px;animation:moonFloat 6s ease-in-out infinite;position:relative;}
 .hero-moon::after{content:'';position:absolute;width:25px;height:25px;border-radius:50%;background:rgba(200,180,140,.3);top:30px;left:60px;}
@@ -120,10 +119,10 @@ body{background:var(--night);color:var(--text-primary);font-family:'Noto Sans KR
 .hero h1{font-family:'Gowun Dodum',serif;font-size:clamp(34px,6vw,54px);color:var(--moon);margin-bottom:16px;text-shadow:0 0 40px rgba(245,230,178,.2);line-height:1.3;}
 .hero h1 span{display:block;font-size:clamp(18px,3.5vw,26px);color:var(--text-secondary);font-family:'Noto Sans KR',sans-serif;font-weight:300;margin-top:12px;text-shadow:none;}
 .hero-desc{font-size:clamp(16px,2.5vw,19px);color:var(--text-secondary);max-width:500px;margin:0 auto 44px;line-height:1.8;}
-.hero-cta{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#7c5cbf,#9b6de0,#a67cef);border:none;border-radius:28px;color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:var(--fs-btn);font-weight:700;padding:17px 44px;cursor:pointer;transition:all .3s;box-shadow:0 4px 24px rgba(124,92,191,.42),0 0 36px -6px rgba(86,131,218,.3),0 0 0 1px rgba(166,124,239,.2) inset;text-decoration:none;position:relative;overflow:hidden;}
+.hero-cta{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#7c5cbf,#9b6de0,#a67cef);border:none;border-radius:28px;color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:var(--fs-btn);font-weight:700;padding:17px 44px;cursor:pointer;transition:all .3s;box-shadow:0 4px 24px rgba(124,92,191,.4),0 0 0 1px rgba(166,124,239,.2) inset;text-decoration:none;position:relative;overflow:hidden;}
 .hero-cta::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.12) 50%,transparent 60%);transform:translateX(-150%);animation:btnShimmer 4s ease-in-out infinite;}
 @keyframes btnShimmer{0%,100%{transform:translateX(-150%)}50%{transform:translateX(150%)}}
-.hero-cta:hover{box-shadow:0 6px 32px rgba(124,92,191,.55),0 0 48px -4px rgba(125,232,216,.26);transform:translateY(-2px);}
+.hero-cta:hover{box-shadow:0 6px 32px rgba(124,92,191,.55);transform:translateY(-2px);}
 .hero-scroll{position:absolute;bottom:32px;color:var(--text-muted);font-size:var(--fs-small);display:flex;flex-direction:column;align-items:center;gap:6px;animation:scrollBounce 2s ease-in-out infinite;}
 .hero-scroll::after{content:'';width:1px;height:24px;background:linear-gradient(to bottom,var(--text-muted),transparent);}
 @keyframes scrollBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
@@ -220,7 +219,7 @@ section{padding:100px 0;}
 
 /* CTA 섹션 */
 .cta-section{text-align:center;padding:80px 0 120px;position:relative;}
-.cta-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:400px;height:400px;border-radius:50%;background:radial-gradient(ellipse at 36% 38%,rgba(86,131,218,.1),transparent 58%),radial-gradient(ellipse at 64% 62%,rgba(125,232,216,.07),transparent 58%),radial-gradient(circle,rgba(124,92,191,.15),transparent 70%);pointer-events:none;}
+.cta-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(124,92,191,.15),transparent 70%);pointer-events:none;}
 .cta-title{font-family:'Gowun Dodum',serif;font-size:clamp(26px,4.5vw,38px);color:var(--moon);margin-bottom:16px;text-shadow:0 0 30px rgba(245,230,178,.15);position:relative;z-index:1;}
 .cta-desc{font-size:16px;color:var(--text-secondary);margin-bottom:36px;position:relative;z-index:1;line-height:1.8;}
 .cta-btn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#7c5cbf,#9b6de0,#a67cef);border:none;border-radius:28px;color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:var(--fs-btn);font-weight:700;padding:17px 48px;cursor:pointer;transition:all .3s;box-shadow:0 4px 24px rgba(124,92,191,.4);text-decoration:none;position:relative;z-index:1;overflow:hidden;}
@@ -280,11 +279,6 @@ html.lenis,html.lenis body{height:auto;}
   .rv,.rv-wipe,.rv-focus{opacity:1 !important;transform:none !important;filter:none !important;clip-path:none !important;transition:none !important;will-change:auto !important;}
   .hero-moon-wrap{opacity:1 !important;filter:none !important;transform:none !important;transition:none !important;will-change:auto !important;}
   #sky{transform:none !important;will-change:auto !important;}
-  /* 오로라: 드리프트 정지·정적 잔광만 유지 */
-  .aurora{animation:none !important;will-change:auto !important;}
-  .aurora-a{opacity:.26 !important;}
-  .aurora-b{opacity:.18 !important;}
-  .aurora-c{opacity:.16 !important;}
 }
 
 /* ── 해몽 과정 워크스루 ──────────────────────────────────────── */
@@ -360,10 +354,6 @@ html.lenis,html.lenis body{height:auto;}
 
 /* 반응형 */
 @media (max-width:640px){
-  /* 오로라 모바일 강등 — blur 비용 절감(줄무늬 노출은 opacity 로 상쇄) */
-  .aurora-a{filter:blur(42px) saturate(1.2);opacity:.42;}
-  .aurora-b{filter:blur(54px) saturate(1.1);opacity:.28;}
-  .aurora-c{filter:blur(20px) saturate(1.25);opacity:.24;}
   .landing{padding:0 16px;}
   .nav{padding:12px 16px;}
   .nav-logo{font-size:17px;}
@@ -460,11 +450,7 @@ html.lenis,html.lenis body{height:auto;}
 </head>
 <body>
 
-<div id="sky">
-  <div class="aurora aurora-a"></div>
-  <div class="aurora aurora-b"></div>
-  <div class="aurora aurora-c"></div>
-</div>
+<div id="sky"></div>
 
 <nav class="nav" id="nav">
   <a href="#" class="nav-logo">
@@ -478,6 +464,7 @@ html.lenis,html.lenis body{height:auto;}
 
   <!-- 히어로 -->
   <section class="hero">
+    <div class="aurora-bg" aria-hidden="true"></div>
     <div class="hero-moon-wrap moon-enter"><div class="hero-moon"></div></div>
     <h1>
       간밤의 꿈, 무슨 의미일까?
