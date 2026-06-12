@@ -70,6 +70,7 @@ export function trackFunnelStep(stepId, meta = {}) {
  * 세션 내 퍼널 이탈 지점을 분석한다.
  * @returns {{ steps: Array<{id, label, order, reached, count}>, dropoffs: Array<{from, to, rate}>, deepest: string }}
  */
+// KEEP — 테스트가 소스 존재 단언(계약 핀)
 export function getFunnelDropoffs() {
   const session = JSON.parse(sessionStorage.getItem('mg_funnel_session') || '{}');
   const firstReach = JSON.parse(localStorage.getItem('mg_funnel') || '{}');

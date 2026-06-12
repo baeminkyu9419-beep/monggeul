@@ -17,6 +17,7 @@ import { PRODUCT_CATALOG } from './payment.js';
 
 // ── 상품 정의 (PRODUCT_CATALOG 정본 파생 — 금액 중복 정의 금지) ──
 // PRODUCT_CATALOG 키: pack_1 / pack_5 / pack_15 / unconscious_profile / pro_monthly / plus_monthly / premium_monthly
+// KEEP — 테스트가 소스 존재 단언(계약 핀)
 export const PRODUCTS = {
   single:   { key: 'monggeul_single',  price: PRODUCT_CATALOG.pack_1.price,              label: PRODUCT_CATALOG.pack_1.name,   count: PRODUCT_CATALOG.pack_1.count },
   pack5:    { key: 'monggeul_pack5',   price: PRODUCT_CATALOG.pack_5.price,              label: PRODUCT_CATALOG.pack_5.name,   count: PRODUCT_CATALOG.pack_5.count },
@@ -24,6 +25,7 @@ export const PRODUCTS = {
   profile:  { key: 'monggeul_profile', price: PRODUCT_CATALOG.unconscious_profile.price, label: PRODUCT_CATALOG.unconscious_profile.name },
 };
 
+// KEEP — 테스트가 소스 존재 단언(계약 핀)
 export const SKU_MAP = {
   ios:     { single: 'com.monggeul.single', pack5: 'com.monggeul.pack5', pack15: 'com.monggeul.pack15', profile: 'com.monggeul.profile', pro: 'com.monggeul.pro.monthly' },
   android: { single: 'monggeul_single',     pack5: 'monggeul_pack5',     pack15: 'monggeul_pack15',     profile: 'monggeul_profile',      pro: 'monggeul_pro_monthly' },

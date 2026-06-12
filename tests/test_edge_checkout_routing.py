@@ -43,7 +43,9 @@ def _read(p: pathlib.Path) -> str:
 # ═══════════════════════════════════════════════════════════════
 
 def parse_sku_alias(src: str) -> dict:
-    """const SKU_ALIAS: Record<string,string> = { legacy: canonical } 블록 추출."""
+    """Edge Function(.ts) SKU_ALIAS 검사 — 클라 payment.js판은 2026-06-12 dead-export로 제거됨, .ts판이 정본.
+
+    const SKU_ALIAS: Record<string,string> = { legacy: canonical } 블록 추출."""
     m = re.search(r"SKU_ALIAS[^=]*=\s*\{(.*?)\}", src, re.DOTALL)
     assert m, "SKU_ALIAS block not found in create-checkout/index.ts"
     alias = {}
