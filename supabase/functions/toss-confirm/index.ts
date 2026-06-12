@@ -2,6 +2,7 @@
 // 사용자가 결제 완료 후 리다이렉트 → 클라이언트가 이 함수 호출 → 토스 승인 API → DB 업데이트
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { notifyOps } from "../_shared/notify-ops.ts"
 
 const TOSS_SECRET_KEY = Deno.env.get('TOSS_SECRET_KEY')!
 const TOSS_CONFIRM_URL = 'https://api.tosspayments.com/v1/payments/confirm'
@@ -29,6 +30,8 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  // [관측 P1-2] catch 에서 주문 상관관계 로깅용 — orderId·메시지만 (시크릿·카드정보 금지)
+  let opsOrderId = ''
   try {
     // 인증
     const authHeader = req.headers.get('Authorization')
@@ -51,6 +54,7 @@ serve(async (req) => {
     }
 
     const { paymentKey, orderId, amount } = await req.json()
+    opsOrderId = orderId || ''
 
     if (!paymentKey || !orderId || !amount) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
@@ -190,10 +194,14 @@ serve(async (req) => {
     }
 
     // 승인 실패
+    console.error('[toss-confirm] approve failed', orderId, tossData.code, tossData.message)
     await supabaseAdmin.from('payments').update({
       status: 'failed',
       raw_response: tossData,
     }).eq('id', payment.id)
+
+    // [운영자 알림 P0-1] 결제 승인 실패 — notifyOps 는 내부 try/catch 로 절대 throw 안 함
+    await notifyOps(`❌ 토스 결제 승인 실패 — orderId=${orderId} code=${tossData.code || ''} msg=${tossData.message || ''} amount=${amount}`)
 
     return new Response(JSON.stringify({
       success: false,
@@ -204,6 +212,10 @@ serve(async (req) => {
     })
 
   } catch (error) {
+    // [관측 P1-2] Supabase function logs 추적용 — orderId·메시지만
+    console.error('[toss-confirm] error', opsOrderId, error?.message ?? error)
+    // [운영자 알림 P0-1] 처리 예외 = 결제 흐름 500 — 즉시 인지 대상
+    await notifyOps(`🔥 toss-confirm 처리 예외 — orderId=${opsOrderId} err=${error?.message ?? error}`)
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })

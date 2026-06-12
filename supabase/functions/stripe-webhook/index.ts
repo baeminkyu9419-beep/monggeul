@@ -1,6 +1,7 @@
 // Supabase Edge Function: Stripe Webhook (Plus/Premium 지원)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { notifyOps } from "../_shared/notify-ops.ts"
 
 const STRIPE_WEBHOOK_SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET')!
 const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY')!
@@ -33,13 +34,24 @@ async function verifyStripeSignature(payload: string, sigHeader: string, secret:
 serve(async (req) => {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 })
 
+  // [관측 P1-2] catch 에서 이벤트 상관관계 로깅용 — event.id·type·메시지만 (시크릿·카드정보 금지)
+  let opsEventId = ''
+  let opsEventType = ''
   try {
     const body = await req.text()
     const sigHeader = req.headers.get('stripe-signature') || ''
     const valid = await verifyStripeSignature(body, sigHeader, STRIPE_WEBHOOK_SECRET)
-    if (!valid) return new Response('Invalid signature', { status: 400 })
+    if (!valid) {
+      // [운영자 알림 P0-1] 서명 거부 — 위조 시도 또는 STRIPE_WEBHOOK_SECRET 불일치(설정 사고).
+      // 미검증 body 내용은 알림에 싣지 않는다(공격자 통제 데이터).
+      console.error('[stripe-webhook] signature rejected', sigHeader ? 'sig-present' : 'sig-missing')
+      await notifyOps(`🚨 stripe-webhook 서명 거부 (signature ${sigHeader ? 'present' : 'missing'}) — 위조 시도 또는 STRIPE_WEBHOOK_SECRET 불일치`)
+      return new Response('Invalid signature', { status: 400 })
+    }
 
     const event = JSON.parse(body)
+    opsEventId = event.id || ''
+    opsEventType = event.type || ''
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
     // [멱등성] Stripe 는 at-least-once 전송(정규 재전송 존재) — 서명 검증 직후 event.id 선기록.
@@ -247,6 +259,10 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ received: true }), { headers: { 'Content-Type': 'application/json' } })
   } catch (error) {
+    // [관측 P1-2] Supabase function logs 추적용 — event.id·type·메시지만
+    console.error('[stripe-webhook] error', opsEventId, opsEventType, error?.message ?? error)
+    // [운영자 알림 P0-1] 처리 예외 — 500 = Stripe 재전송 예정, 반복되면 설정/스키마 사고
+    await notifyOps(`🔥 stripe-webhook 처리 예외(500→Stripe 재전송 예정) — event=${opsEventId} type=${opsEventType} err=${error?.message ?? error}`)
     return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } })
   }
 })

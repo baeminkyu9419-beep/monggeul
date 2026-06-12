@@ -2,6 +2,7 @@
 // 토스에서 결제 상태 변경 시 호출 (취소/환불/빌링 갱신 등)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { notifyOps } from "../_shared/notify-ops.ts"
 
 const TOSS_SECRET_KEY = Deno.env.get('TOSS_SECRET_KEY')!
 const TOSS_WEBHOOK_SECRET = Deno.env.get('TOSS_WEBHOOK_SECRET')!
@@ -38,6 +39,8 @@ async function verifyTossSignature(body: string, signature: string | null): Prom
 serve(async (req) => {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 })
 
+  // [관측 P1-2] catch 에서 주문 상관관계 로깅용 — orderId·메시지만 (시크릿·카드정보 금지)
+  let opsOrderId = ''
   try {
     const body = await req.text()
 
@@ -45,6 +48,10 @@ serve(async (req) => {
     const signature = req.headers.get('Toss-Signature')
     const isValid = await verifyTossSignature(body, signature)
     if (!isValid) {
+      // [운영자 알림 P0-1] 서명 거부 — 위조 시도 또는 TOSS_WEBHOOK_SECRET 불일치(설정 사고).
+      // 미검증 body 내용은 알림에 싣지 않는다(공격자 통제 데이터).
+      console.error('[toss-webhook] signature rejected', signature ? 'sig-present' : 'sig-missing')
+      await notifyOps(`🚨 toss-webhook 서명 거부 (signature ${signature ? 'present' : 'missing'}) — 위조 시도 또는 TOSS_WEBHOOK_SECRET 불일치`)
       return new Response(JSON.stringify({ error: 'Invalid signature' }), {
         status: 401, headers: { 'Content-Type': 'application/json' }
       })
@@ -58,6 +65,7 @@ serve(async (req) => {
     )
 
     const { eventType, data } = event
+    opsOrderId = data?.orderId || ''
 
     switch (eventType) {
       // 결제 취소/환불
@@ -97,6 +105,9 @@ serve(async (req) => {
             event: 'payment_cancelled',
             properties: { pg: 'toss', order_id: data.orderId, reason: data.cancels?.[0]?.cancelReason, status: data.status },
           })
+
+          // [운영자 알림 P0-1] 취소/환불 — 매출 역전 이벤트는 즉시 인지 대상
+          await notifyOps(`↩️ 토스 결제 ${data.status === 'CANCELED' ? '취소' : '부분취소(환불)'} — orderId=${data.orderId} reason=${data.cancels?.[0]?.cancelReason || ''}`)
         }
         break
       }
@@ -193,6 +204,10 @@ serve(async (req) => {
       headers: { 'Content-Type': 'application/json' }
     })
   } catch (error) {
+    // [관측 P1-2] Supabase function logs 추적용 — orderId·메시지만
+    console.error('[toss-webhook] error', opsOrderId, error?.message ?? error)
+    // [운영자 알림 P0-1] 처리 예외 — 500 = 토스 재전송 예정, 반복되면 설정/스키마 사고
+    await notifyOps(`🔥 toss-webhook 처리 예외(500→토스 재전송 예정) — orderId=${opsOrderId} err=${error?.message ?? error}`)
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500, headers: { 'Content-Type': 'application/json' }
     })
