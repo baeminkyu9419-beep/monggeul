@@ -189,10 +189,6 @@ button:active,.abtn:active,.qbtn:active,.chip:active,.rbtn:active{transform:scal
 .result-aura.good{background:radial-gradient(ellipse,rgba(248,201,76,.4),rgba(166,124,239,.15),transparent);filter:blur(30px);}
 .result-aura.bad{background:radial-gradient(ellipse,rgba(180,80,120,.35),rgba(100,60,160,.15),transparent);filter:blur(30px);}
 @keyframes auraBreath{0%,100%{opacity:.2;transform:scale(1)}50%{opacity:.4;transform:scale(1.05)}}
-/* 레이더 보이드 천구 별 — twinkle 은 입자 20%만, reduced-motion 정지 */
-.radar-star{animation:radarTwinkle 3s ease-in-out infinite;}
-@keyframes radarTwinkle{0%,100%{opacity:.15}50%{opacity:.8}}
-@media(prefers-reduced-motion:reduce){.radar-star{animation:none;opacity:.45;}}
 .rtitle{font-family:'Gowun Dodum',serif;font-size:var(--fs-h1);color:var(--moon);margin-bottom:4px;text-align:center;position:relative;z-index:1;text-shadow:0 0 20px rgba(245,230,178,.3);}
 .rdate{font-size:11px;color:var(--text-muted);text-align:center;margin-bottom:13px;position:relative;z-index:1;}
 .sct{font-size:12px;color:var(--purple-bright);margin-bottom:14px;font-weight:600;text-shadow:0 0 12px rgba(166,124,239,.2);letter-spacing:1px;}
