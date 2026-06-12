@@ -207,6 +207,45 @@ section{padding:100px 0;}
 .reveal-delay-3{transition-delay:.36s;}
 .reveal-delay-4{transition-delay:.48s;}
 
+/* ── 동적 스크롤 레이어 (촤라락) — transform/opacity 전용, layout 속성 0 ── */
+/* Lenis 관성 스크롤 활성 시 부드러운 휠 보간 */
+html.lenis,html.lenis body{height:auto;}
+.lenis.lenis-smooth{scroll-behavior:auto !important;}
+.lenis.lenis-smooth [data-lenis-prevent]{overscroll-behavior:contain;}
+.lenis.lenis-stopped{overflow:hidden;}
+
+/* 자동 스태거 reveal — 그리드/리스트 자식이 60ms 간격으로 차례 등장 (JS가 --rv-i 주입) */
+.rv{opacity:0;transform:translateY(26px);
+  transition:opacity .7s cubic-bezier(.2,.6,.2,1),transform .7s cubic-bezier(.2,.6,.2,1);
+  transition-delay:calc(var(--rv-i,0) * 64ms);will-change:opacity,transform;}
+.rv.in{opacity:1;transform:none;}
+/* will-change 는 진입 완료 후 해제 (JS) — 메모리 절약 */
+.rv.rv-done{will-change:auto;}
+
+/* wipe 변형 — 위→아래로 닦이며 등장 (clip-path = compositor, layout 무관) */
+.rv-wipe{clip-path:inset(0 0 100% 0);transition:opacity .7s cubic-bezier(.2,.6,.2,1),transform .7s cubic-bezier(.2,.6,.2,1),clip-path .8s cubic-bezier(.2,.6,.2,1);}
+.rv-wipe.in{clip-path:inset(0 0 0 0);}
+
+/* blur→focus 변형 — 미세 스케일+블러 해제 (filter/transform = compositor) */
+.rv-focus{filter:blur(7px);transform:translateY(20px) scale(1.03);
+  transition:opacity .8s cubic-bezier(.2,.6,.2,1),transform .8s cubic-bezier(.2,.6,.2,1),filter .8s cubic-bezier(.2,.6,.2,1);}
+.rv-focus.in{filter:blur(0);transform:none;}
+
+/* 히어로 달 — 진입 시 1회 blur→focus (반복 금지: moonFloat 와 별개 래퍼 transform 사용) */
+.hero-moon-wrap{transition:opacity 1s ease,filter 1s ease,transform 1s cubic-bezier(.2,.6,.2,1);will-change:opacity,filter,transform;}
+.hero-moon-wrap.moon-enter{opacity:0;filter:blur(8px);transform:scale(1.05);}
+.hero-moon-wrap.moon-in{opacity:1;filter:blur(0);transform:scale(1);}
+
+/* 미드나잇 오로라 패럴랙스 — #sky 를 미세 이동 (transform 전용, JS가 --sky-y 주입) */
+#sky{will-change:transform;transform:translate3d(0,var(--sky-y,0),0);}
+
+/* prefers-reduced-motion: 동적 레이어 전부 정적 폴백 */
+@media(prefers-reduced-motion:reduce){
+  .rv,.rv-wipe,.rv-focus{opacity:1 !important;transform:none !important;filter:none !important;clip-path:none !important;transition:none !important;will-change:auto !important;}
+  .hero-moon-wrap{opacity:1 !important;filter:none !important;transform:none !important;transition:none !important;will-change:auto !important;}
+  #sky{transform:none !important;will-change:auto !important;}
+}
+
 /* ── 해몽 과정 워크스루 ──────────────────────────────────────── */
 .walkthrough{max-width:600px;margin:0 auto;}
 
@@ -390,7 +429,7 @@ section{padding:100px 0;}
 
   <!-- 히어로 -->
   <section class="hero">
-    <div class="hero-moon"></div>
+    <div class="hero-moon-wrap moon-enter"><div class="hero-moon"></div></div>
     <h1>
       간밤의 꿈, 무슨 의미일까?
       <span>AI가 당신의 꿈을 해석하고 패턴을 분석해드려요</span>
@@ -409,8 +448,8 @@ section{padding:100px 0;}
     <h2 class="section-title reveal">꿈 하나에 이렇게 많은 이야기가</h2>
     <p class="section-desc reveal">단순한 해몽이 아니에요. <br class="pc-br">AI가 꿈 속 상징, 감정, 맥락을 분석해서 <br class="pc-br">진짜 의미를 찾아드려요.</p>
 
-    <div class="features">
-      <div class="feature-card reveal reveal-delay-1">
+    <div class="features" data-stagger>
+      <div class="feature-card rv">
         <div class="feature-icon">🔮</div>
         <div class="feature-title">AI 꿈 해몽</div>
         <div class="feature-desc">꿈 내용을 입력하면 AI가 전통 해몽과 <br class="pc-br">심리학적 해석을 결합해 분석해요. <br class="pc-br">길몽인지 흉몽인지, 어떤 운세와 <br class="pc-br">연결되는지 알려드려요.</div>
@@ -421,7 +460,7 @@ section{padding:100px 0;}
         </div>
       </div>
 
-      <div class="feature-card reveal reveal-delay-2">
+      <div class="feature-card rv">
         <div class="feature-icon">📊</div>
         <div class="feature-title">꿈 패턴 분석</div>
         <div class="feature-desc">기록된 꿈들을 분석해서 반복되는 <br class="pc-br">상징, 감정 흐름, 꿈 주기를 파악해요. <br class="pc-br">자주 꾸는 꿈엔 이유가 있어요.</div>
@@ -432,7 +471,7 @@ section{padding:100px 0;}
         </div>
       </div>
 
-      <div class="feature-card reveal reveal-delay-3">
+      <div class="feature-card rv">
         <div class="feature-icon">📖</div>
         <div class="feature-title">꿈 기록 & 일기</div>
         <div class="feature-desc">모든 꿈을 타임라인으로 기록하고, <br class="pc-br">해몽 결과와 함께 보관해요. <br class="pc-br">나만의 꿈 아카이브를 만들어보세요.</div>
@@ -451,7 +490,7 @@ section{padding:100px 0;}
     <h2 class="section-title reveal">이런 식으로 해몽해드려요</h2>
     <p class="section-desc reveal">꿈을 적으면 AI가 여러 관점에서 <br class="pc-br">분석한 결과를 보여줘요.</p>
 
-    <div class="demo reveal">
+    <div class="demo rv rv-focus">
       <div class="demo-card">
         <div class="demo-label">꿈 내용 입력</div>
         <textarea class="demo-input" readonly>높은 하늘을 자유롭게 날아다니는 꿈을 꿨어요. 구름 위를 걸으며 아래를 내려다보니 도시가 작게 보였어요.</textarea>
@@ -495,29 +534,29 @@ section{padding:100px 0;}
     <h2 class="section-title reveal">꿈이 쌓이면 패턴이 보여요</h2>
     <p class="section-desc reveal">꿈을 꾸준히 기록하면 <br class="pc-br">AI가 숨겨진 패턴을 발견해드려요.</p>
 
-    <div class="pattern-visual">
-      <div class="pattern-card reveal reveal-delay-1">
+    <div class="pattern-visual" data-stagger>
+      <div class="pattern-card rv">
         <div class="pattern-icon pi-1">🔁</div>
         <div>
           <div class="pattern-title">반복꿈 감지</div>
           <div class="pattern-desc">같은 상징이 반복되면 알려드려요. <br class="pc-br">반복되는 꿈엔 중요한 메시지가 숨어 있어요.</div>
         </div>
       </div>
-      <div class="pattern-card reveal reveal-delay-2">
+      <div class="pattern-card rv">
         <div class="pattern-icon pi-2">📈</div>
         <div>
           <div class="pattern-title">감정 흐름 추적</div>
           <div class="pattern-desc">꿈 속 감정의 변화를 시각화해요. <br class="pc-br">불안한 꿈이 줄고 있는지, 늘고 있는지 한눈에.</div>
         </div>
       </div>
-      <div class="pattern-card reveal reveal-delay-3">
+      <div class="pattern-card rv">
         <div class="pattern-icon pi-3">🏷️</div>
         <div>
           <div class="pattern-title">상징 통계</div>
           <div class="pattern-desc">물, 하늘, 사람 등 자주 등장하는 상징을 분석해서 <br class="pc-br">내면의 키워드를 정리해드려요.</div>
         </div>
       </div>
-      <div class="pattern-card reveal reveal-delay-4">
+      <div class="pattern-card rv">
         <div class="pattern-icon pi-4">📋</div>
         <div>
           <div class="pattern-title">주간 리포트</div>
@@ -533,7 +572,7 @@ section{padding:100px 0;}
     <h2 class="section-title reveal">해몽이 이렇게 진행돼요</h2>
     <p class="section-desc reveal">입력부터 결과까지 — 실제 해몽 흐름을 미리 살펴보세요.</p>
 
-    <div class="walkthrough reveal">
+    <div class="walkthrough rv rv-wipe">
       <!-- 탭 선택기 -->
       <div class="wt-tabs" id="wtTabs" role="tablist" aria-label="해몽 과정 단계">
         <div class="wt-tab-indicator" id="wtIndicator"></div>
@@ -715,22 +754,22 @@ section{padding:100px 0;}
     <h2 class="section-title reveal">당신의 꿈이 말하는 무의식의 지도</h2>
     <p class="section-desc reveal">꿈을 기록할수록 AI가 당신의 무의식 패턴을 분석해요.<br class="pc-br">욕구, 불안, 성장 — 세 가지 축으로 내면을 읽어드려요.</p>
 
-    <div class="pattern-visual">
-      <div class="pattern-card reveal reveal-delay-1">
+    <div class="pattern-visual" data-stagger>
+      <div class="pattern-card rv">
         <div class="pattern-icon" style="background:linear-gradient(135deg,rgba(248,201,76,.15),rgba(248,201,76,.05))">✨</div>
         <div>
           <div class="pattern-title">욕구 분석</div>
           <div class="pattern-desc">꿈 속에 나타나는 욕망과 열망의 패턴을 추적해요.<br class="pc-br">재물, 성취, 관계에 대한 무의식의 신호를 읽어요.</div>
         </div>
       </div>
-      <div class="pattern-card reveal reveal-delay-2">
+      <div class="pattern-card rv">
         <div class="pattern-icon" style="background:linear-gradient(135deg,rgba(231,76,111,.15),rgba(231,76,111,.05))">🌊</div>
         <div>
           <div class="pattern-title">불안 감지</div>
           <div class="pattern-desc">반복되는 불안 요소를 감지하고 원인을 분석해요.<br class="pc-br">추락, 쫓김, 상실 — 무의식이 보내는 경고 신호예요.</div>
         </div>
       </div>
-      <div class="pattern-card reveal reveal-delay-3">
+      <div class="pattern-card rv">
         <div class="pattern-icon" style="background:linear-gradient(135deg,rgba(91,191,186,.15),rgba(91,191,186,.05))">🌱</div>
         <div>
           <div class="pattern-title">성장 추적</div>
@@ -746,8 +785,8 @@ section{padding:100px 0;}
     <h2 class="section-title reveal">합리적인 요금제</h2>
     <p class="section-desc reveal">기본 해몽은 무료! 더 깊은 분석이 필요할 때만 결제하세요.</p>
 
-    <div class="features" style="margin-top:40px;">
-      <div class="feature-card reveal reveal-delay-1" style="border-color:rgba(166,124,239,.2);">
+    <div class="features" style="margin-top:40px;" data-stagger>
+      <div class="feature-card rv" style="border-color:rgba(166,124,239,.2);">
         <div class="feature-icon">🌙</div>
         <div class="feature-title">무료</div>
         <div class="feature-desc" style="margin-bottom:16px">
@@ -759,7 +798,7 @@ section{padding:100px 0;}
         <div style="font-size:28px;font-weight:900;color:var(--moon);font-family:'Gowun Dodum',serif;">₩0</div>
       </div>
 
-      <div class="feature-card reveal reveal-delay-2" style="border-color:rgba(248,201,76,.3);position:relative;">
+      <div class="feature-card rv" style="border-color:rgba(248,201,76,.3);position:relative;">
         <div style="position:absolute;top:-10px;right:16px;background:linear-gradient(135deg,#f8c94c,#ffaa33);border-radius:12px;padding:3px 12px;font-size:11px;font-weight:700;color:#1a1200;">인기</div>
         <div class="feature-icon">📜</div>
         <div class="feature-title">상세 해몽</div>
@@ -773,7 +812,7 @@ section{padding:100px 0;}
         <div style="font-size:11px;color:var(--teal);margin-top:6px">15회 팩 ₩19,900 (회당 ₩1,327)</div>
       </div>
 
-      <div class="feature-card reveal reveal-delay-3" style="border-color:rgba(91,191,186,.3);">
+      <div class="feature-card rv" style="border-color:rgba(91,191,186,.3);">
         <div class="feature-icon">✨</div>
         <div class="feature-title">프로 구독</div>
         <div class="feature-desc" style="margin-bottom:16px">
@@ -833,9 +872,164 @@ section{padding:100px 0;}
 
 // 네비게이션 스크롤 효과
 const nav=document.getElementById('nav');
-window.addEventListener('scroll',()=>{
-  nav.classList.toggle('scrolled',window.scrollY>60);
-},{passive:true});
+function syncNav(y){ if(nav) nav.classList.toggle('scrolled',(y!=null?y:window.scrollY)>60); }
+// 폴백: 동적 레이어가 꺼져도(reduced-motion) nav 토글은 항상 동작
+window.addEventListener('scroll',()=>syncNav(),{passive:true});
+
+// ── 동적 스크롤 레이어 (촤라락): Lenis 풍 관성 + 스태거 reveal + 오로라 패럴랙스 ──
+//   transform/opacity 전용. reduced-motion 이면 통째로 비활성 + 정적 폴백.
+(function(){
+  const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const sky = document.getElementById('sky');
+  const moonWrap = document.querySelector('.hero-moon-wrap');
+
+  // ── 1) 자동 스태거 — .reveal 그룹 + 신규 .rv 요소에 인덱스(--rv-i) 부여 ──
+  //   같은 부모 안의 형제 순서대로 0,1,2… → transition-delay 가 60ms 간격 cascade.
+  function tagStagger(){
+    document.querySelectorAll('[data-stagger]').forEach(group=>{
+      const kids = group.querySelectorAll(':scope > .rv, :scope > .reveal');
+      kids.forEach((el,i)=> el.style.setProperty('--rv-i', Math.min(i,8)));
+    });
+  }
+  tagStagger();
+
+  // reduced-motion: 동적 효과 전부 끄고 즉시 정적 노출 (CSS !important 와 동기화)
+  if (REDUCED){
+    document.querySelectorAll('.rv').forEach(el=>el.classList.add('in'));
+    if (moonWrap) moonWrap.classList.remove('moon-enter'), moonWrap.classList.add('moon-in');
+    return; // Lenis·패럴랙스·blur-in 미가동
+  }
+
+  // ── 2) 히어로 달 — 진입 1회 blur→focus ──
+  if (moonWrap){
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      moonWrap.classList.remove('moon-enter');
+      moonWrap.classList.add('moon-in');
+      moonWrap.addEventListener('transitionend',()=>{ moonWrap.style.willChange='auto'; },{once:true});
+    }));
+  }
+
+  // ── 3) .rv 스태거 reveal IntersectionObserver (신규 요소 전용; 기존 .reveal 은 그대로) ──
+  const rvObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        e.target.classList.add('in');
+        e.target.addEventListener('transitionend',()=>e.target.classList.add('rv-done'),{once:true});
+        rvObserver.unobserve(e.target);
+      }
+    });
+  },{threshold:0.16, rootMargin:'0px 0px -48px 0px'});
+  document.querySelectorAll('.rv').forEach(el=>rvObserver.observe(el));
+
+  // ── 4) Lenis 풍 관성 스크롤 (compact vendor, lerp 0.09, 단일 RAF) ──
+  //   자체 구현: 가상 스크롤 타깃을 lerp 로 실 scrollTop 에 보간. wheel/touch 캡처.
+  //   앵커(#) 클릭·키보드·reduced-motion 안전. 스크롤바·접근성 보존.
+  const Lenis = (function(){
+    function clamp(min,v,max){ return Math.max(min,Math.min(v,max)); }
+    function Engine(opts){
+      opts = opts||{};
+      this.lerp = opts.lerp!=null ? opts.lerp : 0.09;
+      this.wheelMultiplier = opts.wheelMultiplier!=null ? opts.wheelMultiplier : 1;
+      this.touchMultiplier = opts.touchMultiplier!=null ? opts.touchMultiplier : 1.6;
+      this.target = window.scrollY;
+      this.current = window.scrollY;
+      this.scrolling = false;
+      this.stopped = false;
+      this._cbs = [];
+      this._last = null;
+      this._init();
+    }
+    Engine.prototype.maxScroll = function(){
+      return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    };
+    Engine.prototype.on = function(ev,cb){ if(ev==='scroll') this._cbs.push(cb); };
+    Engine.prototype.emit = function(){ const e=this; this._cbs.forEach(cb=>cb({scroll:e.current, limit:e.maxScroll()})); };
+    Engine.prototype.stop = function(){ this.stopped=true; document.documentElement.classList.add('lenis-stopped'); };
+    Engine.prototype.start = function(){ this.stopped=false; document.documentElement.classList.remove('lenis-stopped'); this.target=this.current=window.scrollY; };
+    Engine.prototype.scrollTo = function(y,opts){
+      // 즉시(=native) 모드: 앵커/프로그램 점프는 보간 없이 정확히
+      opts = opts||{};
+      if (opts.immediate){ this.target=this.current=clamp(0,y,this.maxScroll()); window.scrollTo(0,this.current); this.emit(); return; }
+      this.target = clamp(0, y, this.maxScroll());
+    };
+    Engine.prototype._init = function(){
+      const self=this;
+      // 휠 → 가상 타깃 누적 (네이티브 스크롤 차단)
+      window.addEventListener('wheel',function(e){
+        if(self.stopped) return;
+        // 가로 스크롤·확대(ctrl) 제스처는 네이티브 유지
+        if (e.ctrlKey) return;
+        e.preventDefault();
+        self.target = clamp(0, self.target + e.deltaY * self.wheelMultiplier, self.maxScroll());
+        self.scrolling = true;
+      },{passive:false});
+      // 터치 → 드래그 보간
+      let ty=0;
+      window.addEventListener('touchstart',function(e){ if(e.touches.length===1) ty=e.touches[0].clientY; },{passive:true});
+      window.addEventListener('touchmove',function(e){
+        if(self.stopped||e.touches.length!==1) return;
+        const y=e.touches[0].clientY, dy=ty-y; ty=y;
+        self.target = clamp(0, self.target + dy * self.touchMultiplier, self.maxScroll());
+        self.scrolling = true;
+      },{passive:true});
+      // 키보드/접근성/네이티브 점프(앵커, Home/End, 포커스 이동) → 실제 위치에 동기화
+      window.addEventListener('scroll',function(){
+        if(!self.scrolling){ self.target = self.current = window.scrollY; }
+      },{passive:true});
+      window.addEventListener('resize',function(){ self.target=clamp(0,self.target,self.maxScroll()); },{passive:true});
+      // 앵커 클릭 → 부드러운 scrollTo (네이티브 jump 대신)
+      document.querySelectorAll('a[href^="#"]').forEach(a=>{
+        const id=a.getAttribute('href');
+        if(!id||id==='#') return;
+        a.addEventListener('click',function(ev){
+          const t=document.querySelector(id);
+          if(!t) return;
+          ev.preventDefault();
+          const y=window.scrollY + t.getBoundingClientRect().top;
+          self.scrolling=true;
+          self.scrollTo(y);
+        });
+      });
+    };
+    Engine.prototype.raf = function(now){
+      if(this.stopped){ this._last=now; return; }
+      const diff = this.target - this.current;
+      if (Math.abs(diff) < 0.12){
+        if(this.scrolling){ this.current=this.target; window.scrollTo(0,this.current); this.emit(); }
+        this.scrolling=false;
+        this.current=this.target;
+        this._last=now;
+        return;
+      }
+      // 프레임 독립 lerp (60fps 기준 보정)
+      const dt = this._last!=null ? Math.min((now-this._last)/16.667, 3) : 1;
+      this._last = now;
+      this.current += diff * (1 - Math.pow(1 - this.lerp, dt));
+      window.scrollTo(0, this.current);
+      this.emit();
+    };
+    return Engine;
+  })();
+
+  const lenis = new Lenis({ lerp:0.09, wheelMultiplier:1 });
+  window.__lenis = lenis; // 디버그/검증 핸들
+
+  // 스크롤 콜백: nav 토글 + 오로라 패럴랙스 (transform 전용)
+  lenis.on('scroll', ({scroll})=>{
+    syncNav(scroll);
+    if (sky){
+      // 미세 패럴랙스: 스크롤의 ~6% 만큼 위로 (compositor transform)
+      sky.style.setProperty('--sky-y', (-(scroll*0.06)).toFixed(1)+'px');
+    }
+  });
+
+  // 단일 RAF 루프 (워크스루의 별도 RAF 들과 독립 공존)
+  function frame(now){ lenis.raf(now); requestAnimationFrame(frame); }
+  requestAnimationFrame(frame);
+
+  // 탭 비활성 → 복귀 시 점프 방지: 타깃을 실위치로 리셋
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden){ lenis.target=lenis.current=window.scrollY; } });
+})();
 
 // 스크롤 reveal + 카운터 애니메이션
 const observer=new IntersectionObserver((entries)=>{
