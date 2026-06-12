@@ -1,3 +1,55 @@
+> 2026-06-12 라운드 반영: E2E harness 실전 연결(4 시나리오 grn) + M1·M2·M3 수술 완주 + dead-export·shared/ 격리 + checkout.js 흡수 + 오로라 비주얼 + PURPOSE.lock.yaml 도입.
+
+**[2026-06-12 라운드 반영]**
+
+### 주제별 변경 요약
+
+#### 1. 오로라 비주얼 (84903a0 · 0da6d4c)
+- `84903a0` `feat(visual)`: 미드나잇 오로라 CSS 토큰(Huly 문법) 전체 적용 — 기능·카피·가격 불변
+- `0da6d4c` `feat(visual-r2)`: 결과 시트·탭 active 상태 오로라 톤 통일 — 기능·가격 불변
+
+#### 2. PURPOSE.lock.yaml 도입 + lock 상태 정합 (f273bdd · cdadaf7 · 71c7ba0)
+- `f273bdd` `lock`: PURPOSE.lock.yaml 신설 — 목적 잠금(census 151샤드 합성) + AGENTS.md 참조 연결
+- `cdadaf7` `lock(conflicts)`: 실측 해소 주석 — 수치/경로/정본 확정 (2026-06-12 batch)
+- `71c7ba0` `lock`: shared/ 격리 반영 → GHOST-DRIFT 해소 (deadcode 6f309d1 정합)
+
+#### 3. 심부 리모델링 — SKU 단일화·사문 격리 (c4f27e1 · bf1ff62 · 3bbcaeb · fc3f77c)
+- `c4f27e1` `remodel(심부)`: SKU 정의 단일화(PRODUCT_CATALOG 정본) + 사문 정리 — 금액 불변
+- `bf1ff62` `remodel(심부)`: utils/helpers.js + descriptions.txt 3종 → `_archive/remodel_20260611/` 격리. 게이트: 253 pytest PASS + vite build OK
+- `3bbcaeb` `fix(DEFER2)`: paywall 레거시 SKU 괴리 정정 — `pro_monthly ₩9,900` → 정본 `Plus ₩3,900` + 정본 외 혜택 주장(프로파일 무료) 제거
+- `fc3f77c` `feat(hooking)`: hero 서브 카테고리 나열 → 기제 예시로 교체 (랜딩 진단 보강)
+
+#### 4. 대형 파일 분리 M1·M2 (b27c90b · 8d2710d)
+- `b27c90b` `refactor(M1)`: `dali.js` 999줄 → `dali-chat.js` + `dali-ui.js` + `dali.js(데이터층)` 3분리. 게이트: 253 PASS + npm run build OK
+- `8d2710d` `refactor(M2)`: `dream-export.js` 733줄 → `dream-export-pdf.js` + `dream-export-qr.js` + 진입점 3분리. 게이트: 253 PASS + npm run build OK
+
+#### 5. E2E harness 실전 연결 (498b3f1 → 5c1315a)
+- `498b3f1` `test(e2e)`: 결제경로 E2E 스켈레톤 신설(skip stub, harness 미연결 명시)
+- `5c1315a` `feat(e2e)`: puppeteer E2E harness 실전 연결 — 4 시나리오(dream_input/paywall_cta/offline_fallback/price_display) grn. 게이트: **257 PASS** (기존 253 + 신규 4) exit 0
+
+#### 6. shared/ Python 전수 격리 (6f309d1)
+- `6f309d1` `refactor(deadcode)`: `shared/` 20개 파일 전부 `_archive/deadcode_20260612_shared_python/` git mv. 근거: `from shared|import shared` → 0건 전수 실측. 게이트: 253 PASS + build OK
+
+#### 7. checkout.js 흡수 M3 (0a6f78a)
+- `0a6f78a` `refactor(M3)`: `checkout.js` 제거 — `startCheckout → startPayment` 직접 호출 전환. `window.startCheckout` 하위호환 wrapper 유지. 게이트: **257 PASS** + build clean + E2E 4/4
+
+#### 8. dead-export 6건 인라인 제거 (5d98e4c)
+- `5d98e4c` `refactor(deadcode)`: `renderSimilarDreamsSection` / `destroyCommunity` / `updBubble` / `hasWatchedAd` / `SKU_ALIAS+resolveCanonicalSku` / `usePackCredit` 제거. 게이트: **257 PASS** + build OK + 가격 grep 무변 + E2E 4 PASS
+
+#### 9. 랜딩 워크스루 섹션 + 구조 정정 (2dd0024 · 283f947)
+- `2dd0024` `feat(landing)`: 해몽 과정 미리보기 워크스루 섹션(3탭 인터랙티브) 신축
+- `283f947` `chore`: SKU_ALIAS 독스트링 정정 + KEEP 계약핀 주석 + PWA 아이콘 존재 실측. 게이트: **257 PASS** + npm run build OK + `icon-{192,512}.png` 존재 확인
+
+### 최종 테스트 게이트 (2026-06-12 기준)
+- pytest: **257 passed** (exit 0)
+- npm run build: OK
+- E2E puppeteer 4 시나리오: grn
+
+### 잔여 blocker (민규 P0, 변동 없음)
+- Supabase unpause / repo public 전환 / OpenAI·Gemini 키 충전 / AdSense·Play Store
+
+---
+
 > 2026-06-11 리빌딩 P2: AGENTS.md INTERFACE(T1 기계판독) 도입 + 루트 위생. SPEC=C:/JARVIS_NEW/evidence/workspace_census/rebuild_spec_20260611.md
 
 # MONGGEUL HANDOFF
