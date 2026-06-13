@@ -1,0 +1,5 @@
+# 몽글몽글 ads.txt — AdSense 승인 후 pub-id 로 교체
+# 포맷: <exchange>, <publisher_id>, <relationship>, <TAG-ID>
+# 참고: https://support.google.com/adsense/answer/7532444
+# 예시 (민규님 pub-id 교체 후 활성화):
+# google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0

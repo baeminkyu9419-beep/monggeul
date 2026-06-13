@@ -1,0 +1,6 @@
+# Cloudflare Pages 라우팅 — 마케팅 랜딩 첫 진입 + 앱 SPA fallback
+#   배포 base=/ (npm run deploy:cf = build:root, DEPLOY_BASE=/). 규칙은 위→아래 first-match.
+#   1) 정확히 루트(/) 진입 = 마케팅 landing.html (워크스루/오로라/hero). landing CTA(./index.html?ref=landing) → 앱.
+#   2) 그 외 모든 경로 = 앱 SPA(index.html) fallback. 실파일(/assets/*, /landing.html, /index.html, /sw.js …)은 Pages 가 우선 서빙.
+/            /landing.html   200
+/*           /index.html     200

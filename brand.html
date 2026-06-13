@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>몽글몽글 — Brand Identity System</title>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0e0c1a;color:#f0ecff;font-family:'Noto Sans KR',sans-serif;font-size:14px;line-height:1.8;}
+::selection{background:rgba(166,124,239,.3);color:#fff;}
+
+/* 레이아웃 */
+.wrap{max-width:900px;margin:0 auto;padding:60px 32px 100px;}
+section{margin-bottom:80px;}
+
+/* 헤더 */
+.brand-hero{text-align:center;padding:80px 0 60px;position:relative;}
+.brand-hero::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:300px;height:300px;background:radial-gradient(circle,rgba(166,124,239,.12),transparent 70%);pointer-events:none;}
+.brand-logo-big{font-size:72px;margin-bottom:16px;filter:drop-shadow(0 0 30px rgba(245,230,178,.2));}
+.brand-title{font-family:'Gowun Dodum',serif;font-size:40px;color:#f5e6b2;letter-spacing:4px;text-shadow:0 0 40px rgba(245,230,178,.15);margin-bottom:8px;}
+.brand-sub{font-size:14px;color:#6b5e8a;letter-spacing:2px;}
+.brand-ver{display:inline-block;margin-top:20px;padding:4px 16px;border:1px solid rgba(166,124,239,.2);border-radius:20px;font-size:11px;color:#a67cef;letter-spacing:1px;}
+
+/* 섹션 타이틀 */
+.sec-num{font-size:11px;color:#a67cef;letter-spacing:3px;text-transform:uppercase;margin-bottom:4px;}
+.sec-head{font-size:24px;font-weight:900;color:#f0ecff;margin-bottom:8px;letter-spacing:-0.5px;}
+.sec-desc{font-size:13px;color:#6b5e8a;max-width:600px;margin-bottom:32px;}
+.divider{height:1px;background:linear-gradient(90deg,transparent,rgba(166,124,239,.2),transparent);margin:60px 0;}
+
+/* 컬러 */
+.color-section{display:flex;flex-direction:column;gap:24px;}
+.color-group-title{font-size:12px;font-weight:700;color:#a67cef;letter-spacing:2px;margin-bottom:12px;text-transform:uppercase;}
+.color-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;}
+.color-card{border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,.04);transition:transform .2s,box-shadow .2s;cursor:pointer;}
+.color-card:hover{transform:translateY(-4px);box-shadow:0 8px 30px rgba(0,0,0,.3);}
+.color-top{height:100px;position:relative;display:flex;align-items:flex-end;padding:10px 14px;}
+.color-top span{font-size:9px;opacity:.7;font-family:monospace;background:rgba(0,0,0,.3);padding:2px 6px;border-radius:4px;}
+.color-bot{padding:12px 14px;background:rgba(255,255,255,.02);}
+.color-name{font-size:12px;font-weight:700;margin-bottom:2px;}
+.color-codes{font-size:10px;color:#6b5e8a;font-family:monospace;line-height:1.6;}
+.color-use{font-size:10px;color:#a89dd0;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.04);}
+.color-pantone{display:inline-block;font-size:9px;padding:1px 6px;border:1px solid rgba(255,255,255,.1);border-radius:4px;color:#a89dd0;margin-top:4px;}
+
+/* 타이포 */
+.typo-showcase{background:rgba(255,255,255,.02);border-radius:24px;padding:32px;border:1px solid rgba(255,255,255,.04);}
+.typo-row{display:flex;align-items:baseline;gap:20px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.03);}
+.typo-row:last-child{border-bottom:none;}
+.typo-meta{min-width:100px;flex-shrink:0;}
+.typo-level{font-size:10px;font-weight:700;color:#a67cef;letter-spacing:1px;}
+.typo-spec{font-size:9px;color:#6b5e8a;margin-top:2px;font-family:monospace;}
+.typo-sample{flex:1;}
+.font-badge{display:inline-block;font-size:9px;padding:2px 8px;border-radius:8px;background:rgba(166,124,239,.1);color:#a67cef;margin-left:8px;}
+
+/* 로고 */
+.logo-showcase{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.logo-box{padding:40px;border-radius:24px;text-align:center;border:1px solid rgba(255,255,255,.04);}
+.logo-box.dark{background:#0e0c1a;}
+.logo-box.purple{background:linear-gradient(135deg,#1a1040,#2d1b69);}
+.logo-icon-lg{width:80px;height:80px;background:linear-gradient(135deg,#7c5cbf,#a67cef);border-radius:18px;display:inline-flex;align-items:center;justify-content:center;font-size:40px;box-shadow:0 8px 30px rgba(124,92,191,.4);margin-bottom:16px;}
+.logo-wordmark{font-family:'Gowun Dodum',serif;font-size:28px;letter-spacing:2px;}
+.logo-label{font-size:9px;color:#6b5e8a;margin-top:8px;letter-spacing:1px;}
+
+/* 여백 규정 */
+.spacing-demo{display:flex;align-items:center;justify-content:center;padding:40px;background:rgba(255,255,255,.02);border-radius:20px;margin:16px 0;}
+.spacing-box{position:relative;padding:24px;border:2px dashed rgba(166,124,239,.3);border-radius:14px;}
+.spacing-inner{padding:16px 24px;background:rgba(166,124,239,.05);border-radius:10px;display:flex;align-items:center;gap:12px;}
+.spacing-arrow{position:absolute;font-size:8px;color:#a67cef;}
+
+/* 컴포넌트 */
+.comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:600px){.comp-grid,.logo-showcase{grid-template-columns:1fr;}}
+.comp-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);border-radius:20px;padding:24px;}
+.comp-title{font-size:11px;font-weight:700;color:#a67cef;letter-spacing:1px;margin-bottom:16px;}
+
+/* 데모 카드 */
+.demo-glass{background:rgba(45,40,88,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(166,124,239,.12);border-radius:26px;padding:20px;transition:all .3s;}
+.demo-glass:hover{border-color:rgba(166,124,239,.25);box-shadow:0 4px 24px rgba(124,92,191,.12);}
+
+/* 버튼 */
+.demo-btn{background:linear-gradient(135deg,#7c5cbf,#9b6de0,#a67cef);border:none;border-radius:20px;color:#fff;font-size:14px;font-weight:700;padding:14px 36px;cursor:pointer;box-shadow:0 4px 20px rgba(124,92,191,.35),0 0 0 1px rgba(166,124,239,.2) inset;font-family:'Noto Sans KR',sans-serif;position:relative;overflow:hidden;display:inline-block;}
+.demo-btn::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.12) 50%,transparent 60%);transform:translateX(-150%);animation:shimBtn 4s ease-in-out infinite;}
+@keyframes shimBtn{0%,100%{transform:translateX(-150%)}50%{transform:translateX(150%)}}
+.demo-btn-outline{background:transparent;border:1px solid rgba(166,124,239,.3);border-radius:20px;color:#a67cef;font-size:13px;padding:10px 24px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .2s;}
+.demo-btn-outline:hover{background:rgba(166,124,239,.1);border-color:rgba(166,124,239,.5);}
+
+/* 뱃지 */
+.badge-row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;}
+.badge{padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;}
+.bl{background:rgba(248,201,76,.12);color:#f8c94c;border:1px solid rgba(248,201,76,.25);box-shadow:0 0 10px rgba(248,201,76,.15);text-shadow:0 0 8px rgba(248,201,76,.3);}
+.bv{background:rgba(240,168,200,.1);color:#f0a8c8;border:1px solid rgba(240,168,200,.2);box-shadow:0 0 10px rgba(240,168,200,.12);}
+.bb{background:rgba(200,80,80,.1);color:#f08080;border:1px solid rgba(200,80,80,.2);box-shadow:0 0 10px rgba(200,80,80,.12);}
+
+/* 글로우 */
+.glow-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;}
+@media(max-width:500px){.glow-grid{grid-template-columns:repeat(3,1fr);}}
+.glow-item{aspect-ratio:1;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;transition:transform .2s;}
+.glow-item:hover{transform:scale(1.05);}
+.glow-emoji{font-size:28px;}
+.glow-label{font-size:9px;font-weight:700;letter-spacing:1px;}
+
+/* 모션 */
+.motion-table{width:100%;border-collapse:collapse;margin:16px 0;}
+.motion-table th{font-size:10px;color:#a67cef;text-align:left;padding:8px 12px;border-bottom:1px solid rgba(166,124,239,.15);letter-spacing:1px;}
+.motion-table td{font-size:12px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.03);color:#a89dd0;}
+.motion-table td:first-child{color:#f0ecff;font-weight:500;}
+.motion-preview{width:24px;height:24px;background:#a67cef;border-radius:6px;display:inline-block;}
+
+/* 캐릭터 */
+.char-card{display:flex;gap:24px;padding:32px;background:rgba(255,255,255,.02);border-radius:24px;border:1px solid rgba(255,255,255,.04);}
+.char-avatar{width:80px;height:80px;background:linear-gradient(135deg,#2d2256,#3d3080);border:3px solid rgba(166,124,239,.35);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px;flex-shrink:0;box-shadow:0 4px 20px rgba(124,92,191,.3);}
+.char-info{flex:1;}
+.char-name{font-size:20px;font-weight:900;margin-bottom:4px;}
+.char-role{font-size:12px;color:#a89dd0;margin-bottom:12px;}
+.char-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.char-tag{font-size:10px;padding:3px 10px;border-radius:12px;background:rgba(166,124,239,.08);color:#a67cef;border:1px solid rgba(166,124,239,.15);}
+
+/* 금지 */
+.dont-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:500px){.dont-grid{grid-template-columns:1fr;}}
+.dont-item{padding:16px;border-radius:16px;background:rgba(240,128,128,.04);border:1px solid rgba(240,128,128,.1);}
+.dont-icon{font-size:16px;margin-bottom:6px;}
+.dont-text{font-size:11px;color:#f08080;line-height:1.5;}
+
+/* 접근성 */
+.a11y-table{width:100%;border-collapse:collapse;}
+.a11y-table th{font-size:10px;color:#a67cef;text-align:left;padding:8px;border-bottom:1px solid rgba(166,124,239,.15);}
+.a11y-table td{padding:8px;font-size:12px;border-bottom:1px solid rgba(255,255,255,.03);}
+.a11y-pass{color:#7de8d8;}
+.a11y-warn{color:#f8c94c;}
+.a11y-fail{color:#f08080;}
+.a11y-swatch{display:inline-block;width:16px;height:16px;border-radius:4px;vertical-align:middle;margin-right:6px;}
+
+.footer{text-align:center;padding:40px 0;border-top:1px solid rgba(255,255,255,.04);margin-top:40px;}
+.footer-logo{font-family:'Gowun Dodum',serif;font-size:16px;color:#f5e6b2;margin-bottom:8px;}
+.footer-text{font-size:10px;color:#6b5e8a;line-height:2;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ═══ 히어로 ═══ -->
+<div class="brand-hero">
+  <div class="brand-logo-big">🌙</div>
+  <div class="brand-title">몽글몽글</div>
+  <div class="brand-sub">BRAND IDENTITY SYSTEM</div>
+  <div class="brand-ver">VERSION 1.0 · 2026</div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══ 01. 브랜드 개요 ═══ -->
+<section>
+  <div class="sec-num">01 — OVERVIEW</div>
+  <div class="sec-head">브랜드 개요</div>
+  <div class="sec-desc">몽글몽글은 꿈을 기록하고 달이와 함께 해몽하는 꿈 동반자 앱입니다. '밤하늘 아래 따뜻한 대화'를 핵심 경험으로, 사용자의 무의식을 부드럽게 풀어주는 것을 목표로 합니다.</div>
+
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <span style="padding:6px 16px;border-radius:20px;font-size:11px;background:rgba(166,124,239,.08);color:#a67cef;border:1px solid rgba(166,124,239,.15)">몽환적</span>
+    <span style="padding:6px 16px;border-radius:20px;font-size:11px;background:rgba(245,230,178,.08);color:#f5e6b2;border:1px solid rgba(245,230,178,.15)">따뜻한</span>
+    <span style="padding:6px 16px;border-radius:20px;font-size:11px;background:rgba(125,232,216,.08);color:#7de8d8;border:1px solid rgba(125,232,216,.15)">신비로운</span>
+    <span style="padding:6px 16px;border-radius:20px;font-size:11px;background:rgba(240,168,200,.08);color:#f0a8c8;border:1px solid rgba(240,168,200,.15)">친근한</span>
+    <span style="padding:6px 16px;border-radius:20px;font-size:11px;background:rgba(144,208,255,.08);color:#90d0ff;border:1px solid rgba(144,208,255,.15)">밤하늘</span>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ 02. 색상 시스템 ═══ -->
+<section>
+  <div class="sec-num">02 — COLOR SYSTEM</div>
+  <div class="sec-head">전용 색상</div>
+  <div class="sec-desc">전용색상은 몽글몽글의 이미지를 전달하는 중요한 기본 요소입니다. 어두운 배경에 밝은 색상 사용을 원칙으로 하며, 4원색 표현이나 인쇄매체에서는 가장 유사한 Pantone 색상을 적용합니다.</div>
+
+  <div class="color-section">
+    <div>
+      <div class="color-group-title">Main Color — Monggeul Purple</div>
+      <div class="color-grid">
+        <div class="color-card"><div class="color-top" style="background:#7C5CBF"><span>Primary</span></div><div class="color-bot"><div class="color-name" style="color:#7C5CBF">Purple Deep</div><div class="color-codes">HEX #7C5CBF<br>RGB 124, 92, 191<br>CMYK 54, 66, 0, 0</div><div class="color-use">CTA 버튼, 주요 강조, 브랜드 대표</div><div class="color-pantone">Pantone 2665 C</div></div></div>
+        <div class="color-card"><div class="color-top" style="background:#A67CEF"><span>Secondary</span></div><div class="color-bot"><div class="color-name" style="color:#A67CEF">Purple Bright</div><div class="color-codes">HEX #A67CEF<br>RGB 166, 124, 239<br>CMYK 40, 52, 0, 0</div><div class="color-use">활성 탭, 링크, 하이라이트</div><div class="color-pantone">Pantone 2577 C</div></div></div>
+        <div class="color-card"><div class="color-top" style="background:#C8BFF8"><span>Tertiary</span></div><div class="color-bot"><div class="color-name" style="color:#C8BFF8">Purple Soft</div><div class="color-codes">HEX #C8BFF8<br>RGB 200, 191, 248<br>CMYK 24, 24, 0, 0</div><div class="color-use">보조 텍스트, 태그, 비활성</div><div class="color-pantone">Pantone 2706 C</div></div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="color-group-title">Sub Color — 감성 팔레트</div>
+      <div class="color-grid">
+        <div class="color-card"><div class="color-top" style="background:#F5E6B2"><span style="color:#333">Moon</span></div><div class="color-bot"><div class="color-name" style="color:#F5E6B2">Moon Gold</div><div class="color-codes">HEX #F5E6B2<br>RGB 245, 230, 178</div><div class="color-use">히어로 제목, 길몽 라벨</div><div class="color-pantone">Pantone 7401 C</div></div></div>
+        <div class="color-card"><div class="color-top" style="background:#F8C94C"><span style="color:#333">Amber</span></div><div class="color-bot"><div class="color-name" style="color:#F8C94C">Amber</div><div class="color-codes">HEX #F8C94C<br>RGB 248, 201, 76</div><div class="color-use">재물운, 보상, XP</div><div class="color-pantone">Pantone 7408 C</div></div></div>
+        <div class="color-card"><div class="color-top" style="background:#7DE8D8"><span style="color:#333">Teal</span></div><div class="color-bot"><div class="color-name" style="color:#7DE8D8">Teal</div><div class="color-codes">HEX #7DE8D8<br>RGB 125, 232, 216</div><div class="color-use">건강운, 활력, 긍정 피드백</div><div class="color-pantone">Pantone 332 C</div></div></div>
+        <div class="color-card"><div class="color-top" style="background:#F0A8C8"><span style="color:#333">Pink</span></div><div class="color-bot"><div class="color-name" style="color:#F0A8C8">Pink</div><div class="color-codes">HEX #F0A8C8<br>RGB 240, 168, 200</div><div class="color-use">연애운, 감성 표현</div><div class="color-pantone">Pantone 189 C</div></div></div>
+        <div class="color-card"><div class="color-top" style="background:#F08080"><span>Coral</span></div><div class="color-bot"><div class="color-name" style="color:#F08080">Coral</div><div class="color-codes">HEX #F08080<br>RGB 240, 128, 128</div><div class="color-use">흉몽, 경고, 주의</div><div class="color-pantone">Pantone 170 C</div></div></div>
+        <div class="color-card"><div class="color-top" style="background:#90D0FF"><span style="color:#333">Blue</span></div><div class="color-bot"><div class="color-name" style="color:#90D0FF">Sky Blue</div><div class="color-codes">HEX #90D0FF<br>RGB 144, 208, 255</div><div class="color-use">직관, 보조 정보</div><div class="color-pantone">Pantone 291 C</div></div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="color-group-title">Background — 밤하늘 시스템</div>
+      <div class="color-grid">
+        <div class="color-card"><div class="color-top" style="background:#0E0C1A;border:1px solid rgba(255,255,255,.1)"><span>Darkest</span></div><div class="color-bot"><div class="color-name">Night</div><div class="color-codes">HEX #0E0C1A</div><div class="color-use">앱 배경, body</div></div></div>
+        <div class="color-card"><div class="color-top" style="background:#13102A"><span>Dark</span></div><div class="color-bot"><div class="color-name">Deep</div><div class="color-codes">HEX #13102A</div><div class="color-use">카드 배경 (깊은)</div></div></div>
+        <div class="color-card"><div class="color-top" style="background:#1E1840"><span>Mid</span></div><div class="color-bot"><div class="color-name">Mid</div><div class="color-codes">HEX #1E1840</div><div class="color-use">모달, 입력 배경</div></div></div>
+        <div class="color-card"><div class="color-top" style="background:#2D2858"><span style="color:#a89dd0">Light</span></div><div class="color-bot"><div class="color-name">Card</div><div class="color-codes">HEX #2D2858</div><div class="color-use">카드, 컨테이너</div></div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="color-group-title">Text Color</div>
+      <div class="color-grid">
+        <div class="color-card"><div class="color-top" style="background:#1a1535"><span style="color:#f0ecff;font-size:14px;background:none;">가나다라마바사</span></div><div class="color-bot"><div class="color-name" style="color:#f0ecff">Primary</div><div class="color-codes">HEX #F0ECFF</div><div class="color-use">본문, 제목</div></div></div>
+        <div class="color-card"><div class="color-top" style="background:#1a1535"><span style="color:#a89dd0;font-size:14px;background:none;">가나다라마바사</span></div><div class="color-bot"><div class="color-name" style="color:#a89dd0">Secondary</div><div class="color-codes">HEX #A89DD0</div><div class="color-use">설명, 부제</div></div></div>
+        <div class="color-card"><div class="color-top" style="background:#1a1535"><span style="color:#6b5e8a;font-size:14px;background:none;">가나다라마바사</span></div><div class="color-bot"><div class="color-name" style="color:#6b5e8a">Muted</div><div class="color-codes">HEX #6B5E8A</div><div class="color-use">비활성, 힌트</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ 03. 로고 ═══ -->
+<section>
+  <div class="sec-num">03 — LOGO</div>
+  <div class="sec-head">로고 시스템</div>
+  <div class="sec-desc">몽글몽글 로고는 달 이모지(🌙)와 한글 워드마크의 조합으로 구성됩니다. 어두운 배경에서만 사용하며, 주변 여백은 로고 높이의 50% 이상을 확보합니다.</div>
+
+  <div class="logo-showcase">
+    <div class="logo-box dark">
+      <div class="logo-icon-lg">🌙</div>
+      <div class="logo-wordmark" style="color:#f5e6b2">몽글몽글</div>
+      <div class="logo-label">기본형 — Night 배경</div>
+    </div>
+    <div class="logo-box purple">
+      <div class="logo-icon-lg">🌙</div>
+      <div class="logo-wordmark" style="color:#f0ecff">몽글몽글</div>
+      <div class="logo-label">변형 — Purple 배경</div>
+    </div>
+  </div>
+
+  <div class="spacing-demo">
+    <div class="spacing-box">
+      <div class="spacing-arrow" style="top:-16px;left:50%;transform:translateX(-50%)">↕ 최소 여백 50%</div>
+      <div class="spacing-arrow" style="left:-50px;top:50%;transform:translateY(-50%)">↔</div>
+      <div class="spacing-inner">
+        <span style="font-size:24px">🌙</span>
+        <span style="font-family:'Gowun Dodum',serif;font-size:20px;color:#f5e6b2">몽글몽글</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ 04. 타이포 ═══ -->
+<section>
+  <div class="sec-num">04 — TYPOGRAPHY</div>
+  <div class="sec-head">타이포그래피</div>
+  <div class="sec-desc">주 서체 Gowun Dodum은 제목과 브랜드 감성 텍스트에, Noto Sans KR은 모든 UI 본문에 사용합니다.</div>
+
+  <div class="typo-showcase">
+    <div class="typo-row">
+      <div class="typo-meta"><div class="typo-level">DISPLAY</div><div class="typo-spec">40px · 700</div></div>
+      <div class="typo-sample" style="font-family:'Gowun Dodum',serif;font-size:40px;color:#f5e6b2;line-height:1.2">몽글몽글<span class="font-badge">Gowun Dodum</span></div>
+    </div>
+    <div class="typo-row">
+      <div class="typo-meta"><div class="typo-level">H1</div><div class="typo-spec">22px · 700</div></div>
+      <div class="typo-sample" style="font-family:'Gowun Dodum',serif;font-size:22px;color:#f5e6b2">오늘 꾼 꿈, 몽글몽글이 해석해드려요</div>
+    </div>
+    <div class="typo-row">
+      <div class="typo-meta"><div class="typo-level">H2</div><div class="typo-spec">16px · 700</div></div>
+      <div class="typo-sample" style="font-size:16px;font-weight:700">프리미엄 꿈 해석<span class="font-badge">Noto Sans KR</span></div>
+    </div>
+    <div class="typo-row">
+      <div class="typo-meta"><div class="typo-level">H3</div><div class="typo-spec">14px · 700</div></div>
+      <div class="typo-sample" style="font-size:14px;font-weight:700;color:#a67cef">✦ 꿈 에너지 분석</div>
+    </div>
+    <div class="typo-row">
+      <div class="typo-meta"><div class="typo-level">BODY</div><div class="typo-spec">13px · 400</div></div>
+      <div class="typo-sample" style="font-size:13px;color:#a89dd0">이 꿈에서 뱀은 재물과 지혜를 상징해요. 특히 황금 뱀은 큰 행운의 전조로 여겨져요.</div>
+    </div>
+    <div class="typo-row">
+      <div class="typo-meta"><div class="typo-level">CAPTION</div><div class="typo-spec">11px · 400</div></div>
+      <div class="typo-sample" style="font-size:11px;color:#6b5e8a">3시간 전 · 뱀 꿈 · 128명이 비슷한 꿈을 꿨어요</div>
+    </div>
+    <div class="typo-row">
+      <div class="typo-meta"><div class="typo-level">TINY</div><div class="typo-spec">10px · 500</div></div>
+      <div class="typo-sample" style="font-size:10px;font-weight:500;color:#6b5e8a">꿈 해석은 재미와 자기 성찰을 위한 거예요 🌙</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ 05. 컴포넌트 ═══ -->
+<section>
+  <div class="sec-num">05 — COMPONENTS</div>
+  <div class="sec-head">UI 컴포넌트</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-title">CARD — 글래스모피즘</div>
+      <div class="demo-glass">
+        <div style="font-size:13px;font-weight:700;margin-bottom:6px">✦ 꿈 에너지 분석</div>
+        <div style="font-size:11px;color:#a89dd0">backdrop-filter: blur(12px)<br>border: 1px solid rgba(166,124,239,.12)</div>
+      </div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-title">BUTTONS</div>
+      <div style="display:flex;flex-direction:column;gap:12px;align-items:flex-start;">
+        <button class="demo-btn">🔮 해몽하기</button>
+        <button class="demo-btn-outline">📜 프리미엄 해석 · ₩500</button>
+      </div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-title">BADGES</div>
+      <div class="badge-row">
+        <span class="badge bl">길몽</span>
+        <span class="badge bl">재물운</span>
+        <span class="badge bv">연애운</span>
+        <span class="badge bv">건강운</span>
+        <span class="badge bb">흉몽</span>
+      </div>
+      <div style="font-size:10px;color:#6b5e8a;margin-top:8px">box-shadow glow + text-shadow</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-title">INPUT</div>
+      <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px 16px;font-size:14px;color:#6b5e8a;">꿈을 적어보세요...</div>
+      <div style="font-size:10px;color:#6b5e8a;margin-top:8px">font-size: 16px (iOS 줌 방지)</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ 06. 글로우 & 이펙트 ═══ -->
+<section>
+  <div class="sec-num">06 — VISUAL EFFECTS</div>
+  <div class="sec-head">글로우 & 이펙트</div>
+  <div class="sec-desc">각 운세별 글로우 색상은 일관되게 적용합니다. 글로우는 box-shadow 이중 레이어로 구현합니다.</div>
+
+  <div class="glow-grid">
+    <div class="glow-item" style="background:rgba(166,124,239,.1);box-shadow:0 0 20px rgba(166,124,239,.25),0 0 40px rgba(166,124,239,.08);">
+      <div class="glow-emoji">🌙</div>
+      <div class="glow-label" style="color:#a67cef">길흉</div>
+    </div>
+    <div class="glow-item" style="background:rgba(248,201,76,.1);box-shadow:0 0 20px rgba(248,201,76,.25),0 0 40px rgba(248,201,76,.08);">
+      <div class="glow-emoji">💰</div>
+      <div class="glow-label" style="color:#f8c94c">재물운</div>
+    </div>
+    <div class="glow-item" style="background:rgba(240,168,200,.1);box-shadow:0 0 20px rgba(240,168,200,.25),0 0 40px rgba(240,168,200,.08);">
+      <div class="glow-emoji">💕</div>
+      <div class="glow-label" style="color:#f0a8c8">연애운</div>
+    </div>
+    <div class="glow-item" style="background:rgba(125,232,216,.1);box-shadow:0 0 20px rgba(125,232,216,.25),0 0 40px rgba(125,232,216,.08);">
+      <div class="glow-emoji">💚</div>
+      <div class="glow-label" style="color:#7de8d8">건강운</div>
+    </div>
+    <div class="glow-item" style="background:rgba(125,232,216,.1);box-shadow:0 0 20px rgba(125,232,216,.25),0 0 40px rgba(125,232,216,.08);">
+      <div class="glow-emoji">⚡</div>
+      <div class="glow-label" style="color:#7de8d8">활력</div>
+    </div>
+    <div class="glow-item" style="background:rgba(240,128,128,.1);box-shadow:0 0 20px rgba(240,128,128,.25),0 0 40px rgba(240,128,128,.08);">
+      <div class="glow-emoji">😱</div>
+      <div class="glow-label" style="color:#f08080">흉몽</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ 07. 모션 ═══ -->
+<section>
+  <div class="sec-num">07 — MOTION</div>
+  <div class="sec-head">모션 가이드</div>
+
+  <table class="motion-table">
+    <thead><tr><th>효과</th><th>속도</th><th>이징</th><th>용도</th></tr></thead>
+    <tbody>
+      <tr><td>페이지 전환</td><td>0.32s</td><td>cubic-bezier(.2,0,.2,1)</td><td>탭 전환</td></tr>
+      <tr><td>카드 등장</td><td>0.28s</td><td>ease</td><td>채팅 말풍선</td></tr>
+      <tr><td>CTA 시머</td><td>4s</td><td>ease-in-out</td><td>해몽하기 버튼</td></tr>
+      <tr><td>펄스 글로우</td><td>2s</td><td>ease-in-out</td><td>알림, CTA</td></tr>
+      <tr><td>별 반짝임</td><td>3~5s</td><td>ease-in-out</td><td>배경 별</td></tr>
+      <tr><td>바 채우기</td><td>1~1.2s</td><td>ease</td><td>레이더 차트</td></tr>
+      <tr><td>호버 리프트</td><td>0.2s</td><td>ease</td><td>카드, 버튼</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ 08. 캐릭터 ═══ -->
+<section>
+  <div class="sec-num">08 — CHARACTER</div>
+  <div class="sec-head">달이 (Dali)</div>
+
+  <div class="char-card">
+    <div class="char-avatar">🐱</div>
+    <div class="char-info">
+      <div class="char-name">달이</div>
+      <div class="char-role">꿈 이야기를 듣고 해석해주는 꿈 친구</div>
+      <div class="char-tags">
+        <span class="char-tag">따뜻한</span>
+        <span class="char-tag">호기심 많은</span>
+        <span class="char-tag">카톡 말투</span>
+        <span class="char-tag">전문가 X</span>
+        <span class="char-tag">학술 용어 X</span>
+        <span class="char-tag">마크다운 X</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ 09. 접근성 ═══ -->
+<section>
+  <div class="sec-num">09 — ACCESSIBILITY</div>
+  <div class="sec-head">색상 접근성</div>
+
+  <table class="a11y-table">
+    <thead><tr><th>조합</th><th>대비율</th><th>AA</th><th>AAA</th></tr></thead>
+    <tbody>
+      <tr><td><span class="a11y-swatch" style="background:#f0ecff"></span>Primary on Night</td><td>13.2:1</td><td class="a11y-pass">✅ Pass</td><td class="a11y-pass">✅ Pass</td></tr>
+      <tr><td><span class="a11y-swatch" style="background:#f5e6b2"></span>Moon Gold on Night</td><td>11.8:1</td><td class="a11y-pass">✅ Pass</td><td class="a11y-pass">✅ Pass</td></tr>
+      <tr><td><span class="a11y-swatch" style="background:#a89dd0"></span>Secondary on Night</td><td>6.1:1</td><td class="a11y-pass">✅ Pass</td><td class="a11y-pass">✅ Pass</td></tr>
+      <tr><td><span class="a11y-swatch" style="background:#a67cef"></span>Purple Bright on Night</td><td>5.4:1</td><td class="a11y-pass">✅ Pass</td><td class="a11y-warn">⚠️ Large Only</td></tr>
+      <tr><td><span class="a11y-swatch" style="background:#6b5e8a"></span>Muted on Night</td><td>3.2:1</td><td class="a11y-warn">⚠️ Large Only</td><td class="a11y-fail">❌ Fail</td></tr>
+    </tbody>
+  </table>
+  <div style="font-size:10px;color:#6b5e8a;margin-top:8px">* Muted 색상은 보조 정보에만 사용하며, 핵심 콘텐츠에는 사용하지 않습니다.</div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ 10. 금지 사항 ═══ -->
+<section>
+  <div class="sec-num">10 — DON'T</div>
+  <div class="sec-head">금지 사항</div>
+
+  <div class="dont-grid">
+    <div class="dont-item"><div class="dont-icon">❌</div><div class="dont-text">밝은 배경(흰색/회색) 위에 브랜드 색상 사용</div></div>
+    <div class="dont-item"><div class="dont-icon">❌</div><div class="dont-text">로고 색상 임의 변경 또는 비율 왜곡</div></div>
+    <div class="dont-item"><div class="dont-icon">❌</div><div class="dont-text">Purple Deep를 넓은 면적의 배경색으로 사용</div></div>
+    <div class="dont-item"><div class="dont-icon">❌</div><div class="dont-text">본문에 Gowun Dodum 서체 사용 (제목 전용)</div></div>
+    <div class="dont-item"><div class="dont-icon">❌</div><div class="dont-text">이모지를 3개 이상 연속 사용</div></div>
+    <div class="dont-item"><div class="dont-icon">❌</div><div class="dont-text">"AI"라는 단어를 사용자 대면 텍스트에 사용</div></div>
+    <div class="dont-item"><div class="dont-icon">❌</div><div class="dont-text">불릿포인트(■●✦) 스타일의 기계적 텍스트</div></div>
+    <div class="dont-item"><div class="dont-icon">❌</div><div class="dont-text">라이트 모드 디자인 (다크 전용 브랜드)</div></div>
+  </div>
+</section>
+
+<!-- 푸터 -->
+<div class="footer">
+  <div class="footer-logo">🌙 몽글몽글</div>
+  <div class="footer-text">
+    Brand Identity System v1.0<br>
+    © 2026 몽글몽글. All rights reserved.<br>
+    monggeul.app@gmail.com
+  </div>
+</div>
+
+</div>
+</body>
+</html>

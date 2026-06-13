@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Sitemap: https://baeminkyu9419-beep.github.io/monggeul/sitemap.xml
+Feed: https://baeminkyu9419-beep.github.io/monggeul/feed.xml
+
+# Naver
+User-agent: Yeti
+Allow: /
+
+# Daum
+User-agent: Daum
+Allow: /
