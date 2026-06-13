@@ -842,8 +842,17 @@ export function initTodaySymbol(){
   const cnt=document.getElementById('tsCount');
   if(el)el.textContent=s.symbol;
   if(desc)desc.textContent=s.desc;
-  const hourBonus=new Date().getHours()*3+Math.floor(Math.random()*5);
-  if(cnt)cnt.innerHTML=`오늘 <strong>${s.count*13+hourBonus*8}명</strong>이<br>꿨어요`;
+  // [정직] 실집계 백엔드(Supabase) 미연결 시 "오늘 N명" 수치는 날조이므로 숨김.
+  // 연결 환경에서 실제 집계 배선되기 전까지는 수치 없는 라벨만 노출.
+  if(cnt){
+    if(window.SUPABASE_URL){
+      cnt.textContent='요즘 자주 올라오는 상징';
+      cnt.style.display='';
+    }else{
+      cnt.textContent='';
+      cnt.style.display='none';
+    }
+  }
   window._todayKeyword=s.keyword;
 }
 

@@ -553,23 +553,24 @@ function generateCasesSection(slug) {
 
   const caseCards = cases.map(c => {
     const badgeHtml = c.badges.map(b => `<span class="case-badge">${b}</span>`).join('');
+    // [2026-06-14] 가짜 사회증거 제거(민규): 실사용자 0명인데 닉네임·좋아요수 박제 = 거짓 + Google 수동제재 위험.
+    //   닉네임(c.nick)·좋아요수(c.likes) 삭제. 이모지 아이콘과 해석 본문만 유지하고 '예시' 라벨로 정직화.
     return `
       <div class="case-card">
         <div class="case-header">
           <span class="case-avatar">${c.icon}</span>
-          <span class="case-nick">${c.nick}</span>
           ${badgeHtml}
         </div>
         <div class="case-title">${c.title}</div>
         <p class="case-body">${c.body}</p>
-        <div class="case-footer"><span class="case-likes">&hearts; ${c.likes}</span></div>
+        <div class="case-footer"><span class="case-example">예시 해석</span></div>
       </div>`;
   }).join('');
 
   return `
   <div class="community-cases">
-    <h3>다른 사람들은 이런 꿈을 꿨어요</h3>
-    <p class="cases-sub">몽글몽글 사용자들의 실제 꿈 사례</p>
+    <h3>이런 꿈, 이렇게 해석돼요</h3>
+    <p class="cases-sub">자주 찾는 꿈 사례와 해석 예시예요</p>
     ${caseCards}
   </div>`;
 }
@@ -592,7 +593,9 @@ function generateFaqSchema(dream) {
     for (const c of cases) {
       const cleanTitle = c.title.replace(/[^가-힣a-zA-Z0-9\s]/g, '').trim();
       const badgeText = c.badges.length > 0 ? ' ' + c.badges.join(', ') + '으로 분류되며,' : '';
-      const answer = c.body + badgeText + ' 몽글몽글 사용자 ' + c.likes + '명이 공감한 사례입니다. 이런 꿈은 개인의 심리 상태와 최근 경험에 따라 다양하게 해석될 수 있어요.';
+      // ★2026-06-14 가짜 사회증거 제거(민규) — 실사용자 0명인데 'N명이 공감'은 거짓·Google 수동제재 위험.
+      //   닉네임·좋아요수 박제 삭제, 예시 해석만 유지.
+      const answer = c.body + badgeText + ' 이런 꿈은 개인의 심리 상태와 최근 경험에 따라 다양하게 해석될 수 있어요.';
       entries.push(
         '{"@type":"Question","name":"' + esc(cleanTitle + '을 꾸면 어떤 의미인가요?') + '","acceptedAnswer":{"@type":"Answer","text":"' + esc(answer.substring(0, 300)) + '"}}'
       );
@@ -673,12 +676,11 @@ section{background:rgba(45,40,88,.3);border-radius:16px;padding:20px 24px;margin
 .case-card{background:rgba(45,40,88,.25);border:1px solid rgba(124,92,191,.12);border-radius:14px;padding:16px 18px;margin-bottom:12px}
 .case-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
 .case-avatar{font-size:18px}
-.case-nick{font-size:12px;color:#a89dd0;font-weight:700}
 .case-badge{font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(124,92,191,.2);color:#c8bff8}
 .case-title{font-size:14px;font-weight:700;color:#e0d8ff;margin-bottom:6px}
 .case-body{font-size:13px;color:#a89dd0;margin-bottom:8px;line-height:1.6}
-.case-footer{font-size:12px;color:#7c5cbf}
-.case-likes{color:#a67cef}
+.case-footer{font-size:11px;color:#6b5e8a}
+.case-example{font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(255,255,255,.04);color:#6b5e8a;border:1px solid rgba(124,92,191,.1)}
 </style>
 </head>
 <body>

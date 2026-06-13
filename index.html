@@ -423,10 +423,11 @@ html,body{height:100%;margin:0;background:#0e0c1a;color:#f0ecff;font-family:'Not
       <!-- 광고 배너 슬롯 (무료 사용자만 표시) -->
       <div class="ad-banner-slot" style="display:none;"></div>
 
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:28px;margin-bottom:14px;">
-        <span style="font-size:var(--fs-h3);font-weight:700;color:var(--text-primary);">다른 사람들의 꿈</span>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:28px;margin-bottom:6px;">
+        <span style="font-size:var(--fs-h3);font-weight:700;color:var(--text-primary);">다른 사람들의 꿈 <span style="font-size:9px;font-weight:600;color:var(--text-muted);background:rgba(166,124,239,.12);border:1px solid rgba(166,124,239,.2);border-radius:8px;padding:1px 6px;vertical-align:middle">예시</span></span>
         <button onclick="openDictPage()" style="background:rgba(166,124,239,.1);border:1px solid rgba(166,124,239,.2);border-radius:16px;color:var(--purple-bright);font-size:var(--fs-tiny);font-family:'Noto Sans KR',sans-serif;padding:3px 10px;cursor:pointer">📖 꿈 사전</button>
       </div>
+      <div style="font-size:10px;color:var(--text-muted);margin-bottom:14px;">달이가 준비한 해몽 예시예요. 내가 올린 글은 사례모음 탭에서 볼 수 있어요 🌙</div>
       <div class="popular-stories" id="popularStories"></div>
     </div>
 
@@ -542,7 +543,7 @@ html,body{height:100%;margin:0;background:#0e0c1a;color:#f0ecff;font-family:'Not
         <div class="pc-benefits">
           <div class="pc-benefit">🔮 5축 무의식 심층 분석</div>
           <div class="pc-benefit">✦ 누적 꿈 기반 성격 프로파일</div>
-          <div class="pc-benefit">✦ 프로 구독(₩9,900/월)이면 무료!</div>
+          <div class="pc-benefit">✦ Plus 구독이면 무료!</div>
         </div>
         <button class="pc-btn" style="background:linear-gradient(135deg,#5bbfba,#3d9e99)">무의식 프로파일 보기 →</button>
       </div>
@@ -658,9 +659,10 @@ html,body{height:100%;margin:0;background:#0e0c1a;color:#f0ecff;font-family:'Not
         const seed=(new Date().getDate()*7+h)%tags.length;
         const pick=[];for(let i=0;i<4;i++)pick.push(tags[(seed+i*3)%tags.length]);
         const el=document.getElementById('hotTagsDynamic');
+        // [정직] 키워드별 '+N명'은 실집계 백엔드가 없어 랜덤 날조였음 → 수치 제거, 키워드만 노출.
+        // 실제 per-keyword 집계가 배선되기 전까지 숫자 금지(heroStat·tsCount 정직 정책과 통일).
         if(el)el.innerHTML=pick.map(t=>{
-          const cnt=Math.floor(50+Math.random()*150+h*3);
-          return '<span class="hot-tag" onclick="setCommunityFilter(\''+t.f+'\')">'+t.e+' '+t.n+' '+cnt+'명</span>';
+          return '<span class="hot-tag" onclick="setCommunityFilter(\''+t.f+'\')">'+t.e+' '+t.n+'</span>';
         }).join('');
       })();
       </script>
@@ -692,6 +694,11 @@ html,body{height:100%;margin:0;background:#0e0c1a;color:#f0ecff;font-family:'Not
       <div class="ad-banner-slot" style="display:none;"></div>
       <!-- 피드 -->
       <div id="similarDreamsSection" style="display:none;margin-bottom:14px"></div>
+      <!-- [정직] 시드/예시 글 고지 — 실유저 오인 방지. 내가 올린 글(_local)은 실제 게시물. -->
+      <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text-muted);margin-bottom:10px;padding:7px 11px;background:rgba(166,124,239,.06);border:1px solid rgba(166,124,239,.12);border-radius:10px;">
+        <span style="font-size:11px">🌙</span>
+        <span>달이가 준비한 <strong style="color:var(--purple-bright);font-weight:700">예시</strong> 사례가 함께 보여요. 내가 올린 글은 그대로 실제 게시돼요.</span>
+      </div>
       <div id="feedList"></div>
 
     </div>

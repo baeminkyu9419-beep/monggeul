@@ -366,7 +366,9 @@ window.addEventListener("load",async()=>{
   if(!localStorage.getItem('mg_join_date'))localStorage.setItem('mg_join_date',String(Date.now()));
   const joinDays=Math.max(1,Math.floor((Date.now()-parseInt(localStorage.getItem('mg_join_date')))/(1000*60*60*24))+1);
   const joinEl=document.getElementById('myJoinDays');
-  if(joinEl)joinEl.textContent='몽글몽글과 함께한 지 '+joinDays+'일째 ✨';
+  // [정직] 로그인 안 된 상태(계정 미연결)에서 "함께한 지 N일째"는 근거 없는 표시.
+  // currentUser 있을 때만 누적 일수 노출, 아니면 중립 인사.
+  if(joinEl)joinEl.textContent=store.currentUser?('몽글몽글과 함께한 지 '+joinDays+'일째 ✨'):'오늘도 와주셨네요 ✨';
   // 닉네임 복원
   const savedNick=localStorage.getItem('mg_nickname');
   if(savedNick){const ne=document.getElementById('myNickname');if(ne)ne.textContent=savedNick;}

@@ -161,9 +161,12 @@ button:active,.abtn:active,.qbtn:active,.chip:active,.rbtn:active{transform:scal
 .voice-btn.recording{background:linear-gradient(135deg,rgba(240,100,100,.35),rgba(220,80,80,.45));border-color:rgba(240,100,100,.5);box-shadow:0 0 0 4px rgba(240,100,100,.15),0 2px 12px rgba(240,100,100,.3);animation:recGlow 1.2s ease-in-out infinite;}
 .voice-btn.recording .voice-icon{animation:none;}
 @keyframes recGlow{0%,100%{box-shadow:0 0 0 4px rgba(240,100,100,.15),0 2px 12px rgba(240,100,100,.3)}50%{box-shadow:0 0 0 8px rgba(240,100,100,.08),0 2px 20px rgba(240,100,100,.4)}}
-.voice-bubble{position:absolute;bottom:calc(100% + 8px);right:-4px;background:rgba(50,42,90,.92);border:1px solid rgba(166,124,239,.3);border-radius:12px;padding:7px 11px;font-size:11px;color:var(--text-secondary);white-space:nowrap;pointer-events:none;opacity:1;transform:translateY(0);transition:all .3s ease;box-shadow:0 4px 16px rgba(0,0,0,.3);line-height:1.5;text-align:center;}
-.voice-bubble::after{content:'';position:absolute;top:100%;right:16px;border:6px solid transparent;border-top-color:rgba(50,42,90,.92);}
-.voice-bubble.hidden{opacity:0;transform:translateY(4px);pointer-events:none;}
+/* [2026-06-14] 말풍선이 우상단 "🐱 도움"(dreamGuideBtn)을 가리던 문제 수정:
+   위(bottom:100%)에서 아래(top:100%)로 이동 → 헤더의 도움 버튼을 절대 가리지 않음.
+   화살표도 위를 향하도록 반전. pointer-events:none 유지(입력 방해 0). */
+.voice-bubble{position:absolute;top:calc(100% + 8px);right:-4px;background:rgba(50,42,90,.92);border:1px solid rgba(166,124,239,.3);border-radius:12px;padding:7px 11px;font-size:11px;color:var(--text-secondary);white-space:nowrap;pointer-events:none;opacity:1;transform:translateY(0);transition:all .3s ease;box-shadow:0 4px 16px rgba(0,0,0,.3);line-height:1.5;text-align:center;z-index:3;}
+.voice-bubble::after{content:'';position:absolute;bottom:100%;right:16px;border:6px solid transparent;border-bottom-color:rgba(50,42,90,.92);}
+.voice-bubble.hidden{opacity:0;transform:translateY(-4px);pointer-events:none;}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px;}
 .chip{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:4px 11px;font-size:12px;color:var(--text-secondary);cursor:pointer;transition:all .2s;}
 .chip:hover{background:rgba(166,124,239,.15);border-color:rgba(166,124,239,.3);color:var(--star);}
