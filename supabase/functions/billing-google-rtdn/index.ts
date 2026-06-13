@@ -129,7 +129,15 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: "oidc_verification_failed", detail: String(e) }), { status: 401 });
       }
     } else {
-      console.warn("[google-rtdn] signature verification DISABLED by env flag");
+      // [보안 P1: fail-closed] 비활성 플래그는 명시적 dev 탈출(RTDN_ALLOW_UNVERIFIED=true)이
+      // 있을 때만 허용. 그 외에는 미검증 위조 알림(REFUND/REVOKE→강등, purchased→승급) 신뢰를
+      // 거부한다 → env 하나로 OIDC 검증을 끄는 구멍 차단.
+      const allowUnverified = Deno.env.get("RTDN_ALLOW_UNVERIFIED") === "true";
+      if (!allowUnverified) {
+        console.error("[google-rtdn] signature verification disabled without dev escape — refused");
+        return new Response(JSON.stringify({ error: "signature_verification_disabled_refused" }), { status: 401 });
+      }
+      console.warn("[google-rtdn] signature verification DISABLED (dev escape)");
     }
 
     // 2. Pub/Sub message 디코딩

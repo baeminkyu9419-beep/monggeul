@@ -11,6 +11,17 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY')!
 const VAPID_PUBLIC_KEY = Deno.env.get('VAPID_PUBLIC_KEY')!
 const VAPID_SUBJECT = Deno.env.get('VAPID_SUBJECT') || 'mailto:monggeul@example.com'
+// [보안 P1] Cron 공유 시크릿. Supabase Cron 등록 시 Authorization: Bearer <CRON_SECRET> 주입.
+// 미설정 시 fail-closed(401) — 무인증 브로드캐스트 차단.
+const CRON_SECRET = Deno.env.get('CRON_SECRET') || ''
+
+// 상수시간 문자열 비교 (타이밍 공격 차단)
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let mismatch = 0
+  for (let i = 0; i < a.length; i++) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  return mismatch === 0
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -211,6 +222,15 @@ async function sendPatternAlerts(supabase: ReturnType<typeof createClient>) {
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
+  }
+
+  // [보안 P1] Cron 공유 시크릿 게이트 — 누구나 전체 구독자 푸시 브로드캐스트 트리거 차단.
+  const authHeader = req.headers.get('Authorization') || req.headers.get('authorization') || ''
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+  if (!CRON_SECRET || !timingSafeEqual(token, CRON_SECRET)) {
+    return new Response(JSON.stringify({ error: 'unauthorized' }), {
+      status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 
   try {

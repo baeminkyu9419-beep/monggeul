@@ -115,9 +115,16 @@ async function verifyAppleJws(jws: string): Promise<any> {
     throw new Error("missing_x5c_chain");
   }
 
-  // 서명 검증 스위치 (긴급 disable 가능하게 env 제공)
+  // [보안 P1: fail-closed] 서명 검증 스위치는 sandbox 에서만, 그리고 명시적 dev 탈출 플래그가
+  // 있을 때만 허용. 프로덕션(APPLE_ENVIRONMENT=Production)에서는 비활성 플래그를 무시하고
+  // 항상 검증한다 → env 하나로 미검증 위조 알림(REFUND→강등, SUBSCRIBED→승급)을 신뢰하는 구멍 차단.
   if (!SIGNATURE_VERIFICATION_ENABLED) {
-    console.warn("[apple-notif] signature verification DISABLED by env flag");
+    const isProd = APPLE_ENVIRONMENT === "Production";
+    const allowUnverified = Deno.env.get("APPLE_ALLOW_UNVERIFIED") === "true";
+    if (isProd || !allowUnverified) {
+      throw new Error("signature_verification_disabled_refused");
+    }
+    console.warn("[apple-notif] signature verification DISABLED (sandbox dev escape)");
     return JSON.parse(b64urlDecodeToString(parts[1]));
   }
 
