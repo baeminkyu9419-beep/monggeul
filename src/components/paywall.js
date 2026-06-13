@@ -38,13 +38,13 @@ export function showPaywall(feature) {
       title: '주간 리포트',
       desc: '지난 7일간의 꿈 흐름 리포트는 프로 구독에서 확인하세요',
       cta: 'Plus 구독하기 (₩3,900/월)',
-      action: () => showMethodSelect('pro_monthly'),
+      action: () => showMethodSelect('plus_monthly'),
     },
     repeat_dream: {
       title: '반복꿈 감지',
       desc: '반복되는 꿈 패턴 분석은 프로 구독에서 이용하세요',
       cta: 'Plus 구독하기 (₩3,900/월)',
-      action: () => showMethodSelect('pro_monthly'),
+      action: () => showMethodSelect('plus_monthly'),
     },
   };
 
@@ -304,7 +304,7 @@ export function closePremiumModalDirect() {
   const modal = document.getElementById('premiumModal');
   if (modal) modal.classList.remove('on');
 }
-export function subscribePlan(tier) { showMethodSelect('pro_monthly'); }
+export function subscribePlan(tier) { showMethodSelect(tier === 'premium' ? 'premium_monthly' : 'plus_monthly'); }
 export function doRestore() {
   if (typeof restorePurchases === 'function') restorePurchases();
 }

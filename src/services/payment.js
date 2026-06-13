@@ -22,7 +22,7 @@ export const PRODUCT_CATALOG = {
   pack_5:              { id: 'pack_5',   name: '상세 해몽 5회 팩', type: 'pack', price: 7900,  count: 5 },
   pack_15:             { id: 'pack_15',  name: '상세 해몽 15회 팩', type: 'pack', price: 19900, count: 15 },
   unconscious_profile: { id: 'unconscious_profile', name: '무의식 프로파일', type: 'one_time', price: 2900 },
-  pro_monthly:         { id: 'pro_monthly', name: '프로 월간 구독', type: 'subscription', price: 9900, alias_of: 'plus_monthly' },
+  pro_monthly:         { id: 'pro_monthly', name: '프로 월간 구독', type: 'subscription', price: 3900, alias_of: 'plus_monthly' },
   plus_monthly:        { id: 'plus_monthly', name: 'Plus 월간 구독', type: 'subscription', price: 3900, entitlement: 'plus' },
   premium_monthly:     { id: 'premium_monthly', name: 'Premium 월간 구독', type: 'subscription', price: 19900, entitlement: 'premium' },
 };

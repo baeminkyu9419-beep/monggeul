@@ -130,13 +130,16 @@ export function renderFeed() {
     const badges = f.badges || [];
     const isLiked = likedPosts.has(postId);
     const displayLikes = isLiked && f._local ? likes + 1 : likes;
+    // [정직] 데모/봇 글에는 '예시' 배지 표기 — 실 유저 글과 구분(가짜 커뮤니티 방지)
+    const isDemo = f._isBot || f._local || f.post_type === 'bot';
+    const demoBadge = isDemo ? '<span class="badge bb" style="font-size:10px;padding:2px 8px">🤖 예시</span>' : '';
 
     return `
     <div class="feed-card" onclick="openDetail('${postId}')">
       <div class="fc-top">
         <div class="fc-av ${av}">${esc(icon)}</div>
         <div><div class="fc-nm">${esc(nick)}</div><div class="fc-tm">${esc(time)}</div></div>
-        <div class="fc-badges">${badges.map(b => `<span class="badge ${bm[b] || 'bl'}" style="font-size:10px;padding:2px 8px">${esc(b)}</span>`).join('')}</div>
+        <div class="fc-badges">${demoBadge}${badges.map(b => `<span class="badge ${bm[b] || 'bl'}" style="font-size:10px;padding:2px 8px">${esc(b)}</span>`).join('')}</div>
       </div>
       <div class="fc-title">${esc(f.title)}</div>
       <div class="fc-body">${esc(f.body)}</div>
@@ -169,7 +172,10 @@ export async function openDetail(id) {
   dAv.className = `detail-author-av fc-av ${av}`; dAv.textContent = icon;
   document.getElementById('dNick').textContent = nick;
   document.getElementById('dTime').textContent = time;
-  document.getElementById('dBadges').innerHTML = badges.map(b => `<span class="badge ${bm[b] || 'bl'}" style="font-size:10px;padding:2px 8px">${b}</span>`).join('');
+  // [정직] 데모/봇 글에는 '예시' 배지 표기 — 실 유저 글과 구분
+  const isDemo = f._isBot || f._local || f.post_type === 'bot';
+  const demoBadge = isDemo ? '<span class="badge bb" style="font-size:10px;padding:2px 8px">🤖 예시</span>' : '';
+  document.getElementById('dBadges').innerHTML = demoBadge + badges.map(b => `<span class="badge ${bm[b] || 'bl'}" style="font-size:10px;padding:2px 8px">${b}</span>`).join('');
   document.getElementById('dTitle').textContent = f.title;
   document.getElementById('dBody').textContent = f.body;
 

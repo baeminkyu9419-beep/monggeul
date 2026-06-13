@@ -228,16 +228,22 @@ class TestPaymentFlow:
             assert prod in self.payment_src, f"Product '{prod}' missing from catalog"
 
     def test_product_prices_match_spec(self):
-        """Product prices must match CLAUDE.md spec"""
+        """Product prices must match CLAUDE.md spec.
+        pro_monthly 는 plus_monthly 의 alias(동일 'plus' entitlement)이므로 가격도 3900 으로 통일됨
+        (2026-06-14 보안/매출 수술: 동일 Plus 구독을 경로에 따라 9900/3900 으로 청구하던 버그 정정)."""
         price_map = {
             "1900": "상세 해몽 1회",
             "7900": "상세 해몽 5회",
-            "19900": "상세 해몽 15회",
+            "19900": "상세 해몽 15회/Premium 월간",
             "2900": "무의식 프로파일",
-            "9900": "프로 월간 구독",
+            "3900": "Plus 월간 구독(pro_monthly alias 포함)",
         }
         for price in price_map:
             assert price in self.payment_src, f"Price {price}원 missing for {price_map[price]}"
+        # 회귀 가드: pro_monthly 가 다시 9900(스테일 정가)으로 되돌아가지 않도록
+        assert "price: 9900" not in self.payment_src, (
+            "pro_monthly 가 9900 으로 회귀 — plus_monthly alias 와 가격 불일치(이중청구 버그) 재발"
+        )
 
     def test_payment_method_pg_mapping(self):
         """Payment methods must map to correct PG"""

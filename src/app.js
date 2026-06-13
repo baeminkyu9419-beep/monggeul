@@ -360,7 +360,7 @@ window.addEventListener("load",async()=>{
   navigator.serviceWorker?.addEventListener("message",(evt)=>{ if(evt.data?.type==="notif_click"&&evt.data.url){ const tab=new URLSearchParams(evt.data.url.split("?")[1]||"").get("tab"); if(tab)switchTab(tab); } });
   try{ window.restoreDreamDraft?.(); }catch(e){}
   try{ window.showEmotionTagsSection?.();window.initTodayFortune?.();window.initQuiz?.();window.checkNoDreamStatus?.();window.checkYesterdayReview?.(); }catch(e){ void('daily init:',e); }
-  try{ window.animateCounter?.();window.updateDariLevel?.(); }catch(e){}
+  try{ window.updateDariLevel?.(); }catch(e){}
   try{ applyFeatureFlags(); }catch(e){}
   // 가입일
   if(!localStorage.getItem('mg_join_date'))localStorage.setItem('mg_join_date',String(Date.now()));

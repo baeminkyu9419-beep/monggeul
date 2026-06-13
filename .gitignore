@@ -97,3 +97,9 @@ public/feed.xml
 public/sitemap.xml
 
 evidence/
+
+# QA/probe 스크린샷 캡처 잔재 무시 (store 제출용 15개만 negate 로 보존)
+screenshots/
+!screenshots/android_*.png
+!screenshots/iphone-5.5_*.png
+!screenshots/iphone-6.7_*.png

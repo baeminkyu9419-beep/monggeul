@@ -923,17 +923,11 @@ export function showRecurringComparison(data, inp) {
 }
 
 export function showSimilarDreams(){
+  // [정직] 날조 소셜프루프 제거(2026-06-14): 이전엔 입력 키워드로 base 를 정하고
+  // Math.random() 으로 'N명이 비슷한 꿈' / '최근 7일 N건' 을 날조했음(DB·실측 아님).
+  // 실 유사꿈 카운트 데이터가 없으므로 행을 숨김. 실데이터 배선 시 아래에서 채울 것.
   const row=document.getElementById('similarDreamRow');
-  const cnt=document.getElementById('sdCount');
-  if(!row||!cnt)return;
-  const inp=(window._last?.inp||'').toLowerCase();
-  let base=30;
-  if(inp.includes('뱀'))base=120;else if(inp.includes('이빨'))base=95;else if(inp.includes('돈')||inp.includes('돼지'))base=85;
-  else if(inp.includes('물')||inp.includes('바다'))base=70;else if(inp.includes('하늘'))base=60;
-  const count=base+Math.floor(Math.random()*30);
-  const recent=Math.floor(count*0.15)+Math.floor(Math.random()*5);
-  cnt.textContent=`${count}명이 비슷한 꿈을 꿨어요 · 최근 7일 ${recent}건`;
-  row.style.display='flex';
+  if(row)row.style.display='none';
 }
 
 
@@ -997,68 +991,10 @@ export function checkNoDreamStatus(){
   }
 }
 
-export async function animateCounter(){
-  const el=document.getElementById('heroCounter');if(!el)return;
-  const {store}=await import('../store.js');
-
-  let cur=256862; // 기본값
-  let realDbValue=null;
-
-  // Supabase에서 실제 카운터 가져오기
-  if(store.supabase){
-    try{
-      const {data}=await store.supabase.from('app_stats').select('value').eq('key','total_dreams').maybeSingle();  // 0행 406 방지
-      if(data){ realDbValue=parseInt(data.value); cur=realDbValue||1331; }
-    }catch{
-      // 테이블 없으면 시간 기반 폴백
-      const launch=new Date('2026-03-21T00:00:00+09:00').getTime();
-      cur=256862+Math.floor(Math.max(0,Date.now()-launch)/(1000*60*4));
-    }
-  }else{
-    const launch=new Date('2026-03-21T00:00:00+09:00').getTime();
-    cur=256862+Math.floor(Math.max(0,Date.now()-launch)/(1000*60*4));
-  }
-
-  // [2026-05-23] 폴리시1: 실 DB 누적치가 비신뢰 수준(< 1000)이면 "지금 N명 해몽 중"(880+)과 모순 +
-  // 출시초 티 → 거짓 부풀리기 대신 누적 카운터 문구를 숨김(honest). 증가 시 자연 노출.
-  if(realDbValue!==null && realDbValue<1000){
-    const wrap=el.closest('p'); if(wrap)wrap.style.display='none'; else el.style.display='none';
-    return;
-  }
-
-  // 카운트업 애니메이션
-  let display=Math.max(1331,cur-30);
-  const countUp=()=>{
-    display+=Math.max(1,Math.ceil((cur-display)*0.08));
-    if(display>=cur)display=cur;
-    el.textContent=display.toLocaleString();
-    if(display<cur)requestAnimationFrame(countUp);
-  };
-  requestAnimationFrame(countUp);
-
-  // 실시간 증가 (20~40초마다)
-  setInterval(()=>{
-    cur++;
-    el.style.transition='color .3s';
-    el.style.color='#f8c94c';
-    el.textContent=cur.toLocaleString();
-    setTimeout(()=>{el.style.color='';},400);
-  },20000+Math.floor(Math.random()*20000));
-
-  // 해몽 완료 시 +1 (DB에도 기록)
-  window._bumpHeroCounter=async function(){
-    cur++;
-    el.style.color='#7de8d8';
-    el.textContent=cur.toLocaleString();
-    setTimeout(()=>{el.style.color='';},500);
-    // Supabase 카운터 증가
-    if(store.supabase){
-      try{
-        await store.supabase.rpc('increment_app_stat',{stat_key:'total_dreams'});
-      }catch{}
-    }
-  };
-}
+// animateCounter() 제거(2026-06-14): #heroCounter 가 HTML 에서 삭제돼(날조 소셜프루프 제거)
+// 즉시 return 하던 데드 함수. 내부에 256862 가짜 카운터 폴백 + 20~40초마다 가짜 실시간 증가가
+// 남아있어 통째 삭제. 실 DB 누적 카운터가 필요하면 < 1000 숨김 폴리시만 살려 재작성할 것.
+// (dream.js:250 의 window._bumpHeroCounter 호출은 typeof 가드로 안전하게 no-op.)
 
 export function updateCharCount(){
   if(!updateCharCount._tracked){const inp=document.getElementById('dreamInput');if(inp&&inp.value.length>0){updateCharCount._tracked=true;trackFunnelStep('dream_input_start');}}
@@ -1147,7 +1083,6 @@ window.spawnConfetti = spawnConfetti;
 window.toggleNoDreamMode = toggleNoDreamMode;
 window.recordNoDream = recordNoDream;
 window.checkNoDreamStatus = checkNoDreamStatus;
-window.animateCounter = animateCounter;
 window.updateCharCount = updateCharCount;
 window.startVoiceInput = startVoiceInput;
 window.stopVoiceInput = stopVoiceInput;
