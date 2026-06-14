@@ -1,0 +1,36 @@
+name: Supabase Keep-Alive
+
+# Supabase 무료 플랜은 7일간 요청이 0이면 프로젝트를 자동 pause한다.
+# pause되면 REST/Auth/Edge Functions(openai-proxy·toss-checkout 등)가 전멸 →
+# 라이브 프론트는 살아있어도 꿈 해석이 9키워드 데모로 폴백, 결제 무음.
+# 이 cron은 매일 1회 가벼운 요청을 보내 "활동"을 생성, pause를 영구 차단한다.
+#
+# ※ 한계: 이미 pause된 상태는 이 cron이 깨우지 못한다(Supabase 정책).
+#    민규: 대시보드에서 1회 수동 Restore → 이후 이 cron이 재pause를 막는다.
+
+on:
+  schedule:
+    - cron: '17 2 * * *'   # 매일 02:17 UTC (1일 1회면 7일 임계 한참 전, 안전 마진)
+  workflow_dispatch:        # 수동 트리거(Restore 직후 즉시 ping 테스트용)
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase (REST root + products)
+        env:
+          SUPA: ${{ secrets.SUPABASE_URL }}
+          KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPA" ] || [ -z "$KEY" ]; then
+            echo "::error::SUPABASE_URL/ANON_KEY secret 미설정 — repo Settings > Secrets 확인"
+            exit 1
+          fi
+          rest=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 -H "apikey: $KEY" "$SUPA/rest/v1/")
+          prod=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 -H "apikey: $KEY" "$SUPA/rest/v1/products?select=id&limit=1")
+          echo "Supabase REST=$rest  products=$prod"
+          if [ "$rest" = "000" ] || [ "$rest" = "503" ]; then
+            echo "::warning::Supabase paused/unreachable — 대시보드에서 수동 Restore 필요. cron은 계속 시도한다."
+            exit 0
+          fi
+          echo "Supabase alive — keep-alive ok"
