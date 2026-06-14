@@ -219,6 +219,8 @@ section{padding:100px 0;}
 
 /* CTA 섹션 */
 .cta-section{text-align:center;padding:80px 0 120px;position:relative;}
+.dream-chip{padding:10px 16px;border:1px solid rgba(166,124,239,.25);border-radius:999px;color:#e8e6f5;background:rgba(166,124,239,.06);font-size:14px;text-decoration:none;white-space:nowrap;transition:all .2s ease;}
+.dream-chip:hover{border-color:rgba(166,124,239,.6);background:rgba(166,124,239,.14);transform:translateY(-2px);}
 .cta-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(124,92,191,.15),transparent 70%);pointer-events:none;}
 .cta-title{font-family:'Gowun Dodum',serif;font-size:clamp(26px,4.5vw,38px);color:var(--moon);margin-bottom:16px;text-shadow:0 0 30px rgba(245,230,178,.15);position:relative;z-index:1;}
 .cta-desc{font-size:16px;color:var(--text-secondary);margin-bottom:36px;position:relative;z-index:1;line-height:1.8;}
@@ -839,6 +841,31 @@ html.lenis,html.lenis body{height:auto;}
     </div>
   </section>
 
+  <!-- 꿈 해몽 사전 (검색 유입 내부링크 허브) -->
+  <section>
+    <div class="section-label reveal">Dream Dictionary</div>
+    <h2 class="section-title reveal">꿈 해몽 사전</h2>
+    <p class="section-desc reveal">자주 꾸는 꿈 67가지를 상황별로 풀이했어요.<br class="pc-br">궁금한 꿈을 골라 바로 확인해보세요.</p>
+
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;max-width:720px;margin:40px auto 0;">
+      <a href="dreams/snake.html" class="dream-chip">🐍 뱀 꿈</a>
+      <a href="dreams/money.html" class="dream-chip">💰 돈 꿈</a>
+      <a href="dreams/teeth.html" class="dream-chip">🦷 이빨 빠지는 꿈</a>
+      <a href="dreams/fire.html" class="dream-chip">🔥 불 꿈</a>
+      <a href="dreams/water.html" class="dream-chip">🌊 물 꿈</a>
+      <a href="dreams/baby.html" class="dream-chip">👶 아기 꿈</a>
+      <a href="dreams/death.html" class="dream-chip">🕯️ 죽는 꿈</a>
+      <a href="dreams/chase.html" class="dream-chip">🏃 쫓기는 꿈</a>
+      <a href="dreams/falling.html" class="dream-chip">🌀 떨어지는 꿈</a>
+      <a href="dreams/ghost.html" class="dream-chip">👻 귀신 꿈</a>
+      <a href="dreams/pig.html" class="dream-chip">🐷 돼지 꿈</a>
+      <a href="dreams/dragon.html" class="dream-chip">🐉 용 꿈</a>
+    </div>
+    <div style="text-align:center;margin-top:28px;">
+      <a href="dreams/index.html" class="cta-btn reveal" style="display:inline-block;">꿈 해몽 사전 전체 보기 →</a>
+    </div>
+  </section>
+
   <!-- 최종 CTA -->
   <section class="cta-section">
     <div class="cta-glow"></div>
@@ -850,6 +877,8 @@ html.lenis,html.lenis body{height:auto;}
 
   <footer class="footer">
     <p class="footer-links">
+      <a href="dreams/index.html">꿈 해몽 사전</a>
+      <span class="footer-sep">|</span>
       <a href="releases.html">릴리즈노트</a>
       <span class="footer-sep">|</span>
       <a href="terms-of-service.html">이용약관</a>
