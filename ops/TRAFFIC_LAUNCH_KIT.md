@@ -1,7 +1,16 @@
 # 몽글몽글 유입 실행 킷 (TRAFFIC LAUNCH KIT)
 
 작성 2026-06-14. 목적 = "6개월 무수익"의 진짜 원인(유입 0)을 닫는다.
-**코드/SEO는 이미 완료**(아래 §0 증거). 남은 건 검색엔진 제출 + 첫 노출 — 민규님 계정 행동이라 자동화 불가지만, 여기 적힌 대로 복붙하면 ~15분.
+
+## ★자비스가 자동 완료한 것 (계정 불필요분 전부)
+- 메인·랜딩 → 꿈 89페이지 내부링크(고아 해소, 홈 권위 전달). 라이브 확인.
+- 꿈 키워드 페이지 67 → **89개**로 확장(조상·총·경찰·무지개·고래·태풍 등 12+10 추가). 라이브.
+- **IndexNow 제출 완료**(94 URL → Bing·Yandex·Naver·Seznam, 로그인 불필요. HTTP 200). = Bing/네이버/얀덱스 크롤 큐 진입.
+- **호스트 루트 robots.txt 신설**(baeminkyu9419-beep.github.io/robots.txt, 기존 404→200, sitemap 자동발견).
+- **GitHub repo 백링크화**(homepage=라이브 URL + topics 7종 → github.com에서 구글 발견 유도).
+
+## 민규님만 가능한 잔여 (계정 로그인 필요, ~10분)
+구글은 IndexNow를 안 받으므로 서치콘솔만 사람 손이 필요. 네이버는 IndexNow로 이미 제출됐으나 서치어드바이저 등록 시 색인 리포트/가속 가능.
 
 라이브: https://baeminkyu9419-beep.github.io/monggeul/
 사이트맵: https://baeminkyu9419-beep.github.io/monggeul/sitemap.xml
@@ -10,8 +19,8 @@
 
 ## §0 SEO 현황 — 이미 완료된 것 (라이브 실측 2026-06-14)
 - 메인/랜딩: title·meta description·canonical·OG(1200×630)·Twitter card·JSON-LD 풀세트, noindex 없음.
-- 꿈 키워드 롱테일 페이지 **67개**(`뱀 꿈 해몽`·`돈 꿈 해몽`·`이빨 빠지는 꿈 해몽`…) 전부 개별 title/description/canonical + JSON-LD, sitemap 등록.
-- robots.txt(네이버 Yeti·다음 허용) + sitemap.xml(68 URL) + feed.xml + og-image 존재.
+- 꿈 키워드 롱테일 페이지 **89개**(`뱀 꿈 해몽`·`돈 꿈 해몽`·`이빨 빠지는 꿈 해몽`…) 전부 개별 title/description/canonical + JSON-LD, sitemap 등록.
+- robots.txt(네이버 Yeti·다음 허용) + sitemap.xml(94 URL) + feed.xml + og-image 존재.
 - **이번 커밋 추가**: 메인(index.html)·랜딩(landing.html)에서 67개 꿈 페이지로 가는 내부링크(고아 페이지 → 홈 권위 전달). 검색 색인·랭킹에 직접 기여.
 
 → **결론: 기술 SEO는 닫혔다. 남은 단 하나 = 검색엔진에 "여기 있다"고 알리는 것(아래 §1~§2). 이게 유입 0의 실제 원인.**
