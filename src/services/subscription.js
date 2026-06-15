@@ -50,19 +50,23 @@ export function getCreditsLocal() {
 
 export async function getCreditsAsync() {
   if (store.supabase && store.currentUser) {
-    // pending_sync 재시도 (이전 세션 addCredits DB write 실패 복구)
+    // pending_sync 재시도 (이전 세션 addCredits 서버 적립 실패 복구).
+    // pending = 미반영 적립 delta(count). 원자증분 RPC 로 재적립(덮어쓰기 금지 → 사이 적립분 보존).
     const pending = localStorage.getItem('mg_credits_pending_sync');
     if (pending !== null) {
-      try {
-        const { error } = await store.supabase.from('user_entitlements').upsert({
-          user_id: store.currentUser.id,
-          premium_credits: parseInt(pending),
-          updated_at: new Date().toISOString(),
-        });
-        if (error) throw error;
+      const pendingDelta = parseInt(pending);
+      if (Number.isFinite(pendingDelta) && pendingDelta > 0) {
+        try {
+          const { data, error } = await store.supabase.rpc('add_credits', { p_count: pendingDelta });
+          if (error) throw error;
+          if (typeof data !== 'number' || data < 0) throw new Error('add_credits rpc returned ' + data);
+          localStorage.removeItem('mg_credits_pending_sync');
+        } catch (_) {
+          // 여전히 실패 — 플래그 유지하여 다음 세션 재시도.
+        }
+      } else {
+        // 무효/0 이하 잔재 → 폐기(무한 재시도 방지).
         localStorage.removeItem('mg_credits_pending_sync');
-      } catch (_) {
-        // 여전히 실패 — 플래그 유지하여 다음 세션 재시도.
       }
     }
 
@@ -126,26 +130,31 @@ export async function useCredit() {
 }
 
 export async function addCredits(count) {
-  const current = getCredits();
-  const newCredits = current + count;
-  _cachedCredits = newCredits;
-  localStorage.setItem('mg_premium_credits', String(newCredits));
+  // 낙관적 로컬 갱신 (UX 즉시 반영). 서버 정본은 아래 RPC 가 결정.
+  const optimistic = getCredits() + count;
+  _cachedCredits = optimistic;
+  localStorage.setItem('mg_premium_credits', String(optimistic));
 
   if (store.supabase && store.currentUser) {
+    // 2026-06-16: client 산술 누산(getCredits()+count 후 upsert 덮어쓰기) = race(lost update) +
+    //   own_ent 드롭 후 RLS 거부로 死경로였음 → 서버 권위 원자증분 RPC add_credits() 로 교체.
+    //   RPC = auth.uid() 기준 atomic 증분(타인 조작 불가, 덮어쓰기 아님), 반환=가산 후 잔여(-1=실패).
     try {
-      const { error } = await store.supabase.from('user_entitlements').upsert({
-        user_id: store.currentUser.id,
-        premium_credits: newCredits,
-        updated_at: new Date().toISOString(),
-      });
+      const { data, error } = await store.supabase.rpc('add_credits', { p_count: count });
       if (error) throw error;
-      // 성공 시 pending_sync 제거
-      localStorage.removeItem('mg_credits_pending_sync');
+      if (typeof data === 'number' && data >= 0) {
+        // 서버 권위 잔여로 로컬 캐시 정정 (다른 기기/탭 적립분까지 반영).
+        _cachedCredits = data;
+        localStorage.setItem('mg_premium_credits', String(data));
+        localStorage.removeItem('mg_credits_pending_sync');
+      } else {
+        throw new Error('add_credits rpc returned ' + data);
+      }
     } catch (e) {
-      // DB write 실패 무음 삼킴 방지: 로그 + 다음 세션 재시도용 플래그 기록.
-      // 클라이언트(_cachedCredits/localStorage)는 갱신됐으나 서버 미반영 → 재조회 시 0 복원 위험.
+      // RPC 실패(네트워크/미배포) 무음 삼킴 방지: 로그 + 재시도 신호.
+      // 로컬 캐시는 낙관적 가산 상태로 남으나 서버 미반영 → 재조회 시 정정/복구 필요.
       console.error('[monggeul] addCredits DB write failed — pending sync', e);
-      localStorage.setItem('mg_credits_pending_sync', String(newCredits));
+      localStorage.setItem('mg_credits_pending_sync', String(count));
     }
   }
 

@@ -1,8 +1,10 @@
-// Real verification harness for addCredits() DB-write-failure handling + pending_sync retry.
+// Real verification harness for addCredits() server-authority atomic-RPC path + race safety.
 // Imports the ACTUAL src/services/subscription.js (no paraphrase) and exercises:
-//   1) offline write failure  -> console.error + pending_sync flag set, cache/localStorage still bumped
-//   2) pending_sync retry      -> getCreditsAsync flushes pending write on recovery, flag cleared
-//   3) normal online path      -> no console.error, no pending_sync flag, DB upsert received +1
+//   1) offline RPC failure  -> console.error + pending_sync flag set (DELTA), cache bumped optimistically
+//   2) pending_sync retry    -> getCreditsAsync re-applies the pending DELTA via add_credits RPC, flag cleared
+//   3) normal online path    -> no console.error, no flag, server credits == before + count (atomic increment)
+//   4) RACE (lost-update)    -> two concurrent addCredits from same stale base both accumulate on server
+//                               (the bug being fixed: client-side sum+upsert would lose one; atomic RPC must not)
 // Exit 0 = all assertions pass; exit 1 = any failure.
 
 // ── minimal browser globals (subscription.js -> store.js read localStorage at import) ──
@@ -30,23 +32,36 @@ function check(name, cond, detail) {
   else { console.log(`FAIL  ${name}  ${detail || ''}`); failures++; }
 }
 
-// fake supabase: state.offline -> upsert returns {error}; otherwise applies +write to dbValue
+// fake supabase modelling the SERVER as the source of truth (db.value).
+//   add_credits(p_count) = ATOMIC server-side increment: db.value += p_count; returns new total.
+//     This mirrors the SECURITY DEFINER RPC (insert ... on conflict do update set
+//     premium_credits = premium_credits + p_count). It does NOT trust any client-sent absolute.
+//   offline -> rpc returns {error}; otherwise applies the increment.
+//   delay (ms) -> optional await before applying, to model concurrent (interleaved) calls.
 const db = { value: null };
-function makeSupabase(offline) {
+function makeSupabase(offline, delay = 0) {
   return {
     from(_table) {
       return {
-        async upsert(row) {
-          if (offline) return { error: { message: 'simulated network offline' } };
-          db.value = row.premium_credits;
-          return { error: null };
-        },
+        // legacy direct-write path is RLS-rejected in prod; harness rejects it too so any
+        // regression back to client upsert surfaces as an error (no silent server write).
+        async upsert(_row) { return { error: { message: 'user_entitlements direct write rejected (RLS)' } }; },
         select() { return this; },
         eq() { return this; },
         async maybeSingle() { return { data: { premium_credits: db.value ?? 0 } }; },
       };
     },
-    async rpc(_name) { return { data: null, error: { message: 'no rpc in harness' } }; },
+    async rpc(name, args) {
+      if (name === 'add_credits') {
+        if (offline) return { error: { message: 'simulated network offline' } };
+        const n = args?.p_count;
+        if (typeof n !== 'number' || n <= 0) return { data: -1, error: null };
+        if (delay) await new Promise((r) => setTimeout(r, delay));
+        db.value = (db.value ?? 0) + n;   // ATOMIC increment (server authority)
+        return { data: db.value, error: null };
+      }
+      return { data: null, error: { message: 'no rpc in harness: ' + name } };
+    },
   };
 }
 
@@ -63,13 +78,13 @@ await addCredits(1);
 check('offline: console.error emitted',
   _errors.some((e) => e.includes('addCredits DB write failed')),
   `errors=${JSON.stringify(_errors)}`);
-check('offline: pending_sync flag == 1',
+check('offline: pending_sync flag == 1 (delta)',
   localStorage.getItem('mg_credits_pending_sync') === '1',
   `got=${localStorage.getItem('mg_credits_pending_sync')}`);
-check('offline: client cache bumped to 1',
+check('offline: client cache bumped to 1 (optimistic)',
   localStorage.getItem('mg_premium_credits') === '1',
   `got=${localStorage.getItem('mg_premium_credits')}`);
-check('offline: DB value NOT advanced (still 0)',
+check('offline: server value NOT advanced (still 0)',
   db.value === 0,
   `db.value=${db.value}`);
 
@@ -81,7 +96,7 @@ await getCreditsAsync();
 check('recovery: pending_sync flag cleared',
   localStorage.getItem('mg_credits_pending_sync') === null,
   `got=${localStorage.getItem('mg_credits_pending_sync')}`);
-check('recovery: DB value synced to 1',
+check('recovery: server value synced to 1 (delta re-applied via RPC)',
   db.value === 1,
   `db.value=${db.value}`);
 
@@ -102,9 +117,32 @@ check('online: no console.error',
 check('online: no pending_sync flag',
   localStorage.getItem('mg_credits_pending_sync') === null,
   `got=${localStorage.getItem('mg_credits_pending_sync')}`);
-check(`online: DB value == ${before + 1} (getCredits()+1)`,
+check(`online: server value == ${before + 1} (atomic increment)`,
   db.value === before + 1,
   `before=${before} db.value=${db.value}`);
+
+// ── 4) RACE / LOST-UPDATE: the exact bug being fixed ──
+// Two concurrent addCredits(5) + addCredits(3) fired from the SAME stale base.
+// OLD code: each read getCredits() (same stale value), computed base+5 / base+3 locally, and
+//   upsert-overwrote the row → last write wins → ONE add lost (server ends at base+3 or base+5).
+// NEW code: each calls add_credits RPC = server-side atomic increment → BOTH accumulate.
+// The fake supabase add_credits applies a delay before incrementing to force interleaving;
+// only a true atomic increment survives this. Expected server total = base + 5 + 3.
+localStorage.clear();
+localStorage.setItem('mg_premium_credits', '10');   // stale local base = 10
+const raceBase = 10;
+db.value = raceBase;                                  // server also at 10
+store.supabase = makeSupabase(false, 15);            // 15ms delay → interleave the two RPCs
+_errors.length = 0;
+
+await Promise.all([addCredits(5), addCredits(3)]);    // concurrent, same stale base
+
+check('race: no console.error (both RPCs succeeded)',
+  _errors.length === 0,
+  `errors=${JSON.stringify(_errors)}`);
+check(`race: server total == ${raceBase + 5 + 3} (no lost update)`,
+  db.value === raceBase + 5 + 3,
+  `expected=${raceBase + 8} db.value=${db.value} — LOST UPDATE if < ${raceBase + 8}`);
 
 console.log(failures === 0 ? '\nALL PASS' : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

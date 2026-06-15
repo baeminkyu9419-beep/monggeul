@@ -321,9 +321,17 @@ class TestSubscriptionSystem:
         assert "credits - 1" in self.sub_src or "credits-1" in self.sub_src or "newCredits" in self.sub_src
 
     def test_credit_add_increments(self):
-        """addCredits must increment credit count"""
+        """addCredits must increment credit count via server-authority atomic RPC.
+
+        2026-06-16: prior version pinned the literal 'current + count' (client-side sum
+        then upsert-overwrite) — that exact pattern was a lost-update race AND was RLS-rejected
+        after own_ent drop. The fix routes server writes through the atomic add_credits() RPC
+        (server-side `premium_credits + p_count`). Pin the RPC call, not the removed racy sum."""
         assert "addCredits" in self.sub_src
-        assert "current + count" in self.sub_src or "current+count" in self.sub_src
+        assert "rpc('add_credits'" in self.sub_src, (
+            "addCredits must call the atomic server RPC add_credits (race-safe increment), "
+            "not a client-side sum+upsert"
+        )
 
     def test_sku_maps_for_ios_and_android(self):
         """SKU maps must exist for both iOS and Android"""
