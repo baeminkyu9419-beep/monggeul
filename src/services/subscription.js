@@ -84,19 +84,27 @@ export async function useCredit() {
   const credits = getCredits();
   if (credits <= 0) return false;
 
+  // 2026-06-15: own_ent(RLS) 드롭 이후 client 직접 update 는 거부됨 → 서버 권위 RPC use_credit() 로 차감.
+  // RPC = auth.uid() 기준 원자 차감(자기부여 불가, 0 이하 불가), 반환=잔여 크레딧(-1=없음).
+  if (store.supabase && store.currentUser) {
+    try {
+      const { data, error } = await store.supabase.rpc('use_credit');
+      if (!error && typeof data === 'number') {
+        const remaining = Math.max(0, data);
+        _cachedCredits = remaining;
+        localStorage.setItem('mg_premium_credits', String(remaining));
+        updateCreditInfo();
+        return data >= 0;  // -1 = 서버에 크레딧 없음 → 차감 실패
+      }
+    } catch (e) {}
+    // RPC 실패(네트워크/백엔드 다운) → 과금정확성 우선: 낙관적 차감 없이 보류.
+    return false;
+  }
+
+  // 비로그인/데모: 서버 권위 없음 → localStorage 낙관적 차감만.
   const newCredits = credits - 1;
   _cachedCredits = newCredits;
   localStorage.setItem('mg_premium_credits', String(newCredits));
-
-  if (store.supabase && store.currentUser) {
-    try {
-      await store.supabase.from('user_entitlements').update({
-        premium_credits: newCredits,
-        updated_at: new Date().toISOString(),
-      }).eq('user_id', store.currentUser.id);
-    } catch (e) {}
-  }
-
   updateCreditInfo();
   return true;
 }
