@@ -463,15 +463,8 @@ export function renderConversionLock(data,inp,credits){
 }
 window.renderConversionLock=renderConversionLock;
 
-export function showResult(data,inp){
-  logEvent('dream_completed',{title:data.title,badges:data.badges});
-  trackFunnelStep('interpretation_viewed',{title:data.title});
-  // 퍼널 추적
-  const logs=JSON.parse(localStorage.getItem('mg_logs')||'[]');
-  if(typeof window.trackFunnel==='function'){  // 바레→window(퍼널 추적 미작동 버그)
-    if(logs.length===0)window.trackFunnel('first_dream');
-    else if(logs.length===1)window.trackFunnel('second_dream');
-  }
+// 결과 메타 렌더 (제목/날짜/후킹 한 줄/엔진 표시/오라/배지/감정) — showResult 에서 추출(동작 보존)
+function _renderDreamMeta(data){
   document.getElementById('rTitle').textContent=data.title;
   document.getElementById('rDate').textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
   // [후킹] 핵심 한 줄 — preview 첫 문장을 제목 바로 아래 크게(분석 차트보다 먼저 '의미'를 전달)
@@ -520,6 +513,41 @@ export function showResult(data,inp){
     emotionRow.style.display='block';
     emotionRow.innerHTML=`<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;"><span style="color:var(--purple-bright)">🐱</span> 달이가 분석한 감정</div><div class="emotion-chips">${data.emotions.map(e=>`<span class="echip on">${esc(e)}</span>`).join('')}</div>`;
   }
+}
+
+// 부가 위젯 렌더 (로또/달이 인사이트/반복꿈 비교/상징 카드) — showResult 에서 추출(동작 보존)
+function _renderDreamSidecars(data,inp){
+  renderLotto(data.stats,inp);
+  renderDaliResultInsight(data,inp);
+  renderRecurringComparison(data,inp);
+  // 관련 상징 카드 표시
+  try{ renderSymbolCards(inp); }catch(e){}
+}
+
+// 프리미엄 해석 잠금 게이트 (전환 모먼트 + 구독자 자동 해제) — showResult 에서 추출(동작 보존)
+function _renderDreamConversionGate(data,inp){
+  // 프리미엄 해석 잠금 — 전환 모먼트: 맥락 후킹 + 가치 스택 + 가격 앵커 (정본 카탈로그 pack_1 = ₩1,900)
+  const credits=getCredits();
+  renderConversionLock(data,inp,credits);
+  document.getElementById('detailLock').style.display='block';
+  document.getElementById('detailFull').style.display='none';
+  // Premium / Plus / dev unlock 시 자동 잠금 해제
+  const _tier = getCachedTier();
+  if (_tier === 'premium' || _tier === 'plus') {
+    try { unlockDetail(); } catch(e) {}
+  }
+}
+
+export function showResult(data,inp){
+  logEvent('dream_completed',{title:data.title,badges:data.badges});
+  trackFunnelStep('interpretation_viewed',{title:data.title});
+  // 퍼널 추적
+  const logs=JSON.parse(localStorage.getItem('mg_logs')||'[]');
+  if(typeof window.trackFunnel==='function'){  // 바레→window(퍼널 추적 미작동 버그)
+    if(logs.length===0)window.trackFunnel('first_dream');
+    else if(logs.length===1)window.trackFunnel('second_dream');
+  }
+  _renderDreamMeta(data);
   document.getElementById('interpText').innerHTML=linkSymbols(sanitize(data.preview||data.interpretation||''));
   const insightEl=document.getElementById('dreamInsight');
   const insightText=document.getElementById('insightText');
@@ -593,21 +621,8 @@ export function showResult(data,inp){
   showSimilarDreams();
   addXP(30);
   window._last={data,inp};
-  renderLotto(data.stats,inp);
-  renderDaliResultInsight(data,inp);
-  renderRecurringComparison(data,inp);
-  // 관련 상징 카드 표시
-  try{ renderSymbolCards(inp); }catch(e){}
-  // 프리미엄 해석 잠금 — 전환 모먼트: 맥락 후킹 + 가치 스택 + 가격 앵커 (정본 카탈로그 pack_1 = ₩1,900)
-  const credits=getCredits();
-  renderConversionLock(data,inp,credits);
-  document.getElementById('detailLock').style.display='block';
-  document.getElementById('detailFull').style.display='none';
-  // Premium / Plus / dev unlock 시 자동 잠금 해제
-  const _tier = getCachedTier();
-  if (_tier === 'premium' || _tier === 'plus') {
-    try { unlockDetail(); } catch(e) {}
-  }
+  _renderDreamSidecars(data,inp);
+  _renderDreamConversionGate(data,inp);
   generateResultThumbnail(inp);
   // CRM: 맞춤형 질문 표시
   try{ showContextQuestions(data); }catch(e){}
