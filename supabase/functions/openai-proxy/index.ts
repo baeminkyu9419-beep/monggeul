@@ -258,6 +258,31 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
       }
+
+      // [보안 P0: 서버측 권한 게이트] dream_detail = 유료 상세해몽.
+      // 클라이언트 canUseDream()/useCredit() 은 우회 가능(DevTools/직접 호출).
+      // Edge Function 이 use_credit() RPC 로 서버 권위 차감을 시도하고,
+      // 크레딧이 없으면 구독 여부를 확인한다. 둘 다 없으면 403 — fail-closed.
+      // use_credit() = SECURITY DEFINER, auth.uid() 기반 → 타인 차감/자기부여 불가.
+      if (task === 'dream_detail') {
+        const supabaseGate = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          global: { headers: { Authorization: authHeader! } },
+        })
+        // 1차: 팩 크레딧 차감 시도 (atomic, 0 이하 불가)
+        const { data: remaining, error: creditErr } = await supabaseGate.rpc('use_credit')
+        if (creditErr || (typeof remaining === 'number' && remaining < 0)) {
+          // 크레딧 없음 → 구독 여부 확인 (구독자는 무제한)
+          const { data: entData } = await supabaseGate.rpc('check_entitlement', { p_user_id: user.id })
+          const hasSub = entData?.has_subscription === true
+          if (!hasSub) {
+            return new Response(JSON.stringify({ error: 'Insufficient credits or subscription required' }), {
+              status: 403,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            })
+          }
+        }
+      }
+
       const builtPayload = buildChatPayload(task, params)
       if (!builtPayload) {
         return new Response(JSON.stringify({ error: 'Invalid task' }), {
