@@ -299,11 +299,6 @@ async function startPayment({ productId, method }) {
 
 // ── 하위호환 (기존 코드에서 호출되는 함수들) ──
 export function showPremiumModal() { showPremiumPaywall(); }
-export function closePremiumModal(e) {}
-export function closePremiumModalDirect() {
-  const modal = document.getElementById('premiumModal');
-  if (modal) modal.classList.remove('on');
-}
 export function subscribePlan(tier) { showMethodSelect(tier === 'premium' ? 'premium_monthly' : 'plus_monthly'); }
 export function doRestore() {
   if (typeof restorePurchases === 'function') restorePurchases();
@@ -315,7 +310,5 @@ window.showPremiumPaywall = showPremiumPaywall;
 window.showUnconsciousPaywall = showUnconsciousPaywall;
 window.showAdGate = showAdGate;
 window.showMethodSelect = showMethodSelect;
-window.closePremiumModal = closePremiumModal;
-window.closePremiumModalDirect = closePremiumModalDirect;
 window.subscribePlan = subscribePlan;
 window.doRestore = doRestore;

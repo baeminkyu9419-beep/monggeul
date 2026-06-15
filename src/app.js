@@ -11,7 +11,7 @@ import { trackFunnelStep } from './utils/funnel.js';
 
 // Components
 import { showToast } from './components/toast.js';
-import { showPaywall, showPremiumModal, closePremiumModal, closePremiumModalDirect, subscribePlan } from './components/paywall.js';
+import { showPaywall, showPremiumModal, subscribePlan } from './components/paywall.js';
 import { handlePaymentReturn, startPayment } from './services/payment.js';
 // checkout.js 제거 (M3): startCheckout → startPayment 직접 호출로 통합
 // window.startCheckout 하위호환 — 외부에서 호출 시 plus_monthly 로 라우팅
