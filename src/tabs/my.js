@@ -7,6 +7,7 @@ import { getUserTier } from '../services/subscription.js';
 import { esc, sanitize } from '../utils/sanitize.js';
 import { DICT_DATA, FORTUNES, QUIZ_DATA, REPORT_DATA, FLOW_DEMO } from '../utils/symbols.js';
 import { EXTENDED_DICT } from '../utils/dream-data.js';
+import { getStardust, addStardust, spendStardust } from '../services/stardust.js';
 import { logEvent } from '../services/analytics.js';
 import { trackFunnelStep } from '../utils/funnel.js';
 import { drawDualRadar } from '../components/radar.js';
@@ -1071,30 +1072,8 @@ export function useFreeUnlock(){
   return true;
 }
 
-// ── 포인트(별가루) 시스템 — 나중에 상점 BM 연결용 ──
-export function getStardust(){return parseInt(localStorage.getItem('mg_stardust')||'0');}
-export function addStardust(n,reason){
-  const cur=getStardust();
-  const next=cur+n;
-  localStorage.setItem('mg_stardust',String(next));
-  // 적립 내역 기록
-  const history=JSON.parse(localStorage.getItem('mg_stardust_log')||'[]');
-  history.unshift({amount:n,reason,total:next,date:new Date().toISOString()});
-  localStorage.setItem('mg_stardust_log',JSON.stringify(history.slice(0,100)));
-  updateStardustUI();
-  return next;
-}
-export function spendStardust(n){
-  const cur=getStardust();
-  if(cur<n)return false;
-  localStorage.setItem('mg_stardust',String(cur-n));
-  updateStardustUI();
-  return true;
-}
-function updateStardustUI(){
-  const el=document.getElementById('stardustCount');
-  if(el)el.textContent=getStardust();
-}
+// ── 포인트(별가루) 시스템 — services/stardust.js 로 추출(2026-06-16). 공개 표면 유지 위해 re-export. ──
+export { getStardust, addStardust, spendStardust } from '../services/stardust.js';
 
 // ── 업적 시스템 ──
 const ACHIEVEMENTS=[
