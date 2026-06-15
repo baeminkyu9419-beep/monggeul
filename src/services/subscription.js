@@ -50,6 +50,22 @@ export function getCreditsLocal() {
 
 export async function getCreditsAsync() {
   if (store.supabase && store.currentUser) {
+    // pending_sync 재시도 (이전 세션 addCredits DB write 실패 복구)
+    const pending = localStorage.getItem('mg_credits_pending_sync');
+    if (pending !== null) {
+      try {
+        const { error } = await store.supabase.from('user_entitlements').upsert({
+          user_id: store.currentUser.id,
+          premium_credits: parseInt(pending),
+          updated_at: new Date().toISOString(),
+        });
+        if (error) throw error;
+        localStorage.removeItem('mg_credits_pending_sync');
+      } catch (_) {
+        // 여전히 실패 — 플래그 유지하여 다음 세션 재시도.
+      }
+    }
+
     try {
       // 새 entitlements v2 테이블 시도
       const { data: entData, error: entError } = await store.supabase.rpc('check_entitlement', {
@@ -117,12 +133,20 @@ export async function addCredits(count) {
 
   if (store.supabase && store.currentUser) {
     try {
-      await store.supabase.from('user_entitlements').upsert({
+      const { error } = await store.supabase.from('user_entitlements').upsert({
         user_id: store.currentUser.id,
         premium_credits: newCredits,
         updated_at: new Date().toISOString(),
       });
-    } catch (e) {}
+      if (error) throw error;
+      // 성공 시 pending_sync 제거
+      localStorage.removeItem('mg_credits_pending_sync');
+    } catch (e) {
+      // DB write 실패 무음 삼킴 방지: 로그 + 다음 세션 재시도용 플래그 기록.
+      // 클라이언트(_cachedCredits/localStorage)는 갱신됐으나 서버 미반영 → 재조회 시 0 복원 위험.
+      console.error('[monggeul] addCredits DB write failed — pending sync', e);
+      localStorage.setItem('mg_credits_pending_sync', String(newCredits));
+    }
   }
 
   updateCreditInfo();
