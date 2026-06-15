@@ -21,8 +21,10 @@ import { openFlowPage, closeFlowPage, setFlowPeriod, renderFlow } from './my-flo
 import { openDictPage, closeDictPage, setDictCategory, filterDict, renderDict, ALL_DICT_REF } from './my-dict.js';
 export { ALL_DICT_REF };
 import { renderEmotionFlow, renderRecurringTimeline, renderSymbolEvolution, renderSleepCheckin, renderSleepDreamCorrelation } from './my-emotion-sleep.js';
+import { renderCalendar, prevMonth, nextMonth } from '../services/dream-calendar.js';
+// ── 달력(calendar) 은 services/dream-calendar.js 로 추출(2026-06-16). 공개 표면 유지 위해 re-export. ──
+export { renderCalendar, prevMonth, nextMonth };
 
-let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
 let reportWeekOffset = 0;
 let quizState={idx:0,correct:0,todayDone:false,answered:false};
 
@@ -573,42 +575,6 @@ export function doCheckin(){
   renderAchievements();
   showToast('출석 완료! +10 XP +3 별가루 🔥 '+store.streak+'일 연속');
 }
-
-export function renderCalendar(){
-  const el=document.getElementById('dreamCalendar');if(!el)return;
-  const logs=JSON.parse(localStorage.getItem('mg_logs')||'[]');
-  // 날짜별 꿈 데이터 매핑 (길몽/흉몽 색상)
-  const dreamByDate={};
-  logs.forEach(l=>{if(l.date){
-    const type=(l.badges||[]).includes('흉몽')?'bad':(l.badges||[]).includes('길몽')?'good':'neutral';
-    dreamByDate[l.date]=type;
-  }});
-  const today=new Date();
-  const firstDay=new Date(calYear,calMonth,1).getDay();
-  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
-  const monthNames=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
-  const dayLabels=['일','월','화','수','목','금','토'];
-  let html=`<div class="cal-header">
-    <button class="cal-nav" onclick="prevMonth()">‹</button>
-    <span class="cal-title">${calYear}년 ${monthNames[calMonth]}</span>
-    <button class="cal-nav" onclick="nextMonth()">›</button>
-  </div>
-  <div class="cal-grid">
-    ${dayLabels.map(d=>`<div class="cal-day-label">${d}</div>`).join('')}`;
-  for(let i=0;i<firstDay;i++) html+=`<div class="cal-day other-month"></div>`;
-  for(let d=1;d<=daysInMonth;d++){
-    const dateStr=`${calYear}. ${calMonth+1}. ${d}.`;
-    const dreamType=dreamByDate[dateStr];
-    const isToday=d===today.getDate()&&calMonth===today.getMonth()&&calYear===today.getFullYear();
-    const cls=dreamType==='good'?' has-dream cal-good':dreamType==='bad'?' has-dream cal-bad':dreamType==='neutral'?' has-dream':'';
-    html+=`<div class="cal-day${cls}${isToday?' today':''}" onclick="showToast(this.dataset.tip)" data-tip="꿈 기록">${d}</div>`;
-  }
-  html+=`</div>`;
-  el.innerHTML=html;
-}
-
-export function prevMonth(){if(calMonth===0){calYear--;calMonth=11;}else calMonth--;renderCalendar();}
-export function nextMonth(){if(calMonth===11){calYear++;calMonth=0;}else calMonth++;renderCalendar();}
 
 export function detectRepeatDreams(){
   const logs=JSON.parse(localStorage.getItem('mg_logs')||'[]');
