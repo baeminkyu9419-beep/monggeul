@@ -145,6 +145,13 @@ async function handleTossReturn(params) {
       body: JSON.stringify({ paymentKey, orderId, amount: Number(amount) }),
     });
 
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      logEvent('toss_confirm_http_error', { status: res.status, body: errText.slice(0, 200), order_id: orderId });
+      showToast('결제 확인에 실패했어요 😢');
+      return;
+    }
+
     const result = await res.json();
     if (result.success) {
       showToast('결제가 완료됐어요! ✨');
