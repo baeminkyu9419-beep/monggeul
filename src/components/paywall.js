@@ -24,7 +24,7 @@ export function showPaywall(feature) {
     },
     detail_interpretation: {
       title: '상세 해몽',
-      desc: '무의식 다이브, 5축 운세, 맞춤 조언이 포함된 상세 해몽이에요',
+      desc: '전통+심리 해석, 현실 조언, 깊은 해석 1,000자+ 가 담긴 상세 해몽이에요',
       cta: '상세 해몽 받기 (₩1,900)',
       action: () => showMethodSelect('pack_1'),
     },
@@ -117,11 +117,11 @@ export function showPremiumPaywall() {
 
     <div style="background:rgba(255,255,255,.03);border-radius:12px;padding:12px;margin-bottom:14px;text-align:left">
       <div style="font-size:11px;color:var(--text-secondary);line-height:1.8">
-        🌙 심층 해석 리포트 (전통+심리+현실조언)<br>
-        📊 5축 레이더 차트 (재물/건강/연애/직장/가족)<br>
-        💬 맞춤형 후속 질문 3개 → 2차 해석<br>
-        🧠 무의식 다이브 (4층 심층 분석)<br>
-        📖 빅데이터 인사이트 + 행동 처방
+        📜 전통 해몽서 기반 상징 풀이<br>
+        🧠 융 심리학 무의식 분석<br>
+        💡 일주일 안에 해볼 현실 조언<br>
+        📖 에세이처럼 읽히는 깊은 해석 1,000자+<br>
+        📊 6축 운세 레이더 차트
       </div>
     </div>
 
