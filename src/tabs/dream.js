@@ -207,6 +207,7 @@ export async function analyzeDream(){
   let _analyzeBtnHtml='';
   if(_analyzeBtn){ _analyzeBtnHtml=_analyzeBtn.innerHTML; _analyzeBtn.disabled=true; _analyzeBtn.style.opacity='.7'; _analyzeBtn.style.cursor='wait'; _analyzeBtn.innerHTML='<span class="dream-spin" style="display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;vertical-align:middle;margin-right:6px;animation:dreamspin .7s linear infinite"></span>달이가 꿈을 읽는 중...'; }
   let mi=0;const iv=setInterval(()=>{mi=(mi+1)%LMSGS.length;document.getElementById('loadTxt').textContent=LMSGS[mi];},1800);
+  let _wasFallback=false;  // 2026-06-15: 폴백(데모)엔 무료쿼터 차감 안 함(불공정 방지)
   try{
     const minLoadTime=new Promise(r=>setTimeout(r,2000));
     // 프리미엄/플러스 = 멀티 LLM 교차검증(consensus), 무료 = fallback 라우팅
@@ -220,8 +221,8 @@ export async function analyzeDream(){
     const [data]=await Promise.all([apiCall,minLoadTime]);
     const raw=parseLLMJson(data.choices[0].message.content);
     const valid=validateDreamResult(raw);
-    if(valid){ valid.engine='llm'; valid.isFallback=false; valid.model=data.model||data._provider||'llm'; showResult(valid,inp); }
-    else { showResult(demoResult(inp,'invalid_llm_response'),inp); }  // LLM 응답했으나 형식 무효 → 명시적 폴백
+    if(valid){ valid.engine='llm'; valid.isFallback=false; valid.model=data.model||data._provider||'llm'; _wasFallback=false; showResult(valid,inp); }
+    else { _wasFallback=true; showResult(demoResult(inp,'invalid_llm_response'),inp); }  // LLM 응답했으나 형식 무효 → 명시적 폴백
     // 2단계 2차: 상세 해석 백그라운드 (전통/심리/조언/깊은해석 — 길고 자세하게)
     // [보안] task='dream_detail' — 서버에서 프롬프트+lifeStage 지시문 조립.
     callChat('dream_detail',{input:fullInput,lifeStage:lifeStageKey},dreamMode)
@@ -229,6 +230,7 @@ export async function analyzeDream(){
       .catch(()=>{ try{ if(window.showResultDetail)window.showResultDetail(demoResult(inp,'detail_llm_failed')); }catch(_){} });
   }catch(e){
     await new Promise(r=>setTimeout(r,2000));
+    _wasFallback=true;
     showResult(demoResult(inp, e&&e.fallbackReason ? e.fallbackReason : 'llm_call_failed'),inp);
     // 오프라인/API 실패 시 안내 + 입력 풍부도 평가
     setTimeout(()=>{
@@ -242,7 +244,7 @@ export async function analyzeDream(){
       }
     },500);
   }
-  finally{analyzeDream._busy=false;clearInterval(iv);stopLoadingSteps();ld.classList.remove('on');await incDreamCount();
+  finally{analyzeDream._busy=false;clearInterval(iv);stopLoadingSteps();ld.classList.remove('on');if(!_wasFallback)await incDreamCount();
     // 결함4: 해몽 버튼 원복
     if(_analyzeBtn){ _analyzeBtn.disabled=false; _analyzeBtn.style.opacity=''; _analyzeBtn.style.cursor=''; _analyzeBtn.innerHTML=_analyzeBtnHtml||'🔮 해몽하기'; }
     // 무료 사용자: 해몽 후 전면광고 (3회에 1번)
