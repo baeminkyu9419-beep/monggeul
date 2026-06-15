@@ -325,7 +325,8 @@ export async function incDreamCount() {
 
   if (store.supabase && store.currentUser) {
     try {
-      await store.supabase.rpc('increment_dream_count', { p_user_id: store.currentUser.id });
+      // [보안 수정 2026-06-15] p_user_id 제거 — 서버가 auth.uid() 로 결정(IDOR 차단)
+      await store.supabase.rpc('increment_dream_count');
     } catch (e) {
       // RPC 미배포 시 폴백: upsert
       try {

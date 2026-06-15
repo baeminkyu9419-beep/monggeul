@@ -126,9 +126,9 @@ export async function toggleLikePost(postId) {
   if (!isOnline() || !user) return { liked: false, fromLocal: true };
 
   try {
+    // [보안 수정 2026-06-15] p_user_id 제거 — 서버가 auth.uid() 로 결정(IDOR 차단)
     const { data, error } = await store.supabase.rpc('toggle_post_like', {
       p_post_id: postId,
-      p_user_id: user.id,
     });
     if (error) throw error;
     logEvent('community_like_toggled', { post_id: postId, liked: data });
