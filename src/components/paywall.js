@@ -102,9 +102,9 @@ export function showPremiumPaywall() {
   const credits = getCredits();
   const tier = getCachedTier();
 
-  // 프로 구독 유저는 바로 해제
-  if (tier === 'pro') {
-    showToast('프로 구독 중이에요! 상세 해몽을 바로 확인하세요 ✨');
+  // 구독 유저(plus/premium, 레거시 별칭 pro)는 바로 해제 — 이중청구 방지
+  if (tier === 'plus' || tier === 'premium' || tier === 'pro') {
+    showToast('구독 중이에요! 상세 해몽을 바로 확인하세요 ✨');
     return;
   }
 
@@ -183,8 +183,8 @@ export function showPremiumPaywall() {
 export function showUnconsciousPaywall() {
   logEvent('paywall_shown', { feature: 'unconscious_profile', price: 2900 });
   const tier = getCachedTier();
-  if (tier === 'pro') {
-    showToast('프로 구독 중이에요! 무의식 프로파일을 바로 확인하세요 ✨');
+  if (tier === 'plus' || tier === 'premium' || tier === 'pro') {
+    showToast('구독 중이에요! 무의식 프로파일을 바로 확인하세요 ✨');
     return;
   }
 
