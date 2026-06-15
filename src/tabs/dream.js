@@ -795,6 +795,90 @@ export function unlockDetail(){
 }
 
 
+// ── 서버 저장 (dreams 테이블) — 기기간 동기화 + 영구 보존 ──
+// 제품은 '영구 소장'을 광고하나 기존엔 localStorage('mg_logs')만 써서 기기 교체/캐시 삭제 시 유실됐다.
+// 로그인 사용자(supabase 세션 보유)는 저장 시 dreams 테이블에 실시간 insert 한다.
+// 게스트/비로그인(로컬 게스트)은 기존 localStorage 만 유지(서버 계정 없음 → 쓸 곳 없음).
+// 스키마(supabase/schema.sql dreams): content/title/badges/emotions/keywords/result/radar_data/created_at.
+// RLS: auth.uid()=user_id (own_dreams). user_id 는 서버가 auth.uid() 로 강제하지 않으므로 클라가 명시.
+// migrateFromLocalStorage(auth.js) 와 동일 매핑 패턴 + result/radar_data/keywords 보강(고도화).
+const PENDING_DREAMS_KEY = 'mg_dreams_pending_sync';
+const PENDING_DREAMS_MAX = 100;
+
+// 서버 저장 대상인가 — supabase 클라이언트 + 로그인 세션이 있고, 로컬 전용 게스트가 아님.
+// (익명 로그인 사용자도 supabase uid 가 있으므로 동기화 대상 — migrateFromLocalStorage 와 동일 기준)
+function _canSyncDream(){
+  return !!(store.supabase && store.currentUser && store.currentUser.id && !store.currentUser.isLocalGuest);
+}
+
+// 로컬 로그 엔트리 → dreams 행 매핑(소유권=현재 사용자, created_at=로컬 기록 시각 보존).
+function _dreamRow(log, userId){
+  const symbols = (log.text ? _symbolNames.filter(s => log.text.includes(s)) : []);
+  return {
+    user_id: userId,
+    content: log.text || '',
+    title: log.title || '',
+    badges: log.badges || [],
+    emotions: log.emotions || [],
+    keywords: symbols,
+    result: log.result || null,        // 전체 해석 결과(jsonb)
+    radar_data: log.stats || {},       // 6축 스탯(jsonb)
+    created_at: log.id ? new Date(log.id).toISOString() : new Date().toISOString(),
+  };
+}
+
+// 실패한 서버 저장을 localStorage 큐에 적재(다음 저장/부팅 시 재시도). subscription.js pending_sync 패턴과 일관.
+function _queuePendingDream(log){
+  try{
+    const q = JSON.parse(localStorage.getItem(PENDING_DREAMS_KEY) || '[]');
+    if(log && log.id && q.some(x => x.id === log.id)) return; // 중복 적재 방지(같은 로컬 id)
+    q.push(log);
+    // 오래된 것부터 버려 무한 증가 방지
+    localStorage.setItem(PENDING_DREAMS_KEY, JSON.stringify(q.slice(-PENDING_DREAMS_MAX)));
+  }catch(_){/* localStorage quota 등 — 큐 적재 실패는 조용히 무시(원본 mg_logs 는 이미 저장됨) */}
+}
+
+// 단일 꿈을 서버에 insert. 실패 시 false + 큐 적재(조용히 삼키지 않음).
+export async function syncDreamToServer(log){
+  if(!_canSyncDream()) return false;       // 게스트/비로그인 → 서버 저장 대상 아님(localStorage 만)
+  if(!log || !(log.text||'').trim()) return false;
+  const userId = store.currentUser.id;
+  try{
+    const { error } = await store.supabase.from('dreams').insert(_dreamRow(log, userId));
+    if(error) throw error;
+    return true;
+  }catch(e){
+    // 무음 삼킴 금지: 로그 + 재시도 큐 적재(폴백 = localStorage 는 이미 mg_logs 에 보존됨).
+    console.error('[monggeul] dream server save failed — queued for retry', e);
+    _queuePendingDream(log);
+    return false;
+  }
+}
+window.syncDreamToServer = syncDreamToServer;
+
+// 큐에 쌓인 미동기화 꿈 재시도(부팅/다음 저장 시). 성공분만 큐에서 제거(부분 성공 보존).
+export async function flushPendingDreamSync(){
+  if(!_canSyncDream()) return;
+  let q;
+  try{ q = JSON.parse(localStorage.getItem(PENDING_DREAMS_KEY) || '[]'); }catch(_){ return; }
+  if(!Array.isArray(q) || q.length === 0) return;
+  const userId = store.currentUser.id;
+  const remaining = [];
+  for(const log of q){
+    try{
+      const { error } = await store.supabase.from('dreams').insert(_dreamRow(log, userId));
+      if(error) throw error;
+    }catch(e){
+      remaining.push(log); // 여전히 실패 → 보존하여 다음 기회에 재시도
+    }
+  }
+  try{
+    if(remaining.length === 0) localStorage.removeItem(PENDING_DREAMS_KEY);
+    else localStorage.setItem(PENDING_DREAMS_KEY, JSON.stringify(remaining.slice(-PENDING_DREAMS_MAX)));
+  }catch(_){}
+}
+window.flushPendingDreamSync = flushPendingDreamSync;
+
 export function saveToDreamlog(){
   if(!window._last){showToast('먼저 해몽을 해보세요 🌙');return;}
   const {data,inp}=window._last;
@@ -818,8 +902,16 @@ export function saveToDreamlog(){
       return;
     }
   }
-  logs.unshift({id:Date.now(),text:inp,title:data.title,badges:data.badges,emotions:data.emotions||[],stats:data.stats||{},date:new Date().toLocaleDateString('ko-KR'),thumbnail:window._last?.thumbnail||null});
+  const newLog={id:Date.now(),text:inp,title:data.title,badges:data.badges,emotions:data.emotions||[],stats:data.stats||{},result:data||null,date:new Date().toLocaleDateString('ko-KR'),thumbnail:window._last?.thumbnail||null};
+  logs.unshift(newLog);
   localStorage.setItem('mg_logs',JSON.stringify(logs.slice(0,50)));
+  // [서버 저장] 로그인 사용자면 dreams 테이블에 실시간 insert(기기간 동기화·영구 보존).
+  // fire-and-forget — 실패해도 localStorage(mg_logs)는 이미 위에서 저장됨 + 큐 재시도(syncDreamToServer 내부).
+  // 게스트/비로그인은 _canSyncDream()=false 라 no-op(기존 동작 유지).
+  if(typeof syncDreamToServer==='function'){
+    // 이전 세션 실패분도 함께 재시도(flush 먼저 → 순서 보존), 그다음 이번 꿈 저장.
+    Promise.resolve().then(()=>flushPendingDreamSync()).then(()=>syncDreamToServer(newLog)).catch(()=>{});
+  }
   // [리텐션] 꿈 저장 = 오늘 활동 → 날짜기반 연속기록(출석 doCheckin 과 mg_cin 공유해 중복 카운트 방지)
   (function(){
     const today=new Date().toDateString();

@@ -141,6 +141,10 @@ async function onLoginSuccess(user) {
   await Promise.all([getUserTier(), getDreamCountAsync()]);
   updateDreamCountInfo();
 
+  // 세션 확립 후 — 이전에 서버 저장 실패해 큐(mg_dreams_pending_sync)에 쌓인 꿈 재시도.
+  // (dream.js 가 동적 로드되어 window 에 노출됨. 아직 미로드면 다음 저장 시 flush 됨.)
+  try { window.flushPendingDreamSync?.(); } catch (e) {}
+
   // 사용자 정보 저장/업데이트
   const meta = user.user_metadata || {};
   const displayName = meta.full_name || meta.name || meta.preferred_username || '';
