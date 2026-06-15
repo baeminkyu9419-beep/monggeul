@@ -260,10 +260,9 @@ export function renderLog(){
   }).join('');
 }
 
-export function deleteDreamLog(idx){
-  if(!confirm('이 꿈 기록을 삭제할까요?'))return;
-  const logs=JSON.parse(localStorage.getItem('mg_logs')||'[]');
-  if(logs[idx]){logs.splice(idx,1);localStorage.setItem('mg_logs',JSON.stringify(logs));}
+// 사용자 데이터 변경(삭제/추가 등) 후 MY 탭 전체 재렌더 — 산포 의존 단일화.
+// 새 렌더러 추가 시 여기 한 곳만 수정하면 모든 뮤테이션 경로에 반영된다.
+export function refreshMyTab(){
   renderLog();updateStats();renderCalendar();renderDreamPersonality();renderPatternCard();renderEmotionFlow();renderRecurringTimeline();renderSymbolTracker('symbolTrackerWrap');renderDreamTimeline();renderUnconsciousProfile();renderDreamGallery();
   // 아침 체크인 배너 (오늘 미완료 시 표시)
   const _slLogs=JSON.parse(localStorage.getItem('mg_sleep_logs')||'[]');
@@ -272,6 +271,13 @@ export function deleteDreamLog(idx){
   const _banner=document.getElementById('checkinBanner');
   if(_banner)_banner.style.display=(!_todaySl||!_todaySl.satisfaction)?'block':'none';
   renderSleepCorrelation('sleepCorrelationChart');
+}
+
+export function deleteDreamLog(idx){
+  if(!confirm('이 꿈 기록을 삭제할까요?'))return;
+  const logs=JSON.parse(localStorage.getItem('mg_logs')||'[]');
+  if(logs[idx]){logs.splice(idx,1);localStorage.setItem('mg_logs',JSON.stringify(logs));}
+  refreshMyTab();
   showToast('삭제됐어요');
 }
 
