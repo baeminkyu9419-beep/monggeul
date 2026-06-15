@@ -76,7 +76,9 @@ create policy "Users can update own data" on users for update using (auth.uid() 
 create policy "Users can insert own data" on users for insert with check (auth.uid() = id);
 
 create policy "Users can CRUD own dreams" on dreams for all using (auth.uid() = user_id);
-create policy "Users can CRUD own usage" on usage_daily for all using (auth.uid() = user_id);
+-- usage_daily: select 전용. 쓰기는 increment_dream_count RPC(security definer)만 → 무료 일일한도 자가 리셋(API비용 DoS) 차단.
+drop policy if exists "Users can CRUD own usage" on usage_daily;
+create policy "Users can read own usage" on usage_daily for select using (auth.uid() = user_id);
 create policy "Users can CRUD own dali" on dali_memory for all using (auth.uid() = user_id);
 create policy "Users can insert own events" on events for insert with check (auth.uid() = user_id);
 
