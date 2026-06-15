@@ -233,6 +233,47 @@ class TestCheckEntitlementInfoLeak:
             "check_entitlement 가 authenticated+service_role 전용 GRANT 없음"
         )
 
+    def test_check_entitlement_idor_fixed_uses_auth_uid(self):
+        """check_entitlement 가 auth.uid() 기준으로 재작성됨 (authenticated↔authenticated IDOR 제거).
+
+        20260615 하드닝은 anon EXECUTE 만 차단했고, 인증된 임의 사용자가
+        check_entitlement('<victim_uuid>') 로 타인 구독/크레딧을 열람할 수 있었다.
+        20260616_fix_check_entitlement_idor.sql 이 auth.uid() 강제로 이를 차단한다.
+        [뮤테이션 검증: coalesce(auth.uid(), p_user_id) 를 p_user_id 로 바꾸면 이 테스트 FAIL]"""
+        fix = MIGRATIONS / "20260616_fix_check_entitlement_idor.sql"
+        assert fix.is_file(), (
+            "20260616_fix_check_entitlement_idor.sql 마이그레이션 누락 — "
+            "check_entitlement IDOR(타인 구독정보 열람) 미수정"
+        )
+        content = fix.read_text(encoding="utf-8")
+        assert re.search(
+            r"create or replace function public\.check_entitlement\(\s*p_user_id\s+uuid\s*\)",
+            content,
+        ), "check_entitlement 가 재작성되지 않음"
+        # 호출자 식별을 auth.uid() 로 강제해야 함 (전달 p_user_id 를 그대로 신뢰하면 IDOR)
+        assert "coalesce(auth.uid(), p_user_id)" in content, (
+            "IDOR 잔존: 인증 호출자에 대해 auth.uid() 를 강제하지 않음. "
+            "auth.uid() 가 있으면 p_user_id 를 무시하고 본인 정보만 반환해야 함."
+        )
+        # 조회 WHERE 절은 전달 인자(p_user_id)가 아닌 auth.uid() 파생값(v_uid)으로만 필터해야 함
+        assert "where user_id = p_user_id" not in content, (
+            "IDOR 잔존: WHERE user_id = p_user_id 로 전달 인자를 그대로 사용 중 — "
+            "타인 UUID 조회 가능. v_uid(=auth.uid()) 기준이어야 함."
+        )
+        assert "where user_id = v_uid" in content, (
+            "조회가 auth.uid() 파생값(v_uid) 으로 필터되지 않음"
+        )
+
+    def test_check_entitlement_idor_fix_preserves_anon_revoke(self):
+        """IDOR 수정 마이그레이션이 anon EXECUTE 차단(REVOKE/GRANT)을 유지(회귀 방지)."""
+        content = (MIGRATIONS / "20260616_fix_check_entitlement_idor.sql").read_text(encoding="utf-8")
+        assert "revoke all on function public.check_entitlement(uuid) from public" in content, (
+            "수정 마이그레이션이 anon EXECUTE 차단(REVOKE)을 누락 — anon 정보열람 회귀"
+        )
+        assert "grant execute on function public.check_entitlement(uuid) to authenticated, service_role" in content, (
+            "수정 마이그레이션이 authenticated+service_role GRANT 를 누락"
+        )
+
 
 # ═══════════════════════════════════════════════════════════════
 # 5. 프롬프트 인젝션 방어 — openai-proxy
