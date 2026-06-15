@@ -4,7 +4,7 @@ import { callOpenAI, callChat } from '../services/api.js';
 import { showToast } from '../components/toast.js';
 import { showPaywall, showPremiumPaywall } from '../components/paywall.js';
 import { drawRadar, drawRadarCompare, drawDualRadar } from '../components/radar.js';
-import { canUseDream, incDreamCount, getDreamCount, getCachedTier, getUserTier, getCredits, useCredit, updateCreditInfo } from '../services/subscription.js';
+import { canUseDream, incDreamCount, getDreamCount, getCachedTier, getUserTier, getCredits, useCredit, updateCreditInfo, BETA_OPEN_ALL, FREE_STORAGE_LIMIT } from '../services/subscription.js';
 import { LMSGS, DAILY_SYMBOLS, DICT_DATA, FEED_DEMO } from '../utils/symbols.js';
 import { logEvent } from '../services/analytics.js';
 import { trackFunnelStep } from '../utils/funnel.js';
@@ -807,10 +807,13 @@ export function saveToDreamlog(){
   )).slice(0,3);
 
   // [버그수정 F3] 꿈 저장 무료 10개 제한 — landing/subscription 광고와 코드 일치.
-  // BETA_OPEN_ALL=true인 지금은 분기에 진입하지 않음(정식 오픈 시 자동 활성화).
-  if(typeof window.BETA_OPEN_ALL!=='undefined'&&!window.BETA_OPEN_ALL){
+  // [버그수정 2026-06-16] window.BETA_OPEN_ALL 은 어디서도 set 되지 않아(typeof===undefined)
+  //   이 분기가 항상 dead code 였음 → 무료 10개 저장 제한이 전혀 작동 안 함.
+  //   subscription.js 의 import 모듈 상수(현재 false)를 직접 참조하도록 수정.
+  //   BETA_OPEN_ALL=true(정식 오픈 전 전체 개방) 구간에는 제한 미적용, false 시 제한 발동.
+  if(!BETA_OPEN_ALL){
     const tier=getCachedTier();
-    if(tier==='free'&&logs.length>=10){
+    if(tier==='free'&&logs.length>=FREE_STORAGE_LIMIT){
       showPaywall('storage_limit');
       return;
     }
