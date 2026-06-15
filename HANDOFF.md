@@ -1,3 +1,64 @@
+> 2026-06-15 무중단 구현 라운드 반영: 결함 스윕 21파일·RLS 회귀 수정·폴백 과금 차단·CORS/rate-limit 보안 하드닝. 로컬 커밋 완료; 배포=민규.
+
+**[2026-06-15 무중단 구현 라운드]**
+
+### 커밋 요약 (4건, 전부 로컬 — push=민규)
+
+#### 1. `62322e8` fix: 자동수정 검증 커밋 — 빌드/타입체크 통과분 (21파일, 389 추가/105 제거)
+- CORS 와일드카드(`*`) → allowlist 강화 (create-checkout·toss-checkout·toss-confirm·openai-proxy)
+- `monggeul.app` 미등록 도메인 제거 (billing-apple/google-verify·openai-proxy)
+- toss-confirm/webhook: 하드코딩 `'pro'` tier → 동적 `entitlementKey/renewedTier` (plus/premium 분기)
+- toss-webhook 취소: 단일 `'pro_monthly'` → 다중 플랜 `includes([...])` 확장
+- `auth.js` showToast window 전역 미표시 버그 → 직접 import 수정; `dali_memory` upsert 컬럼명 `chat_history→chat` 수정
+- `subscription.js` `canSaveDream()` 신설 (무료 10개 저장 제한, BETA_OPEN_ALL 가드)
+- `dream.js` isFallback 결제유도 차단 + `saveToDream` 저장 제한 게이트 추가
+- `growth.js` 가짜 50% 할인 문구 제거·미출시 앱스토어 URL 삭제
+- `paywall.js` `'최대 30% 할인'` → `'15회 팩 회당 30% 절약'` 정확한 문구
+- `community-bot.js` 랜덤 similar 카운트 노출 금지; `community.js` fromLocal 분기 조기 return + 오프라인 toast
+- `my.js` 주간 리포트 실데이터 계산(`_getWeekLogs`) + 부족 시 fallback
+- `tests/test_toss_routing.py` 동적 tier 단언으로 갱신 → **308 PASS** (exit 0)
+
+#### 2. `a200801` fix: 크레딧 차감 RLS 회귀 수정 — `use_credit()` SECURITY DEFINER RPC
+- 원인: `own_ent` 드롭(2026-06-14) 후 client 직접 UPDATE가 RLS 거부 → 크레딧 미차감 = 무제한 열람(매출 누수)
+- 수정: `use_credit()` RPC (auth.uid 기준 원자차감·자기부여 불가·0이하 불가·authenticated only) 신설
+- `subscription.js` `useCredit` → rpc 호출 전환 (RPC 실패 시 과금정확성 우선 보류, 비로그인만 낙관적)
+- 신규 마이그레이션: `supabase/migrations/20260615_use_credit_rpc.sql`
+- 검증: 페이월/크레딧 **75 PASS** + vite 빌드 OK (로컬 실측)
+- ★배포 블로커: 민규 Supabase restore 후 `supabase db push` 필요 (마이그레이션 미적용 상태)
+
+#### 3. `4041ebf` fix: 폴백(데모) 결과엔 무료쿼터 차감 안 함
+- 원인: `incDreamCount`가 `finally` 무조건 호출 → 백엔드 다운(데모 폴백) 시에도 무료할당 소모(불공정)
+- 수정: `_wasFallback` 추적 → 실 LLM 결과만 차감, 폴백(`invalid/llm_call_failed`)은 차감 skip
+- 검증: `dream.js` 구문 OK·페이월 테스트 PASS·vite 빌드 OK (로컬 실측)
+
+#### 4. `2cb6952` fix: 결제함수 CORS/rate-limit + 로그인 에러처리 보안 하드닝
+- `toss-confirm`: CORS를 array+startsWith → `Set+exact match`(`_buildCorsHeaders`)로 교체, origin 거부(403) 명시
+- `toss-checkout/confirm`: `check_rate_limit` RPC(10/min) 추가 — openai-proxy(30/min)보다 엄격한 결제 전용 제한
+- `auth.js` `logout()`: try/catch 추가 — 실패 시 `showToast`로 에러 노출 (기존엔 swallow)
+- `tests/test_business_logic.py` `TestBetaFlagSecurityGate` 추가 — CI/MONGGEUL_PROD 환경서 `BETA_OPEN_ALL=true` 배포 차단 (로컬 skip)
+- 로컬 커밋만; Edge Functions 적용은 `supabase functions deploy` 필요 (미실행)
+
+### 최종 테스트 게이트 (2026-06-15 기준, 로컬)
+- pytest (test_toss_routing): **308 PASS** (exit 0, 로컬 실측)
+- pytest (페이월/크레딧): **75 PASS** (exit 0, 로컬 실측)
+- vite 빌드: OK (로컬)
+- E2E puppeteer 4 시나리오: 이전 세션(2026-06-12) grn — 이번 세션 재실행 없음 (Supabase pause 상태, 미검증)
+
+### ★NEEDS_HUMAN (외부 블로커, 민규 P0)
+
+1. **Supabase restore** — `mskwqlqpcsfvgvhhilma.supabase.co` pause 상태(이전 세션 실측). 대시보드 수동 Restore 1회 필요. 복구 후 `supabase db push`로 `20260615_use_credit_rpc.sql` 마이그레이션 적용.
+2. **git push** — 이번 세션 4커밋 전부 로컬. `git push origin master` → GitHub Pages 자동 배포.
+3. **Gemini API key** — `supabase/functions/openai-proxy` GEMINI_API_KEY Edge secret 설정 (Supabase restore 후 대시보드 → Settings → Edge Functions → Secrets).
+4. **Toss Payments 재개** — 결제 코드 수정 로컬 커밋 완료(CORS·rate-limit·tier 동적 분기). 실결제 E2E는 Supabase pause로 미검증. 민규 Toss 가맹 재개 + `TOSS_SECRET_KEY` Edge secret 갱신 후 실결제 테스트 필요.
+5. **repo public 전환** — GitHub Pages 서빙을 위해 baeminkyu9419-beep/monggeul repo public 설정 (또는 CDN 전환).
+
+### 다음 권장 액션
+1. 민규: Supabase restore → `supabase db push` → `git push origin master` → curl dream_quick 200 확인
+2. 민규: Toss 재개 + Edge Secrets (GEMINI_API_KEY·TOSS_SECRET_KEY) 갱신
+3. Supabase restore 후 E2E 4 시나리오 재실행 (`node tests/e2e/run_all.js`) — 현재 미검증
+
+---
+
 > 2026-06-12 라운드 반영: E2E harness 실전 연결(4 시나리오 grn) + M1·M2·M3 수술 완주 + dead-export·shared/ 격리 + checkout.js 흡수 + 오로라 비주얼 + PURPOSE.lock.yaml 도입.
 
 **[2026-06-12 라운드 반영]**
