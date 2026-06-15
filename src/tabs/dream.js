@@ -1200,45 +1200,6 @@ if(typeof window!=='undefined') window.updateCharCount = updateCharCount;
 
 // window 노출
 
-// ── 반복꿈 비교 섹션 렌더 ──
-function renderRepeatDreamCompare(currentData, prevDreams){
-  const area=document.getElementById('dreamNextAction');
-  if(!area)return;
-  const prev=prevDreams[0]; // 가장 최근 유사 꿈
-  if(!prev||!prev.stats||!currentData.stats)return;
-
-  const statKeys=Object.keys(currentData.stats);
-  const diffHtml=statKeys.map(k=>{
-    const cur=currentData.stats[k]||0;
-    const old=prev.stats[k]||0;
-    const diff=cur-old;
-    if(diff===0)return '';
-    const arrow=diff>0?'\u2191':'\u2193';
-    const color=diff>0?'#7de8d8':'#f0a8c8';
-    return '<span style="font-size:10px;color:'+color+';margin-right:6px">'+k+' '+arrow+Math.abs(diff)+'</span>';
-  }).filter(Boolean).join('');
-
-  // 공통 키워드
-  const curWords=(currentData.badges||[]).concat(currentData.emotions||[]);
-  const prevWords=(prev.badges||[]).concat(prev.emotions||[]);
-  const common=curWords.filter(w=>prevWords.includes(w));
-
-  let compareHtml='<div style="margin-top:12px;background:rgba(248,201,76,.06);border:1px solid rgba(248,201,76,.15);border-radius:14px;padding:14px;">';
-  compareHtml+='<div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:8px">\uD83D\uDD04 이전 비슷한 꿈과 비교</div>';
-  compareHtml+='<div style="display:flex;justify-content:space-between;margin-bottom:8px">';
-  compareHtml+='<div style="flex:1;text-align:center"><div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">이번</div><div style="font-size:13px;font-weight:700;color:var(--moon)">'+(currentData.title||'')+'</div></div>';
-  compareHtml+='<div style="color:var(--text-muted);padding:0 8px;font-size:16px">vs</div>';
-  compareHtml+='<div style="flex:1;text-align:center"><div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">'+(prev.date||'이전')+'</div><div style="font-size:13px;font-weight:700;color:var(--amber)">'+(prev.title||'')+'</div></div>';
-  compareHtml+='</div>';
-  if(diffHtml) compareHtml+='<div style="margin-bottom:6px">'+diffHtml+'</div>';
-  if(common.length>0) compareHtml+='<div style="font-size:10px;color:var(--text-muted)">\uD83D\uDD17 공통: '+common.join(', ')+'</div>';
-  compareHtml+='<div style="font-size:10px;color:var(--teal);margin-top:6px">\uD83D\uDCA1 반복 꿈은 무의식이 해결을 원하는 주제일 수 있어요</div>';
-  compareHtml+='</div>';
-
-  area.style.display='block';
-  area.innerHTML=compareHtml+area.innerHTML;
-}
-
 window.fillDream = fillDream;
 window.quickSearch = quickSearch;
 window.analyzeDream = analyzeDream;
