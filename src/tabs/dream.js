@@ -9,7 +9,7 @@ import { LMSGS, DAILY_SYMBOLS, DICT_DATA, FEED_DEMO } from '../utils/symbols.js'
 import { logEvent } from '../services/analytics.js';
 import { trackFunnelStep } from '../utils/funnel.js';
 import { esc, sanitize, validateDreamResult } from '../utils/sanitize.js';
-import { addXP, ALL_DICT_REF } from './my.js';
+import { addXP, ALL_DICT_REF, getFreeUnlocks, useFreeUnlock } from './my.js';
 import { getContextForPrompt, getLifeStageKey, showContextQuestions } from '../services/dream-context.js';
 import { demoResult, _evaluateRichness } from './dream-demo.js';
 import { isNonsenseInput } from '../utils/dream-validator.js';
@@ -535,6 +535,23 @@ function _renderDreamConversionGate(data,inp){
   const _tier = getCachedTier();
   if (_tier === 'premium' || _tier === 'plus') {
     try { unlockDetail(); } catch(e) {}
+    return;
+  }
+  // [CONVERSION-1] 죽은 약속 배선: 온보딩이 약속한 '상세 해몽 5회 무료'를 실제로 소비.
+  //   claimOnboarding 이 mg_free_unlocks=5 를 세팅하지만 useFreeUnlock() 이 어디서도 호출되지
+  //   않아 무료 횟수가 영영 소비되지 않았다(약속 미이행 → 가치 입증 실패 → 전환 손실).
+  //   조건: 크레딧 0(결제수단 없음) & 무료 횟수 보유 → 결제 없이 무료 소비로 상세 해몽 공개.
+  //   소진(6회차) 후부터는 기존 페이월 그대로 노출.
+  if (credits === 0) {
+    try {
+      if (getFreeUnlocks() > 0 && useFreeUnlock()) {
+        unlockDetail();
+        const _left = getFreeUnlocks();
+        try { showToast(_left > 0 ? `🎁 무료 상세 해몽 사용 (${_left}회 남음)` : '🎁 마지막 무료 상세 해몽이에요'); } catch(e) {}
+        try { logEvent('free_unlock_used', { remaining: _left }); } catch(e) {}
+        try { trackFunnelStep('feature_used', { method: 'free_unlock', remaining: _left }); } catch(e) {}
+      }
+    } catch(e) {}
   }
 }
 
