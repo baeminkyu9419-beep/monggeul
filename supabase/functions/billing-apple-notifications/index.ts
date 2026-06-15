@@ -3,14 +3,26 @@
 // https://developer.apple.com/documentation/appstoreservernotifications
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { X509Certificate } from "node:crypto";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const APPLE_BUNDLE_ID = Deno.env.get("APPLE_BUNDLE_ID") || "com.monggeul.app";
 const APPLE_ENVIRONMENT = Deno.env.get("APPLE_ENVIRONMENT") || "sandbox";
-// Apple Root CA SHA-256 fingerprint (Apple Root CA - G3)
-// https://www.apple.com/certificateauthority/
-const APPLE_ROOT_CA_G3_SHA256 = "63343abfb89a6a03eb0e3c5f4d4b4ca8c5e7e8b4d1a7e3b5f6c8d9e0a1b2c3d4"; // placeholder — 실배포 시 정확한 값 주입
+// Apple Root CA SHA-256 fingerprint (Apple Root CA - G3), colon-less lowercase hex.
+// 출처: https://www.apple.com/certificateauthority/AppleRootCA-G3.cer 의 fingerprint256 실측값.
+// (subject==issuer=="Apple Root CA - G3", self-signed, ca:true)
+const APPLE_ROOT_CA_G3_SHA256 =
+  "63343abfb89a6a03ebb57e9b3f5fa7be7c4f5c756f3017b3a8c488c3653e9179";
+// 운영자가 정본 외 추가 신뢰 root 를 주입할 수 있게 허용(콤마 구분, colon-less lowercase hex).
+const EXTRA_TRUSTED_ROOTS = (Deno.env.get("APPLE_EXTRA_ROOT_FINGERPRINTS") || "")
+  .split(",")
+  .map((s) => s.replace(/:/g, "").trim().toLowerCase())
+  .filter(Boolean);
+const TRUSTED_ROOT_FINGERPRINTS = new Set<string>([
+  APPLE_ROOT_CA_G3_SHA256,
+  ...EXTRA_TRUSTED_ROOTS,
+]);
 const SIGNATURE_VERIFICATION_ENABLED = Deno.env.get("APPLE_SIGNATURE_VERIFICATION") !== "false";
 
 const PRODUCT_TO_ENTITLEMENT: Record<string, string> = {
@@ -53,58 +65,84 @@ function b64urlToBytes(s: string): Uint8Array {
   return out;
 }
 
-// JWS x5c: base64 DER cert → Uint8Array
-function certDerFromX5c(b64: string): Uint8Array {
+// JWS x5c: base64 (표준 base64, base64url 아님) DER cert → X509Certificate
+function x509FromX5c(b64: string): X509Certificate {
   const bin = atob(b64);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
+  const der = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) der[i] = bin.charCodeAt(i);
+  return new X509Certificate(der);
 }
 
-// DER 에서 SubjectPublicKeyInfo (SPKI) 추출은 WebCrypto 가 직접 지원하지 않음.
-// Apple App Store 서명 JWS 는 P-256 ECDSA + x5c (leaf cert) 포함.
-// Deno 환경에서 X.509 파싱은 std 라이브러리 없음 → JWS 헤더 x5c 첫 항목을 public key SPKI 로 사용.
-// 정석은 x509 파서(또는 apple-app-store-server-library-deno) 이지만, MVP 에서는 x5c[0] leaf 의
-// SubjectPublicKeyInfo 를 추출하여 WebCrypto 의 'spki' 포맷으로 importKey.
-// (아래는 ECDSA P-256 leaf 의 SPKI 가 DER 내부 특정 OID 시퀀스에 담긴 관례 기반의 최소 파서.)
-function extractEcdsaP256SpkiFromX509(der: Uint8Array): Uint8Array | null {
-  // 정식 ASN.1 파서를 Deno std 없이 구현하지 않고, OID 1.2.840.10045.2.1 (ecPublicKey) + 1.2.840.10045.3.1.7 (P-256)
-  // 의 OID 바이트 시퀀스 직후 비트스트링 65바이트 (0x00 || 0x04 || X(32) || Y(32)) 를 추출.
-  const ecOid = [0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01]; // 1.2.840.10045.2.1
-  // find pattern
-  for (let i = 0; i < der.length - ecOid.length; i++) {
-    let ok = true;
-    for (let j = 0; j < ecOid.length; j++) {
-      if (der[i + j] !== ecOid[j]) { ok = false; break; }
+function fp256(cert: X509Certificate): string {
+  // node:crypto fingerprint256 = "AA:BB:.." → colon-less lowercase hex 로 정규화.
+  return cert.fingerprint256.replace(/:/g, "").toLowerCase();
+}
+
+// x5c 체인을 Apple Root CA 까지 검증한다.
+//   1) 인접 인증서가 실제로 issuer 관계인지(checkIssued) + 상위 공개키로 서명 검증(verify).
+//   2) 체인 최상위(또는 체인에 포함된 신뢰 root) 의 SHA-256 fingerprint 가 신뢰 set 에 있는지.
+// 통과 시 leaf 인증서를 반환(JWS payload 서명 검증에 사용).
+//
+// [P1 수정] 이전 구현은 leaf(x5c[0]) 공개키로 JWS 서명만 확인하고 root 를 확증하지 않아,
+//   공격자가 자체서명 인증서를 x5c 에 넣어 위조 알림(SUBSCRIBED→승급, REFUND→강등)을
+//   통과시킬 수 있었다. 이제 체인이 Apple Root CA G3 에 anchor 되지 않으면 거부한다.
+export function verifyX5cChain(x5c: string[]): X509Certificate {
+  if (!Array.isArray(x5c) || x5c.length === 0) throw new Error("missing_x5c_chain");
+  const certs = x5c.map(x509FromX5c);
+
+  // 만료/미발효 검사 (validFrom/validTo 는 RFC1123 형식)
+  const now = Date.now();
+  for (const c of certs) {
+    if (Number.isFinite(Date.parse(c.validFrom)) && Date.parse(c.validFrom) > now) {
+      throw new Error("cert_not_yet_valid");
     }
-    if (!ok) continue;
-    // OID 직후 다음 OID (namedCurve) 건너뛰고 BIT STRING (0x03) 찾기
-    for (let k = i + ecOid.length; k < Math.min(i + ecOid.length + 40, der.length - 66); k++) {
-      if (der[k] === 0x03 && der[k + 1] === 0x42 && der[k + 2] === 0x00 && der[k + 3] === 0x04) {
-        // SPKI = SEQUENCE { AlgorithmId, BIT STRING }. 재구성.
-        const pubKeyBytes = der.slice(k + 2, k + 2 + 0x42); // 0x00 || 0x04 || X(32) || Y(32)
-        // SPKI 전체 재작성
-        const algId = new Uint8Array([
-          0x30, 0x13, // SEQUENCE AlgorithmIdentifier (19 bytes)
-          0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01, // OID ecPublicKey
-          0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07, // OID P-256
-        ]);
-        const bitString = new Uint8Array([0x03, 0x42, ...pubKeyBytes.slice(0)]);
-        const inner = new Uint8Array(algId.length + bitString.length);
-        inner.set(algId, 0);
-        inner.set(bitString, algId.length);
-        const outer = new Uint8Array(2 + inner.length);
-        outer[0] = 0x30;
-        outer[1] = inner.length;
-        outer.set(inner, 2);
-        return outer;
-      }
+    if (Number.isFinite(Date.parse(c.validTo)) && Date.parse(c.validTo) < now) {
+      throw new Error("cert_expired");
     }
   }
-  return null;
+
+  // 인접 issuer 관계 + 서명 검증
+  for (let i = 0; i < certs.length - 1; i++) {
+    const child = certs[i];
+    const parent = certs[i + 1];
+    if (!child.checkIssued(parent)) throw new Error(`chain_broken_at:${i}`);
+    if (!child.verify(parent.publicKey)) throw new Error(`chain_sig_invalid_at:${i}`);
+  }
+
+  // 신뢰 root anchor: 체인 안의 어떤 인증서든 fingerprint 가 신뢰 set 에 있으면,
+  // 그 지점까지의 서명 체인은 위에서 검증됐으므로 leaf 가 Apple 로부터 유래함이 보장된다.
+  // (Apple 은 보통 leaf, intermediate(WWDR/G6), root(G3) 3장을 보냄. root 가 x5c 에 포함될 수도,
+  //  intermediate 까지만 올 수도 있어 두 경우 모두 처리한다.)
+  let anchored = false;
+  for (let i = 0; i < certs.length; i++) {
+    if (TRUSTED_ROOT_FINGERPRINTS.has(fp256(certs[i]))) { anchored = true; break; }
+    // 체인 끝 인증서가 root(G3) 의 자식이면(= root 가 x5c 에 없어도) anchor 인정.
+    // 단 이 경우 root 인증서 자체가 없으므로 fingerprint 비교만으로 anchor 를 인정하지 않고,
+    // 마지막 인증서의 issuer 정보가 Apple Root CA G3 와 일치하는지로 한정한다.
+  }
+  if (!anchored) {
+    // 체인에 신뢰 root 가 직접 포함되지 않은 경우: 최상위 인증서의 issuer 가
+    // "Apple Root CA - G3" 인지로 보수적으로 거부/허용을 결정한다.
+    // Apple Root 가 누락된 채로 위조 self-signed 체인이 통과되지 않도록, issuer DN 만으로는
+    // 신뢰하지 않고 명시적으로 거부한다(운영자는 APPLE_EXTRA_ROOT_FINGERPRINTS 로 주입 가능).
+    throw new Error("untrusted_root_chain");
+  }
+  return certs[0];
 }
 
-async function verifyAppleJws(jws: string): Promise<any> {
+async function importLeafPublicKey(leaf: X509Certificate): Promise<CryptoKey> {
+  // X509Certificate.publicKey → DER SPKI 추출 후 WebCrypto ECDSA P-256 importKey.
+  const spkiDer = leaf.publicKey.export({ type: "spki", format: "der" }) as unknown as Uint8Array;
+  return await crypto.subtle.importKey(
+    "spki",
+    spkiDer,
+    { name: "ECDSA", namedCurve: "P-256" },
+    false,
+    ["verify"],
+  );
+}
+
+export async function verifyAppleJws(jws: string): Promise<any> {
   const parts = jws.split(".");
   if (parts.length !== 3) throw new Error("invalid_jws_format");
   const header = JSON.parse(b64urlDecodeToString(parts[0]));
@@ -128,22 +166,9 @@ async function verifyAppleJws(jws: string): Promise<any> {
     return JSON.parse(b64urlDecodeToString(parts[1]));
   }
 
-  // leaf cert (x5c[0]) 에서 P-256 public key 추출
-  const leafDer = certDerFromX5c(header.x5c[0]);
-  const spki = extractEcdsaP256SpkiFromX509(leafDer);
-  if (!spki) {
-    // fallback: x5c 파싱 실패 시 서명 검증 스킵하되 경고 (프로덕션에선 apple-app-store-server-library 권장)
-    console.error("[apple-notif] failed to extract SPKI from x5c leaf — signature NOT verified");
-    throw new Error("spki_extraction_failed");
-  }
-
-  const pubKey = await crypto.subtle.importKey(
-    "spki",
-    spki,
-    { name: "ECDSA", namedCurve: "P-256" },
-    false,
-    ["verify"],
-  );
+  // [P1 수정] x5c 체인을 Apple Root CA G3 까지 검증 → anchor 확보된 leaf 만 신뢰.
+  const leaf = verifyX5cChain(header.x5c);
+  const pubKey = await importLeafPublicKey(leaf);
 
   // JWS signature 는 JOSE concat(R||S) 형식 (WebCrypto ECDSA 와 동일 포맷)
   const sig = b64urlToBytes(parts[2]);
@@ -156,12 +181,11 @@ async function verifyAppleJws(jws: string): Promise<any> {
   );
   if (!valid) throw new Error("signature_invalid");
 
-  // TODO: x5c 체인 root 가 Apple Root CA G3 인지 확증 (SHA-256 fingerprint 비교).
-  //       프로덕션 배포 전 apple-app-store-server-library-deno 또는 직접 체인 검증 로직 추가.
   return JSON.parse(b64urlDecodeToString(parts[1]));
 }
 
-serve(async (req) => {
+export async function handleRequest(req: Request): Promise<Response> {
+  {
   if (req.method !== "POST") return new Response(null, { status: 405 });
   try {
     const body = await req.json().catch(() => ({}));
@@ -311,4 +335,11 @@ serve(async (req) => {
     console.error("Apple notification error:", e);
     return new Response(null, { status: 500 });
   }
-});
+  }
+}
+
+// Supabase Edge Runtime 은 모듈을 main 으로 실행하므로 항상 serve() 가 동작한다.
+// (테스트에서 import 시에는 import.meta.main 이 false → handleRequest 만 직접 호출)
+if (import.meta.main) {
+  serve(handleRequest);
+}
