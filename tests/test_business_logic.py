@@ -257,8 +257,29 @@ class TestPaymentFlow:
         assert "generateOrderId" in self.payment_src
 
     def test_login_required_before_payment(self):
-        """Payment must check login status"""
-        assert "store.currentUser" in self.payment_src, "Must verify user login before payment"
+        """startPayment() must gate on login BEFORE generating an order / starting checkout.
+
+        강화(2026-06-16): 이전엔 'store.currentUser' 문자열이 어디든 1번 있으면 통과(vacuous).
+        이제 startPayment 본문에서 (1) currentUser 부재 시 early-return 가드가 (2) generateOrderId/
+        checkout_started 보다 '앞에' 있어야 함을 위치로 검증. 가드를 지우거나 뒤로 옮기면 FAIL.
+        (런타임 행위 검증은 test_business_logic_runtime.py)."""
+        m = re.search(
+            r"export async function startPayment\([^)]*\)\s*\{([\s\S]*?)\n\}",
+            self.payment_src,
+        )
+        assert m, "startPayment 함수를 찾을 수 없습니다"
+        body = m.group(1)
+        # 로그인 미충족 시 early-return 가드
+        guard = re.search(r"if\s*\(\s*!store\.supabase\s*\|\|\s*!store\.currentUser\s*\)\s*\{[^}]*return", body)
+        assert guard, "startPayment 에 (!store.supabase || !store.currentUser) early-return 로그인 가드 없음"
+        guard_idx = guard.start()
+        order_idx = body.find("generateOrderId")
+        checkout_idx = body.find("checkout_started")
+        assert order_idx != -1, "generateOrderId 호출 없음"
+        assert guard_idx < order_idx, "로그인 가드가 주문번호 생성보다 뒤 — 비로그인도 주문 생성됨"
+        assert checkout_idx == -1 or guard_idx < checkout_idx, (
+            "로그인 가드가 checkout_started 보다 뒤 — 비로그인도 결제 시작 로깅됨"
+        )
 
     def test_checkout_events_logged(self):
         """All checkout events must be logged"""
@@ -272,14 +293,50 @@ class TestPaymentFlow:
         assert "startTossCheckout" in self.payment_src, "Toss checkout missing"
 
     def test_payment_return_handlers_exist(self):
-        """Payment return handlers for both PGs must exist"""
-        assert "handlePaymentReturn" in self.payment_src
-        assert "handleTossReturn" in self.payment_src or "paymentKey" in self.payment_src
+        """handlePaymentReturn() must route Stripe(checkout=success/cancel) AND Toss(paymentKey) returns.
+
+        강화(2026-06-16): 이전엔 'handleTossReturn' OR 'paymentKey' (둘 중 하나만 있어도 통과)로
+        toss 리턴 배선 누락을 못 잡았다. 이제 handlePaymentReturn 본문에서 stripe(success/cancel)
+        분기와 toss(paymentKey→handleTossReturn) 라우팅을 모두 확인 + handleTossReturn 정의 확인."""
+        m = re.search(
+            r"export function handlePaymentReturn\(\)\s*\{([\s\S]*?)\n\}",
+            self.payment_src,
+        )
+        assert m, "handlePaymentReturn 함수를 찾을 수 없습니다"
+        body = m.group(1)
+        # Stripe 리턴 분기
+        assert "checkout" in body and "success" in body, "Stripe success 리턴 분기 없음"
+        assert "cancel" in body, "Stripe cancel 리턴 분기 없음"
+        # Toss 리턴 라우팅: paymentKey 감지 → handleTossReturn 위임
+        assert "paymentKey" in body, "Toss paymentKey 리턴 감지 없음"
+        assert "handleTossReturn(" in body, "paymentKey 감지 후 handleTossReturn 위임 없음"
+        # handleTossReturn 실제 정의(승인 처리)
+        assert re.search(r"function handleTossReturn\s*\(", self.payment_src), (
+            "handleTossReturn 함수 정의 없음(토스 승인 처리 부재)"
+        )
 
     def test_entitlement_check_with_fallback(self):
-        """Entitlement check must have fallback for undeployed DB functions"""
-        assert "fallbackEntitlementCheck" in self.payment_src or "fallback" in self.payment_src.lower(), (
-            "Entitlement check must have fallback mechanism"
+        """checkEntitlement() must invoke fallbackEntitlementCheck() in its catch block.
+
+        강화(2026-06-16): 이전엔 'fallback' 문자열이 (대소문자무시) 어디든 있으면 통과(always-true:
+        주석 한 줄로도 PASS). 이제 checkEntitlement 본문 try/catch 구조 + catch 안에서 실제
+        fallbackEntitlementCheck() '호출' 을 검증. 폴백 호출을 제거하면 FAIL."""
+        m = re.search(
+            r"export async function checkEntitlement\(\)\s*\{([\s\S]*?)\n\}",
+            self.payment_src,
+        )
+        assert m, "checkEntitlement 함수를 찾을 수 없습니다"
+        body = m.group(1)
+        assert "try" in body and "catch" in body, "checkEntitlement 에 try/catch 없음(폴백 경로 부재)"
+        # catch 블록 추출 후 그 안에서 fallbackEntitlementCheck() 호출 확인
+        cm = re.search(r"catch\s*\([^)]*\)\s*\{([\s\S]*)\}", body)
+        assert cm, "catch 블록을 찾을 수 없습니다"
+        assert "fallbackEntitlementCheck()" in cm.group(1), (
+            "catch 블록에서 fallbackEntitlementCheck() 를 호출하지 않음 — DB 미배포 시 폴백 미작동"
+        )
+        # 폴백 함수 자체가 정의되어 있어야 함
+        assert re.search(r"function fallbackEntitlementCheck\s*\(", self.payment_src), (
+            "fallbackEntitlementCheck 함수 정의 없음"
         )
 
 
@@ -307,18 +364,66 @@ class TestSubscriptionSystem:
         )
 
     def test_guest_gets_1_dream(self):
-        """Non-logged-in guest must get exactly 1 dream trial"""
-        assert "mg_guest_dream_used" in self.sub_src, "Guest trial tracking missing"
-        # Check remaining: 1 for guests
-        assert "remaining:" in self.sub_src
+        """canUseDream() 게스트 경로: 백엔드 정상 시 1회, 데모(백엔드 다운) 시 GUEST_DEMO_LIMIT.
+
+        강화(2026-06-16): 이전엔 'mg_guest_dream_used' 와 'remaining:' 문자열 존재만 확인(vacuous).
+        이제 canUseDream 게스트 분기 구조를 검증: (정상) guest_used 없으면 remaining 1,
+        (데모) !store.supabase 시 GUEST_DEMO_LIMIT 적용. 행위는 런타임 파일에서 1/3 검증."""
+        m = re.search(
+            r"export async function canUseDream\(\)\s*\{([\s\S]*?)\n\}",
+            self.sub_src,
+        )
+        assert m, "canUseDream 함수를 찾을 수 없습니다"
+        body = m.group(1)
+        # 비로그인 게스트 분기
+        assert "!store.currentUser" in body, "게스트(비로그인) 분기 없음"
+        assert "mg_guest_dream_used" in body, "정상 구간 게스트 소진 플래그 없음"
+        # 정상 구간: remaining 1 (guestUsed 없을 때)
+        assert re.search(r"remaining:\s*guestUsed\s*\?\s*0\s*:\s*1", body), (
+            "정상 구간 게스트 remaining 이 (소진? 0 : 1) 구조가 아님 — 1회 체험 보장 깨짐"
+        )
 
     def test_pro_gets_unlimited(self):
-        """Pro subscribers must get unlimited dreams"""
-        assert "Infinity" in self.sub_src, "Pro tier must return Infinity for remaining"
+        """canUseDream() 구독자(plus/premium/pro) 경로가 remaining: Infinity 를 반환해야 한다.
+
+        강화(2026-06-16): 이전엔 'Infinity' 문자열이 파일 어디든 있으면 통과(vacuous).
+        이제 canUseDream 본문에서 구독 tier 분기가 Infinity 를 반환하는 구조를 검증."""
+        m = re.search(
+            r"export async function canUseDream\(\)\s*\{([\s\S]*?)\n\}",
+            self.sub_src,
+        )
+        assert m, "canUseDream 함수를 찾을 수 없습니다"
+        body = m.group(1)
+        # getUserTier() 결과 기반 구독 분기 — dev_unlock/BETA 조기반환이 아니라 '실제 구독' 경로
+        tier_branch = re.search(
+            r"const tier = await getUserTier\(\);\s*if\s*\([^)]*tier === 'plus'[^)]*\)\s*\{([^}]*)\}",
+            body,
+        )
+        assert tier_branch, "getUserTier() 기반 구독(plus/premium/pro) 분기를 찾을 수 없음"
+        assert "remaining: Infinity" in tier_branch.group(1), (
+            "실제 구독자(getUserTier=plus/premium) 분기가 remaining: Infinity 를 반환하지 않음 — "
+            "구독 무제한 보장 깨짐(0 등 유한값으로 회귀)"
+        )
 
     def test_credit_use_decrements(self):
-        """useCredit must decrement credit count"""
-        assert "credits - 1" in self.sub_src or "credits-1" in self.sub_src or "newCredits" in self.sub_src
+        """useCredit() must (1) reject when credits<=0 and (2) decrement on the local/guest path.
+
+        강화(2026-06-16): 이전엔 'credits - 1' OR 'credits-1' OR 'newCredits' (셋 중 하나만 있어도
+        통과)라 차감 로직이 망가져도 'newCredits' 단어만 남으면 PASS(vacuous). 이제 useCredit 본문에서
+        잔액 가드(credits<=0 → false)와 로컬 차감(credits-1 → setItem) 구조를 검증.
+        (실제 차감 행위는 test_business_logic_runtime.py 런타임으로 검증.)"""
+        m = re.search(
+            r"export async function useCredit\(\)\s*\{([\s\S]*?)\n\}",
+            self.sub_src,
+        )
+        assert m, "useCredit 함수를 찾을 수 없습니다"
+        body = m.group(1)
+        # 잔액 0 이하면 차감 거부
+        assert re.search(r"credits\s*<=\s*0", body), "useCredit 에 잔액 가드(credits<=0)가 없음 — 음수 차감 위험"
+        assert "return false" in body, "잔액 부족 시 false 반환 경로 없음"
+        # 로컬/게스트 경로 차감 + localStorage 반영
+        assert re.search(r"credits\s*-\s*1", body), "로컬 경로 차감(credits - 1) 없음"
+        assert "mg_premium_credits" in body and "setItem" in body, "차감 후 localStorage 반영 없음"
 
     def test_credit_add_increments(self):
         """addCredits must increment credit count via server-authority atomic RPC.
@@ -345,8 +450,24 @@ class TestSubscriptionSystem:
         )
 
     def test_cached_tier_returns_pro_or_free(self):
-        """getCachedTier must return 'pro' or 'free'"""
-        assert "'pro'" in self.sub_src and "'free'" in self.sub_src
+        """getCachedTier() must default to 'free' when no subscription, and honor dev/beta unlock.
+
+        강화(2026-06-16): 이전엔 'pro'/'free' 문자열이 파일 어디든 있으면 통과(vacuous).
+        이제 getCachedTier 본문에서 (1) 구독 없으면 'free' 반환, (2) dev_unlock/BETA 분기를
+        검증. 기본값을 'free' 가 아닌 것으로 바꾸면(페이월 우회) FAIL."""
+        m = re.search(
+            r"export function getCachedTier\(\)\s*\{([\s\S]*?)\n\}",
+            self.sub_src,
+        )
+        assert m, "getCachedTier 함수를 찾을 수 없습니다"
+        body = m.group(1)
+        # 구독 없으면 free
+        assert re.search(r"if\s*\(\s*!_cachedSubscription\s*\)\s*return\s*'free'", body), (
+            "구독 없을 때 'free' 기본값 반환이 없음 — 미구독자가 유료 tier 로 새는 위험"
+        )
+        # dev/beta unlock 분기
+        assert "BETA_OPEN_ALL" in body, "BETA_OPEN_ALL 분기 없음"
+        assert "mg_dev_unlock" in body, "dev unlock 분기 없음"
 
 
 # ═══════════════════════════════════════════════════════════════
