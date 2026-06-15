@@ -645,6 +645,15 @@ export function showResult(data,inp){
   try{ showContextQuestions(data); }catch(e){}
   // 리텐션 훅: 내일 다시 오기 유도
   try{ showRetentionHook(); }catch(e){}
+  // [CONVERSION-3] 가치 우선 온보딩 — 첫 꿈 결과를 먼저 체험시킨 뒤 온보딩 모달 노출.
+  //   기존: 앱 진입 즉시 모달(가치 입증 전 마찰) → 첫인상 가림·이탈. 이제 첫 해몽 결과를
+  //   ~2.4s 음미한 뒤 환영 선물(상세 해몽 5회 무료) 모달을 띄워 "받을 가치가 있다"를 입증.
+  //   showOnboarding 은 mg_onboarded 가드로 1회만 발동(중복 무해).
+  try{
+    if(!localStorage.getItem('mg_onboarded') && dreamCount===0){
+      setTimeout(()=>{ try{ window.showOnboarding?.(); }catch(e){} }, 2400);
+    }
+  }catch(e){}
 }
 
 

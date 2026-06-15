@@ -378,8 +378,13 @@ window.addEventListener("load",async()=>{
   if(di)di.placeholder=placeholders[new Date().getDay()];
   // 연속 기록 뱃지
   // 스트릭은 MY 탭에서만 표시
-  // 온보딩 (첫 실행)
-  try{ window.showOnboarding?.(); }catch(e){}
+  // [CONVERSION-3] 온보딩(환영 선물) 모달을 앱 진입 즉시 → 첫 꿈 결과 직후로 이동(가치 우선).
+  //   첫인상을 모달이 가려 이탈하던 마찰 제거. 트리거는 dream.js showResult(첫 해몽 후 ~2.4s).
+  //   예외: 이미 꿈을 기록한 적 있으나 아직 온보딩 안 된 재방문자는 진입 시 1회 노출(선물 누락 방지).
+  try{
+    const _logs=JSON.parse(localStorage.getItem('mg_logs')||'[]');
+    if(!localStorage.getItem('mg_onboarded') && _logs.length>0) window.showOnboarding?.();
+  }catch(e){}
   // 딥링크 (?tab=chat 등)
   try{ handleDeepLink(); }catch(e){}
   // 앱 평가 유도 (5번째 해몽 이후)

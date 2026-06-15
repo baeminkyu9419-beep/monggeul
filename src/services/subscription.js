@@ -255,6 +255,8 @@ export function getCachedTier() {
 }
 // ── 일일 해몽 제한 ──
 const DAILY_FREE_LIMIT = 2;
+// 백엔드 다운(데모 모드) 구간 비로그인 게스트 무료 체험 횟수 (정상 구간은 1회 + 로그인 유도).
+const GUEST_DEMO_LIMIT = 3;
 
 function getTodayKey() {
   return new Date().toISOString().split('T')[0];
@@ -319,8 +321,21 @@ export async function canUseDream() {
     return { allowed: true, remaining: Infinity };
   }
 
-  // 비로그인: 1회 체험
+  // 비로그인: 체험 횟수.
+  // [CONVERSION-3] 백엔드 다운(데모 모드 = supabase 미연결) 구간엔 로그인이 무의미해
+  //   게스트가 1회에 갇혀 가치 반복체험을 못 한다 → 무료 체험을 3회로 완화(로컬 카운터).
+  //   백엔드 정상(로그인 가능) 구간은 기존 1회 유지(로그인 유도 → 하루 2회).
   if (!store.currentUser) {
+    const backendDown = !store.supabase;
+    if (backendDown) {
+      const used = parseInt(localStorage.getItem('mg_guest_dream_count') || '0');
+      const remaining = Math.max(0, GUEST_DEMO_LIMIT - used);
+      return {
+        allowed: used < GUEST_DEMO_LIMIT,
+        remaining,
+        reason: used >= GUEST_DEMO_LIMIT ? 'guest_limit' : null,
+      };
+    }
     const guestUsed = localStorage.getItem('mg_guest_dream_used');
     return {
       allowed: !guestUsed,
@@ -352,7 +367,13 @@ export async function incDreamCount() {
 
   // 비로그인 게스트 체험 마크
   if (!store.currentUser) {
-    localStorage.setItem('mg_guest_dream_used', '1');
+    // 백엔드 다운(데모) 구간: 3회 카운터 증가. 정상 구간: 기존 1회 소진 플래그.
+    if (!store.supabase) {
+      const used = parseInt(localStorage.getItem('mg_guest_dream_count') || '0');
+      localStorage.setItem('mg_guest_dream_count', String(used + 1));
+    } else {
+      localStorage.setItem('mg_guest_dream_used', '1');
+    }
     return;
   }
 
