@@ -246,6 +246,30 @@ export async function getDreamCountAsync() {
   return getDreamCountLocal();
 }
 
+// ── 꿈 저장 제한 (무료: 10개, Plus/Premium: 무제한) ──
+// BM 광고(landing.html) 및 주석(line 10)과 일치.
+// BETA_OPEN_ALL=true 구간에는 항상 allowed=true 반환.
+// 정식 오픈(BETA_OPEN_ALL=false) 시 dream.js saveDream 에서 호출:
+//   const { allowed } = await canSaveDream(logs.length);
+//   if (!allowed) { showPaywall('storage_limit'); return; }
+export const FREE_STORAGE_LIMIT = 10;
+
+export async function canSaveDream(currentSavedCount) {
+  if (BETA_OPEN_ALL) return { allowed: true, remaining: Infinity };
+  const devUnlock = (typeof localStorage !== 'undefined') ? localStorage.getItem('mg_dev_unlock') : null;
+  if (devUnlock === 'premium' || devUnlock === 'plus') return { allowed: true, remaining: Infinity };
+  const tier = await getUserTier();
+  if (tier === 'plus' || tier === 'premium' || tier === 'pro') return { allowed: true, remaining: Infinity };
+  // 무료 로그인 사용자: 10개 제한
+  const count = typeof currentSavedCount === 'number' ? currentSavedCount : 0;
+  const remaining = Math.max(0, FREE_STORAGE_LIMIT - count);
+  return {
+    allowed: count < FREE_STORAGE_LIMIT,
+    remaining,
+    reason: count >= FREE_STORAGE_LIMIT ? 'storage_limit' : null,
+  };
+}
+
 export async function canUseDream() {
   if (BETA_OPEN_ALL) return { allowed: true, remaining: Infinity };
   // Dev unlock: 비로그인이라도 mg_dev_unlock 시 무제한 (오너/개발자용)
@@ -326,6 +350,7 @@ export function markPremiumSuggested() {
   localStorage.setItem(DALI_SUGGEST_COOLDOWN_KEY, String(Date.now()));
 }
 
+window.canSaveDream = canSaveDream;
 window.getUserTier = getUserTier;
 window.getCachedTier = getCachedTier;
 window.getCredits = getCredits;

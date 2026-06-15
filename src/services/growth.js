@@ -13,8 +13,7 @@ import { trackFunnelStep } from '../utils/funnel.js';
 // ═══════════════════════════════════════
 
 const APP_URL = 'https://baeminkyu9419-beep.github.io/monggeul';
-const PLAY_URL = 'https://play.google.com/store/apps/details?id=com.monggeul.app';
-const IOS_URL = 'https://apps.apple.com/app/monggeul/id000000000'; // 출시 후 교체
+// PLAY_URL / IOS_URL: 네이티브 앱 미출시 — 출시 후 이 위치에 추가
 
 export function getShareUrl(referralCode) {
   return `${APP_URL}?ref=${referralCode}`;
@@ -241,7 +240,7 @@ const PRODUCT_TO_FEATURE = {
 };
 
 const PRODUCT_SUBTITLES = {
-  pro: '프로 구독 월 9,900원',
+  pro: 'Plus 구독 월 3,900원',
   weekly_report: '프로 구독에서 확인',
   detail_interpretation: '상세 해몽 1,900원부터',
   unconscious_profile: '무의식 프로파일 2,900원',
@@ -261,8 +260,8 @@ function showSmartUpsell(msg, product) {
     unconscious_profile: '내 무의식 지도를 펼쳐보세요',
   };
   const subtitle = toneVariant === 'B'
-    ? (BENEFIT_SUBTITLES[product] || '프로 구독 월 9,900원')
-    : (PRODUCT_SUBTITLES[product] || '프로 구독 월 9,900원');
+    ? (BENEFIT_SUBTITLES[product] || 'Plus 구독 월 3,900원')
+    : (PRODUCT_SUBTITLES[product] || 'Plus 구독 월 3,900원');
 
   banner.innerHTML = `
     <div style="background:linear-gradient(135deg,rgba(124,92,191,.2),rgba(166,124,239,.1));border:1px solid rgba(166,124,239,.25);border-radius:14px;padding:14px 16px;margin:8px 16px;display:flex;align-items:center;gap:12px;animation:slideUp .4s ease;cursor:pointer" data-upsell-product="${esc(product || 'pro')}">
@@ -330,10 +329,9 @@ function showPromoModal() {
   overlay.innerHTML = `<div style="background:linear-gradient(135deg,#1a1535,#2d1b69);border-radius:20px;padding:28px 24px;max-width:320px;width:100%;text-align:center;border:1px solid rgba(248,201,76,.3);">
     <div style="font-size:40px;margin-bottom:8px">🎁</div>
     <div style="font-size:18px;font-weight:700;color:var(--amber);font-family:'Gowun Dodum',serif;margin-bottom:6px">첫 구독 특별 혜택</div>
-    <div style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:16px">꿈 기록을 시작한 당신에게<br>Plus 플랜 첫 달 50% 할인!</div>
-    <div style="font-size:24px;font-weight:700;color:var(--moon);margin-bottom:4px">월 1,950원</div>
-    <div style="font-size:11px;color:var(--text-muted);text-decoration:line-through;margin-bottom:16px">정가 3,900원</div>
-    <button onclick="this.closest('div[style]').parentElement.remove();subscribePlan('plus')" style="background:linear-gradient(135deg,#f8c94c,#ffaa33);border:none;border-radius:12px;color:#1a1200;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;width:100%;margin-bottom:8px">🎁 50% 할인으로 시작하기</button>
+    <div style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:16px">꿈 기록을 시작한 당신에게<br>Plus 플랜으로 무제한 해몽!</div>
+    <div style="font-size:24px;font-weight:700;color:var(--moon);margin-bottom:16px">월 3,900원</div>
+    <button onclick="this.closest('div[style]').parentElement.remove();subscribePlan('plus')" style="background:linear-gradient(135deg,#f8c94c,#ffaa33);border:none;border-radius:12px;color:#1a1200;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;width:100%;margin-bottom:8px">🎁 Plus 시작하기</button>
     <button onclick="this.closest('div[style]').parentElement.remove()" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif">다음에 할게요</button>
   </div>`;
   overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };

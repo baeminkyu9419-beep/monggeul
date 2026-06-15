@@ -55,12 +55,31 @@ const PACK_PRICE_IDS: Record<string, string> = {
   unconscious_profile: Deno.env.get('STRIPE_PROFILE_PRICE_ID') || '',
 }
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+// CORS allowlist — 와일드카드('*') 대신 출처 검증 (openai-proxy 패턴과 동일)
+const ALLOWED_ORIGINS = new Set<string>([
+  'https://baeminkyu9419-beep.github.io',
+  'https://monggeul.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+])
+
+function _buildCorsHeaders(origin: string | null): Record<string, string> {
+  const allowed =
+    origin && ALLOWED_ORIGINS.has(origin)
+      ? origin
+      : 'https://baeminkyu9419-beep.github.io'
+  return {
+    'Access-Control-Allow-Origin': allowed,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  }
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('origin')
+  const corsHeaders = _buildCorsHeaders(origin)
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }

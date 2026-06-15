@@ -45,7 +45,7 @@
 <link rel="dns-prefetch" href="https://mskwqlqpcsfvgvhhilma.supabase.co">
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet"></noscript>
-<script src="config.js" onerror="window.OPENAI_KEY=''"></script>
+<script src="config.js" onerror="window.SUPABASE_URL='';window.SUPABASE_ANON_KEY=''"></script>
 <!-- GA4 — Google Analytics (등록 후 G-XXXXXXX를 실제 ID로 교체) -->
 <script>
 window.GA_ID=window.GA_ID||'';
@@ -378,7 +378,7 @@ html,body{height:100%;margin:0;background:#0e0c1a;color:#f0ecff;font-family:'Not
           <div id="lottoCard" class="lotto-card" style="display:none;margin-top:14px;">
             <div class="lotto-header">
               <span class="lotto-title">🎰 꿈이 알려준 행운의 번호</span>
-              <span class="lotto-sub">꿈 에너지 + 역대 당첨 패턴 분석</span>
+              <span class="lotto-sub">꿈 상징 기반 재미용 번호</span>
             </div>
             <div class="lotto-balls" id="lottoBalls"></div>
             <div class="lotto-analysis" id="lottoAnalysis"></div>
@@ -551,8 +551,8 @@ html,body{height:100%;margin:0;background:#0e0c1a;color:#f0ecff;font-family:'Not
       <div class="sec-title">🏆 업적</div>
       <div class="card" id="achievementList"></div>
       <div class="sec-title">설정</div>
-      <div class="my-menu-item" onclick="showToast('곧 만나요! 달이가 열심히 준비 중 🐱')"><span class="my-menu-icon">🔔</span><span class="my-menu-text">알림 설정</span><span class="my-menu-arrow">›</span></div>
-      <div class="my-menu-item" onclick="showToast('다음 업데이트에서 만나요! ✨')"><span class="my-menu-icon">🐱</span><span class="my-menu-text">프로필 설정</span><span class="my-menu-arrow">›</span></div>
+      <div class="my-menu-item" style="display:none" onclick="showToast('곧 만나요! 달이가 열심히 준비 중 🐱')"><span class="my-menu-icon">🔔</span><span class="my-menu-text">알림 설정</span><span class="my-menu-arrow">›</span></div>
+      <div class="my-menu-item" style="display:none" onclick="showToast('다음 업데이트에서 만나요! ✨')"><span class="my-menu-icon">🐱</span><span class="my-menu-text">프로필 설정</span><span class="my-menu-arrow">›</span></div>
       <div class="my-menu-item" onclick="openReportPage()"><span class="my-menu-icon">📊</span><span class="my-menu-text">주간 꿈 리포트</span><span class="my-menu-arrow">›</span></div>
       <div class="my-menu-item" onclick="openFlowPage()"><span class="my-menu-icon">🌊</span><span class="my-menu-text">꿈 흐름 보기</span><span class="my-menu-arrow">›</span></div>
       <div class="my-menu-item" onclick="openDictPage()"><span class="my-menu-icon">📖</span><span class="my-menu-text">꿈 상징 사전</span><span class="my-menu-arrow">›</span></div>

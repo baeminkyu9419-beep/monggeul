@@ -328,6 +328,36 @@ window._buildCliffhangerPreview=_buildCliffhangerPreview;
 
 // 2단계 응답의 2차: 상세 해석(전통/심리/조언/깊은해석)을 백그라운드로 받아 DOM 채움
 export function showResultDetail(data){
+  // [버그수정 F1] 상세 해석 API 실패 시 demoResult(isFallback:true)가 조용히 프리미엄 콘텐츠로
+  // 투입되던 문제 — isFallback 플래그를 여기서 체크해 사용자에게 명시적으로 알리고
+  // 결제 유도 버튼을 숨긴다(실패한 데이터를 팔면 안 됨).
+  if(data.isFallback){
+    const _eng=document.getElementById('engineStatus');
+    if(_eng){
+      _eng.className='engine-status fallback';
+      _eng.textContent='⚠️ 상세 해석 연결 실패 — 기본 키워드 해석으로 대체됩니다';
+      _eng.style.display='block';
+    }
+    // 잠금 화면 내 결제/크레딧 버튼 숨기고 재시도 버튼으로 교체
+    const lockBtn=document.getElementById('lockBtn');
+    const lockSub=document.getElementById('lockSubText');
+    const priceEl=document.getElementById('lockPriceRow');
+    if(priceEl)priceEl.style.display='none';
+    if(lockSub)lockSub.textContent='상세 해석을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';
+    if(lockBtn){
+      lockBtn.textContent='🔄 다시 시도';
+      lockBtn.onclick=function(){
+        if(window._last){
+          const {inp}=window._last;
+          if(typeof callChat!=='undefined'||window.callChat){
+            // analyzeDream 재실행으로 전체 플로우 재시도
+            if(typeof window.analyzeDream==='function')window.analyzeDream();
+          }
+        }
+      };
+    }
+    return; // 폴백 데이터로 탭을 채우지 않음
+  }
   const full=data.fullInterpretation||data.interpretation||'';
   // 분기 필드가 없으면 fullInterpretation 을 분할해 채움(돈 내고 보는 화면에서 빈 탭 금지)
   let branches=(data.traditional||data.psychology||data.advice)
@@ -774,6 +804,15 @@ export function saveToDreamlog(){
     inp.split(' ').some(w=>w.length>=2&&l.text?.includes(w))
   )).slice(0,3);
 
+  // [버그수정 F3] 꿈 저장 무료 10개 제한 — landing/subscription 광고와 코드 일치.
+  // BETA_OPEN_ALL=true인 지금은 분기에 진입하지 않음(정식 오픈 시 자동 활성화).
+  if(typeof window.BETA_OPEN_ALL!=='undefined'&&!window.BETA_OPEN_ALL){
+    const tier=getCachedTier();
+    if(tier==='free'&&logs.length>=10){
+      showPaywall('storage_limit');
+      return;
+    }
+  }
   logs.unshift({id:Date.now(),text:inp,title:data.title,badges:data.badges,emotions:data.emotions||[],stats:data.stats||{},date:new Date().toLocaleDateString('ko-KR'),thumbnail:window._last?.thumbnail||null});
   localStorage.setItem('mg_logs',JSON.stringify(logs.slice(0,50)));
   // [리텐션] 꿈 저장 = 오늘 활동 → 날짜기반 연속기록(출석 doCheckin 과 mg_cin 공유해 중복 카운트 방지)
@@ -1555,7 +1594,7 @@ function generateLottoNumbers(stats,inp){
   }
   const topStat=Object.entries(stats).sort((a,b)=>b[1]-a[1])[0];
   analysis+=`${topStat[0]}(${topStat[1]}점)이 가장 높아서 관련 번호에 가중치를 뒀어요. `;
-  analysis+='역대 1,100회 당첨 빈도와 결합해서 최적화했어요.';
+  analysis+='꿈 상징과 에너지를 반영한 재미용 번호예요 (당첨 보장 없음)';
 
   return {numbers,analysis,foundSymbols};
 }

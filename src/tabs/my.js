@@ -640,21 +640,167 @@ export function changeReportWeek(d){
   renderReport();
 }
 
+// 날짜 문자열 "2026. 6. 15." → Date 객체 변환
+function _parseMgDate(dateStr){
+  if(!dateStr)return null;
+  const parts=dateStr.replace(/\./g,'').trim().split(/\s+/);
+  if(parts.length<3)return null;
+  const y=parseInt(parts[0]),m=parseInt(parts[1])-1,d=parseInt(parts[2]);
+  if(isNaN(y)||isNaN(m)||isNaN(d))return null;
+  return new Date(y,m,d);
+}
+
+// reportWeekOffset 기준 7일 슬라이스: offset=0 → 오늘 포함 이전 7일, -1 → 7~14일 전 등
+function _getWeekLogs(allLogs, weekOffset){
+  const now=new Date();now.setHours(23,59,59,999);
+  const endMs=now.getTime()+(weekOffset*7*24*60*60*1000);
+  const startMs=endMs-(7*24*60*60*1000);
+  return allLogs.filter(l=>{
+    if(l.noDream)return false;
+    const d=_parseMgDate(l.date);
+    if(!d)return false;
+    const t=d.getTime();
+    return t>=startMs&&t<=endMs;
+  });
+}
+
 export function renderReport(){
   const lbl=document.getElementById('rwsLabel');
   if(reportWeekOffset===0)lbl.textContent='이번 주 리포트';
   else if(reportWeekOffset===-1)lbl.textContent='지난 주 리포트';
   else lbl.textContent=`${Math.abs(reportWeekOffset)}주 전 리포트`;
 
-  const data=REPORT_DATA[Math.abs(reportWeekOffset)%REPORT_DATA.length];
-  document.getElementById('reportHeroEmoji').textContent=data.emoji;
-  document.getElementById('reportHeroTitle').textContent=data.title;
-  document.getElementById('reportHeroSub').textContent=data.sub;
-  document.getElementById('rStatDays').textContent=data.days;
-  document.getElementById('rStatDreams').textContent=data.dreams;
-  document.getElementById('rStatLuck').textContent=data.luck;
+  const allLogs=JSON.parse(localStorage.getItem('mg_logs')||'[]');
+  const weekLogs=_getWeekLogs(allLogs,reportWeekOffset);
 
-  document.getElementById('reportEmoBars').innerHTML=data.emos.map(e=>`
+  // 데이터가 충분하지 않으면 REPORT_DATA fallback + 안내 표시
+  if(weekLogs.length<3){
+    const fallback=REPORT_DATA[Math.abs(reportWeekOffset)%REPORT_DATA.length];
+    document.getElementById('reportHeroEmoji').textContent=fallback.emoji;
+    document.getElementById('reportHeroTitle').textContent=fallback.title;
+    document.getElementById('reportHeroSub').textContent='데이터가 부족해 예시를 보여드려요';
+    document.getElementById('rStatDays').textContent=fallback.days;
+    document.getElementById('rStatDreams').textContent=fallback.dreams;
+    document.getElementById('rStatLuck').textContent=fallback.luck;
+    document.getElementById('reportEmoBars').innerHTML=fallback.emos.map(e=>`
+      <div class="emo-bar-row">
+        <span class="emo-bar-label">${e.l}</span>
+        <div class="emo-bar-wrap"><div class="emo-bar-fill" style="width:0%;background:${e.c}" data-w="${e.v}"></div></div>
+        <span class="emo-bar-pct">${e.v}%</span>
+      </div>`).join('');
+    setTimeout(()=>{document.querySelectorAll('.emo-bar-fill').forEach(b=>b.style.width=b.dataset.w+'%');},80);
+    document.getElementById('reportSymbolRank').innerHTML=fallback.symbols.map((s,i)=>`
+      <div class="symbol-rank-item">
+        <span class="sym-rank-no">${i+1}</span>
+        <span class="sym-rank-emoji">${s.e}</span>
+        <div class="sym-rank-info"><div class="sym-rank-name">${s.n}</div><div class="sym-rank-cnt">${s.c} 등장</div></div>
+        <span class="sym-rank-badge badge ${s.b==='길몽'||s.b==='대길'?'bv':s.b==='주의'?'bb':'bl'}">${s.b}</span>
+      </div>`).join('');
+    document.getElementById('reportLuckGrid').innerHTML=fallback.lucks.map(l=>`
+      <div class="luck-card ${l.type}">
+        <div class="luck-card-icon">${l.icon}</div>
+        <div class="luck-card-label">${l.label}</div>
+        <div class="luck-card-val">${l.val}</div>
+      </div>`).join('');
+    document.getElementById('reportAiText').innerHTML='<span style="font-size:11px;color:var(--text-muted)">이 기간의 꿈 기록이 부족해서 예시 데이터를 보여드리고 있어요. 꿈을 더 기록하면 실제 분석이 나타나요!</span>';
+    return;
+  }
+
+  // ── 실제 데이터 집계 ──
+  const badges=weekLogs.flatMap(l=>l.badges||[]);
+  const good=badges.filter(b=>b==='길몽'||b==='대길'||b==='태몽').length;
+  const bad=badges.filter(b=>b==='흉몽').length;
+  const money=badges.filter(b=>b==='재물운').length;
+  const love=badges.filter(b=>b==='연애운').length;
+  const health=badges.filter(b=>b==='건강운').length;
+
+  // 통계 수치
+  const distinctDays=new Set(weekLogs.map(l=>l.date)).size;
+  const dreamCount=weekLogs.length;
+
+  // 운 등급
+  const goodRate=good/(dreamCount||1);
+  const luckGrade=goodRate>=0.7?'A+':goodRate>=0.5?'A':goodRate>=0.35?'B+':goodRate>=0.2?'B':'C';
+
+  // 영웅 섹션 (배지 분포 기반)
+  let heroEmoji,heroTitle,heroSub;
+  if(good>bad&&good>=money&&good>=love){
+    heroEmoji='🌙';heroTitle='길몽이 가득한 한 주';heroSub='무의식이 밝은 에너지를 보내고 있어요';
+  }else if(bad>good){
+    heroEmoji='🌊';heroTitle='마음이 솔직했던 한 주';heroSub='무거운 꿈도 중요한 메시지예요';
+  }else if(money>=2){
+    heroEmoji='💰';heroTitle='재물 에너지가 넘치는 한 주';heroSub='무의식이 풍요를 향하고 있어요';
+  }else if(love>=2){
+    heroEmoji='💕';heroTitle='감성 충만한 한 주';heroSub='관계와 사랑이 꿈 속에 가득해요';
+  }else{
+    heroEmoji='✨';heroTitle='다양한 꿈을 꾼 한 주';heroSub='무의식이 활발히 탐험하고 있어요';
+  }
+
+  // 감정 바 (배지 기반)
+  const emoMap=[
+    {l:'😊 길몽',v:good,c:'#7de8d8'},
+    {l:'😰 흉몽',v:bad,c:'#f0a8c8'},
+    {l:'💰 재물운',v:money,c:'#f8c94c'},
+    {l:'💕 연애운',v:love,c:'#a67cef'},
+    {l:'💪 건강운',v:health,c:'#5bbfba'},
+  ].filter(e=>e.v>0);
+  const totalEmo=emoMap.reduce((s,e)=>s+e.v,0)||1;
+  const emos=emoMap.map(e=>({...e,v:Math.round(e.v/totalEmo*100)}));
+  // 배지가 아예 없으면 중립 표시
+  if(emos.length===0){emos.push({l:'😌 중립',v:100,c:'#8a7eb0'});}
+
+  // 심볼 카운팅 (꿈 텍스트에서 키워드 탐색)
+  const KNOWN_SYMBOLS=[
+    {e:'🐍',n:'뱀',kw:['뱀'],b:'길몽'},
+    {e:'🌊',n:'물',kw:['물','강','바다','홍수','비'],b:'중립'},
+    {e:'🔥',n:'불',kw:['불','화재'],b:'주의'},
+    {e:'🦷',n:'이빨',kw:['이빨','이가','치아'],b:'주의'},
+    {e:'☁️',n:'하늘',kw:['하늘','날','비행','구름'],b:'길몽'},
+    {e:'🐷',n:'돼지',kw:['돼지'],b:'대길'},
+    {e:'💀',n:'죽음',kw:['죽','사망'],b:'길몽'},
+    {e:'💰',n:'돈',kw:['돈','재물','금','돈다발'],b:'길몽'},
+    {e:'🏠',n:'집',kw:['집','이사','건물'],b:'중립'},
+    {e:'👻',n:'귀신',kw:['귀신','유령','가위'],b:'주의'},
+    {e:'😰',n:'추락',kw:['추락','떨어지'],b:'주의'},
+    {e:'🏃',n:'쫓김',kw:['쫓','도망'],b:'주의'},
+    {e:'🐉',n:'용',kw:['용','드래곤'],b:'대길'},
+    {e:'🐯',n:'호랑이',kw:['호랑이'],b:'길몽'},
+    {e:'🌙',n:'달',kw:['달빛','달이','보름달'],b:'길몽'},
+  ];
+  const fullText=weekLogs.map(l=>(l.text||'')+' '+(l.title||'')).join(' ');
+  const symbolCounts=KNOWN_SYMBOLS.map(s=>{
+    const cnt=s.kw.reduce((acc,kw)=>{
+      let c=0,i=0;
+      while((i=fullText.indexOf(kw,i))!==-1){c++;i+=kw.length;}
+      return acc+c;
+    },0);
+    return{...s,cnt};
+  }).filter(s=>s.cnt>0).sort((a,b)=>b.cnt-a.cnt).slice(0,3);
+
+  const symbolRankData=symbolCounts.length>0?symbolCounts:
+    [{e:'🌙',n:'꿈',cnt:dreamCount,b:'중립'}];
+
+  // 운세 그리드 (배지 기반 동적 계산)
+  const moneyStars=money>=3?'★★★':money>=2?'★★☆':'★☆☆';
+  const loveStars=love>=3?'★★★':love>=2?'★★☆':'★☆☆';
+  const healthStars=health>=2?'★★★':health>=1?'★★☆':bad<=1?'★★☆':'★☆☆';
+  const jobStars=good>=3?'★★★':good>=2?'★★☆':'★★☆';
+  const lucksData=[
+    {icon:'💰',label:'재물운',val:moneyStars,type:money>=2?'good':money>=1?'mid':'bad'},
+    {icon:'💕',label:'연애운',val:loveStars,type:love>=2?'good':love>=1?'mid':'bad'},
+    {icon:'💼',label:'직업운',val:jobStars,type:good>=2?'good':'mid'},
+    {icon:'🏥',label:'건강운',val:healthStars,type:health>=1?'good':bad<=1?'mid':'bad'},
+  ];
+
+  // ── DOM 업데이트 ──
+  document.getElementById('reportHeroEmoji').textContent=heroEmoji;
+  document.getElementById('reportHeroTitle').textContent=heroTitle;
+  document.getElementById('reportHeroSub').textContent=heroSub;
+  document.getElementById('rStatDays').textContent=distinctDays;
+  document.getElementById('rStatDreams').textContent=dreamCount;
+  document.getElementById('rStatLuck').textContent=luckGrade;
+
+  document.getElementById('reportEmoBars').innerHTML=emos.map(e=>`
     <div class="emo-bar-row">
       <span class="emo-bar-label">${e.l}</span>
       <div class="emo-bar-wrap"><div class="emo-bar-fill" style="width:0%;background:${e.c}" data-w="${e.v}"></div></div>
@@ -662,15 +808,15 @@ export function renderReport(){
     </div>`).join('');
   setTimeout(()=>{document.querySelectorAll('.emo-bar-fill').forEach(b=>b.style.width=b.dataset.w+'%');},80);
 
-  document.getElementById('reportSymbolRank').innerHTML=data.symbols.map((s,i)=>`
+  document.getElementById('reportSymbolRank').innerHTML=symbolRankData.map((s,i)=>`
     <div class="symbol-rank-item">
       <span class="sym-rank-no">${i+1}</span>
       <span class="sym-rank-emoji">${s.e}</span>
-      <div class="sym-rank-info"><div class="sym-rank-name">${s.n}</div><div class="sym-rank-cnt">${s.c} 등장</div></div>
+      <div class="sym-rank-info"><div class="sym-rank-name">${s.n}</div><div class="sym-rank-cnt">${s.cnt}회 등장</div></div>
       <span class="sym-rank-badge badge ${s.b==='길몽'||s.b==='대길'?'bv':s.b==='주의'?'bb':'bl'}">${s.b}</span>
     </div>`).join('');
 
-  document.getElementById('reportLuckGrid').innerHTML=data.lucks.map(l=>`
+  document.getElementById('reportLuckGrid').innerHTML=lucksData.map(l=>`
     <div class="luck-card ${l.type}">
       <div class="luck-card-icon">${l.icon}</div>
       <div class="luck-card-label">${l.label}</div>
@@ -678,40 +824,31 @@ export function renderReport(){
     </div>`).join('');
 
   // 달이 내러티브 (실제 데이터 기반)
-  const logs=JSON.parse(localStorage.getItem('mg_logs')||'[]');
-  if(logs.length>=3){
-    const weekLogs=logs.slice(0,7);
-    const emos=weekLogs.map(l=>l.emotion||'').filter(Boolean);
-    const badges=weekLogs.flatMap(l=>l.badges||[]);
-    const good=badges.filter(b=>b==='길몽').length;
-    const bad=badges.filter(b=>b==='흉몽').length;
+  {
+    const emoList=weekLogs.map(l=>l.emotion||'').filter(Boolean);
     const kwCount={};
     weekLogs.forEach(l=>(l.keywords||[]).forEach(k=>{kwCount[k]=(kwCount[k]||0)+1;}));
     const topKw=Object.entries(kwCount).sort((a,b)=>b[1]-a[1])[0];
-    const mainEmo=emos.length>0?emos.reduce((a,c,_,arr)=>arr.filter(v=>v===c).length>arr.filter(v=>v===a).length?c:a,emos[0]):'';
+    const mainEmo=emoList.length>0?emoList.reduce((a,c,_,arr)=>arr.filter(v=>v===c).length>arr.filter(v=>v===a).length?c:a,emoList[0]):'';
 
-    let narrative=`이번 주 ${weekLogs.length}개의 꿈을 분석했어요. `;
+    let narrative=`이번 주 ${dreamCount}개의 꿈을 분석했어요. `;
     if(good>bad) narrative+=`길몽이 ${good}개로 좋은 흐름이에요! `;
     else if(bad>good) narrative+=`흉몽이 ${bad}개로 마음이 무거울 수 있어요. `;
     if(topKw) narrative+=`"${topKw[0]}" 키워드가 ${topKw[1]}번 반복됐는데, 무의식이 강하게 신호를 보내고 있어요. `;
     if(mainEmo) narrative+=`전반적으로 "${mainEmo}" 감정이 많았어요. `;
 
-    // 패턴 엔진 예측 추가
-    const report=generatePatternReport(logs);
-    if(report&&report.prediction){
-      const pred=report.prediction;
+    const patternReport=generatePatternReport(allLogs);
+    if(patternReport&&patternReport.prediction){
+      const pred=patternReport.prediction;
       narrative+=`다음 꿈은 "${pred.predicted}" 계열일 확률이 ${pred.probability}%예요. `;
     }
-    if(report&&report.clusters.length>0){
-      const top=report.clusters[0];
+    if(patternReport&&patternReport.clusters.length>0){
+      const top=patternReport.clusters[0];
       narrative+=`"${top.keyword}"가 ${top.count}번 반복되고 있어서 주의깊게 볼 필요가 있어요. `;
     }
 
     narrative+=good>=bad?'꿈의 기운이 좋은 방향으로 흐르고 있어요 🌙':'충분히 쉬면서 마음을 돌봐주세요 🐱';
-
     document.getElementById('reportAiText').innerHTML=sanitize(narrative);
-  }else{
-    document.getElementById('reportAiText').innerHTML=sanitize(data.ai||'');
   }
 }
 

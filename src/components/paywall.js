@@ -113,7 +113,7 @@ export function showPremiumPaywall() {
   overlay.innerHTML = `<div style="background:linear-gradient(135deg,#1a1535,#2d1b69);border-radius:20px;padding:28px 20px;max-width:360px;width:100%;text-align:center;border:1px solid rgba(166,124,239,.3);">
     <div style="font-size:36px;margin-bottom:8px">📜</div>
     <div style="font-size:16px;font-weight:700;color:var(--moon);font-family:'Gowun Dodum',serif;margin-bottom:4px">상세 해몽</div>
-    <div style="font-size:11px;color:var(--text-muted);margin-bottom:14px">${layoutVariant === 'B' ? '지금 팩으로 구매하면 최대 30% 할인!' : '이 꿈이 진짜 말하려는 게 뭔지 알아보세요'}</div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:14px">${layoutVariant === 'B' ? '15회 팩 구매 시 회당 30% 절약' : '이 꿈이 진짜 말하려는 게 뭔지 알아보세요'}</div>
 
     <div style="background:rgba(255,255,255,.03);border-radius:12px;padding:12px;margin-bottom:14px;text-align:left">
       <div style="font-size:11px;color:var(--text-secondary);line-height:1.8">

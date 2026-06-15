@@ -161,8 +161,10 @@ export async function createComment(postId, body) {
   const user = store.currentUser;
   const nick = localStorage.getItem('mg_nickname') || '꿈탐험가';
 
+  const _localToast = '인터넷 연결 없이 임시 저장됐어요 — 다음에 연결되면 공유되지 않아요';
+
   if (!isOnline() || !user) {
-    return { data: { id: 'local_' + Date.now(), nick, icon: '🐱', body, created_at: new Date().toISOString() }, fromLocal: true };
+    return { data: { id: 'local_' + Date.now(), nick, icon: '🐱', body, created_at: new Date().toISOString() }, fromLocal: true, localToast: _localToast };
   }
 
   try {
@@ -176,7 +178,7 @@ export async function createComment(postId, body) {
     logEvent('community_comment_created', { post_id: postId });
     return { data, fromLocal: false };
   } catch (e) {
-    return { data: { id: 'local_' + Date.now(), nick, icon: '🐱', body, created_at: new Date().toISOString() }, fromLocal: true };
+    return { data: { id: 'local_' + Date.now(), nick, icon: '🐱', body, created_at: new Date().toISOString() }, fromLocal: true, localToast: _localToast };
   }
 }
 

@@ -149,10 +149,14 @@ class TestConfirmSubscriptionMerge:
         assert "type: 'subscription'" in branch
 
     def test_subscription_updates_users_tier(self):
-        """v2 에서 병합된 users.subscription_tier 갱신이 살아있어야 한다."""
+        """v2 에서 병합된 users.subscription_tier 갱신이 살아있어야 한다.
+        Fix(2026-06-15): 하드코딩 'pro' → 동적 entitlementKey(plus/premium) 로 변경됨.
+        """
         branch = _confirm_subscription_branch(self.src)
         assert "from('users')" in branch, "구독 confirm 시 users 테이블 갱신 누락(v2 병합 유실)"
-        assert "subscription_tier: 'pro'" in branch
+        # 동적 tier 결정: entitlementKey 변수 + subscription_tier 필드 모두 존재해야 함
+        assert "entitlementKey" in branch, "동적 tier 변수(entitlementKey) 누락"
+        assert "subscription_tier" in branch, "subscription_tier 갱신 필드 누락"
         assert "subscription_expires_at" in branch
 
     def test_confirm_only_uses_one_confirm_endpoint(self):
@@ -177,14 +181,23 @@ class TestWebhookMerge:
         assert "mismatch |=" in self.src
 
     def test_cancel_resets_pro_tier(self):
-        """pro_monthly 취소 시 users tier 초기화 병합 보존."""
+        """구독 취소 시 users tier 초기화 병합 보존.
+        Fix(2026-06-15): 단일 'pro_monthly' → 다중 플랜 includes([...]) 로 확장됨.
+        """
         assert "subscription_tier: 'free'" in self.src
-        assert "product_id === 'pro_monthly'" in self.src
+        # 다중 플랜 취소: includes(['pro_monthly', 'plus_monthly', 'premium_monthly'])
+        assert "pro_monthly" in self.src, "pro_monthly 플랜 취소 처리 누락"
+        assert "plus_monthly" in self.src, "plus_monthly 플랜 취소 처리 누락"
+        assert "premium_monthly" in self.src, "premium_monthly 플랜 취소 처리 누락"
 
     def test_billing_renewal_updates_tier_and_emits_event(self):
-        """빌링 갱신 시 users 갱신 + subscription_renewed 이벤트 병합 보존."""
+        """빌링 갱신 시 users 갱신 + subscription_renewed 이벤트 병합 보존.
+        Fix(2026-06-15): 하드코딩 'pro' → 동적 renewedTier(plus/premium) 로 변경됨.
+        """
         assert "subscription_renewed" in self.src
-        assert "subscription_tier: 'pro'" in self.src
+        # 동적 tier: renewedTier 변수 + subscription_tier 필드
+        assert "renewedTier" in self.src, "동적 갱신 tier 변수(renewedTier) 누락"
+        assert "subscription_tier" in self.src
 
     def test_handles_core_event_types(self):
         for ev in ("PAYMENT_STATUS_CHANGED", "BILLING_PAYMENT_DONE"):
@@ -204,9 +217,10 @@ class TestWebhookMerge:
 class TestMutationProof:
     def test_confirm_tier_merge_mutation_is_caught(self):
         src = _read(CONFIRM_TS)
-        # 정상: 구독 분기에 users tier 갱신 존재
+        # 정상: 구독 분기에 users tier 갱신 존재 (동적 entitlementKey 방식)
         branch = _confirm_subscription_branch(src)
-        assert "subscription_tier: 'pro'" in branch
+        assert "entitlementKey" in branch, "동적 tier 변수(entitlementKey) 누락"
+        assert "subscription_tier" in branch, "subscription_tier 갱신 필드 누락"
         # 옛 v1 으로 되돌림(users 갱신 삭제) 재현
         mutated = re.sub(
             r"\n\s*// users 테이블 tier 갱신.*?\.eq\('id', user\.id\)\n",
@@ -218,7 +232,7 @@ class TestMutationProof:
         assert mutated != src, "mutation no-op: confirm users-tier 병합 블록 미발견"
         mutated_branch = _confirm_subscription_branch(mutated)
         with pytest.raises(AssertionError):
-            assert "subscription_tier: 'pro'" in mutated_branch
+            assert "entitlementKey" in mutated_branch
 
     def test_webhook_renewal_event_mutation_is_caught(self):
         src = _read(WEBHOOK_TS)

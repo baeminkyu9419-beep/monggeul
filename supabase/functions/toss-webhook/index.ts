@@ -91,8 +91,8 @@ serve(async (req) => {
               is_active: false,
             }).eq('payment_id', payment.id)
 
-            // pro 구독 취소 시 users 테이블 tier 초기화 (구 toss-payment-webhook v2 에서 통합)
-            if (payment.product_id === 'pro_monthly') {
+            // 구독 취소 시 users 테이블 tier 초기화 (pro/plus/premium 전 구독 플랜 포함)
+            if (['pro_monthly', 'plus_monthly', 'premium_monthly'].includes(payment.product_id)) {
               await supabase.from('users').update({
                 subscription_tier: 'free',
                 subscription_expires_at: null,
@@ -175,8 +175,10 @@ serve(async (req) => {
           .eq('product_id', product.id)
 
           // users 테이블 갱신 + 갱신 이벤트 (구 toss-payment-webhook v2 에서 통합)
+          // product_id 기반으로 tier 동적 결정: premium_monthly → 'premium', 그 외 구독 → 'plus'
+          const renewedTier = product.id === 'premium_monthly' ? 'premium' : 'plus'
           await supabase.from('users').update({
-            subscription_tier: 'pro',
+            subscription_tier: renewedTier,
             subscription_expires_at: expiresAt.toISOString(),
           }).eq('id', userId)
 

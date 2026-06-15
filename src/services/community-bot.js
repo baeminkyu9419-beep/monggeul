@@ -381,8 +381,8 @@ function composeDreamPost(tag, rng, usedCombos){
     stats[k]=randRange(range[0],range[1],rng);
   }
 
-  const similarCount=randRange(30,200,rng);
-  const similar=`${getTagEmoji(tag)} ${tag} · ${similarCount}명`;
+  // similar 카운트는 실제 집계 불가(랜덤 노출 금지) → null 설정, 렌더 측에서 건너뜀
+  const similar=null;
 
   return { title, body, badges, stats, tag, similar };
 }

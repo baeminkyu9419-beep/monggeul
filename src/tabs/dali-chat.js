@@ -153,7 +153,8 @@ export async function sendChat(){
     if(matched) reply=matched[1];
     else if(lastDream) reply=`${lastDream.title} 꿈 이후로 어떠셨어요? 달이가 궁금했어요 🌙`;
     else reply=`${time.greeting} 달이가 들을게요. 조금 더 얘기해줄 수 있어요? 🌙`;
-    replaceTypingBubble(tid,reply);
+    const OFFLINE_PREFIX='일시적으로 연결이 안 되어 기본 응답을 드려요 🌙\n';
+    replaceTypingBubble(tid, OFFLINE_PREFIX+reply, '', 'fallback');
   }
 
   addXPSilent(3);
@@ -273,10 +274,11 @@ export function addTypingBubble(){
   return id;
 }
 
-export function replaceTypingBubble(id,text,trustedHtml){
+export function replaceTypingBubble(id,text,trustedHtml,extraClass){
   const el=document.getElementById(id);
   if(el){
     el.classList.remove('typing-bubble');
+    if(extraClass) el.classList.add(extraClass);
     el.innerHTML=esc(text).replace(/\n/g,'<br>')+(trustedHtml||'');
     el.style.animation='bi .3s ease';
     document.getElementById('chatMsgs').scrollTop=99999;

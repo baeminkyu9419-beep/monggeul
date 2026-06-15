@@ -148,7 +148,7 @@ export function renderFeed() {
           <button class="rbtn ${isLiked ? 'on' : ''}" onclick="event.stopPropagation();toggleLike('${postId}',this)">🌟 ${displayLikes}</button>
           <button class="rbtn" onclick="event.stopPropagation();openDetail('${postId}')">💬 ${commentCnt}</button>
         </div>
-        ${f.similar ? `<div class="fc-similar-cnt" style="font-size:10px;color:var(--purple-bright)">🔍 나도 비슷 · ${parseInt(String(f.similar).match(/\d+/)?.[0] || '0')}명</div>` : ''}
+        ${(!isDemo && f.similar) ? `<div class="fc-similar-cnt" style="font-size:10px;color:var(--purple-bright)">🔍 나도 비슷 · ${parseInt(String(f.similar).match(/\d+/)?.[0] || '0')}명</div>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -267,6 +267,11 @@ export async function postComment() {
     if (result.fromLocal) {
       if (!detailCommentsCache[currentDetailId]) detailCommentsCache[currentDetailId] = [];
       detailCommentsCache[currentDetailId].unshift({ icon: '🐱', nick: '나', text: txt, time: '방금' });
+      await loadAndRenderComments(currentDetailId);
+      addXP(5);
+      showToast('인터넷 연결 없이 임시 저장됐어요 — 다음에 연결되면 공유되지 않아요');
+      renderFeed();
+      return;
     }
     await loadAndRenderComments(currentDetailId);
   }

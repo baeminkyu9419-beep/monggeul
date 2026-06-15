@@ -44,9 +44,10 @@ const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')  // image(DALL-E) 전용
 const OPENAI_IMAGE_ENABLED = false
 
 // 허용된 CORS origin (프로덕션 GitHub Pages + 로컬 개발)
+// 'https://monggeul.app' 제거 — 미등록/비활성 도메인. 실제 라이브 주소는 baeminkyu9419-beep.github.io/monggeul.
+// monggeul.app 도메인 취득 후 재추가.
 const ALLOWED_ORIGINS = new Set<string>([
   'https://baeminkyu9419-beep.github.io',
-  'https://monggeul.app',
   'http://localhost:5173',
   'http://localhost:3000',
 ])

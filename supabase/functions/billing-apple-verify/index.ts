@@ -21,7 +21,7 @@ const PRODUCT_TO_ENTITLEMENT: Record<string, string> = {
 
 const ALLOWED_ORIGINS = new Set<string>([
   "https://baeminkyu9419-beep.github.io",
-  "https://monggeul.app",
+  // "https://monggeul.app" — removed: domain not registered/live (2026-06-15)
   "capacitor://localhost",
   "http://localhost",
   "http://localhost:5173",

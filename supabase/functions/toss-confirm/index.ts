@@ -20,12 +20,25 @@ async function fetchTossWithRetry(url: string, options: RequestInit): Promise<Re
   }
 }
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+const ALLOWED_ORIGINS = [
+  'https://baeminkyu9419-beep.github.io',
+  'https://monggeul.app',
+  'http://localhost',
+]
+
+function getAllowedOrigin(req: Request): string {
+  const origin = req.headers.get('Origin') || ''
+  const allowed = ALLOWED_ORIGINS.some(o => origin === o || origin.startsWith(o + ':'))
+  return allowed ? origin : ALLOWED_ORIGINS[1]
+}
+
+const corsHeadersBase = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
 serve(async (req) => {
+  const corsHeaders = { ...corsHeadersBase, 'Access-Control-Allow-Origin': getAllowedOrigin(req) }
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -168,8 +181,10 @@ serve(async (req) => {
           })
 
           // users 테이블 tier 갱신 (구 toss-payment-confirm v2 에서 통합)
+          // product.id 기반으로 tier 동적 결정: premium_monthly→'premium', 그 외→'plus'
+          const entitlementKey = product.id === 'premium_monthly' ? 'premium' : 'plus'
           await supabaseAdmin.from('users').update({
-            subscription_tier: 'pro',
+            subscription_tier: entitlementKey,
             subscription_expires_at: expiresAt.toISOString(),
           }).eq('id', user.id)
         }

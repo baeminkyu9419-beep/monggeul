@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { store } from '../store.js';
 import { getUserTier, getDreamCountAsync, updateDreamCountInfo, BETA_OPEN_ALL } from './subscription.js';
 import { logEvent } from './analytics.js';
+import { showToast } from '../components/toast.js';
 
 // ── 초기화 ──
 export async function initSupabase() {
@@ -80,7 +81,7 @@ export async function loginWith(provider) {
       });
     }
   } catch (e) {
-    if (typeof window.showToast === 'function') window.showToast('로그인에 실패했어요. 다시 시도해주세요 🌙');  // 바레 showToast → window(미표시 버그)
+    showToast('로그인에 실패했어요. 다시 시도해주세요 🌙');
     // login error — silent
   }
 }
@@ -125,7 +126,7 @@ export async function logout() {
   await store.supabase.auth.signOut();
   store.currentUser = null;
   updateLoginUI(null);
-  if (typeof window.showToast === 'function') window.showToast('로그아웃 됐어요 🌙');  // 바레 showToast → window(미표시 버그)
+  showToast('로그아웃 됐어요 🌙');
   logEvent('logout');
 }
 
@@ -262,7 +263,7 @@ export async function migrateFromLocalStorage(userId) {
       await store.supabase.from('dali_memory').upsert({
         user_id: userId,
         memories: JSON.parse(mem || '[]'),
-        chat_history: JSON.parse(chat || '[]')
+        chat: JSON.parse(chat || '[]')
       });
     }
     localStorage.setItem('mg_migrated', '1');
