@@ -657,79 +657,6 @@ export function showResult(data,inp){
 }
 
 
-// ── 반복꿈 감지 + 이전 해몽과 비교 섹션 ──
-function showRepeatDreamCompare(data, inp){
-  const el=document.getElementById('repeatDreamCompare');
-  if(!el){ // DOM 없으면 동적 생성
-    const wrap=document.createElement('div');
-    wrap.id='repeatDreamCompare';
-    wrap.style.cssText='display:none;margin-top:14px';
-    const resultEl=document.getElementById('resultEl');
-    const retHook=document.getElementById('retentionHook');
-    if(retHook) resultEl.insertBefore(wrap, retHook);
-    else resultEl.appendChild(wrap);
-  }
-  const container=document.getElementById('repeatDreamCompare');
-  if(!container)return;
-
-  const logs=JSON.parse(localStorage.getItem('mg_logs')||'[]').filter(l=>l.text&&l.stats&&!l.noDream);
-  if(logs.length<2){container.style.display='none';return;}
-
-  // 키워드 유사도로 반복꿈 찾기
-  const inpWords=inp.toLowerCase().split(/\s+/).filter(w=>w.length>=2);
-  let bestMatch=null, bestScore=0;
-
-  for(const log of logs){
-    const logWords=(log.text||'').toLowerCase().split(/\s+/).filter(w=>w.length>=2);
-    const common=inpWords.filter(w=>logWords.includes(w));
-    const score=common.length/Math.max(inpWords.length,1);
-    if(score>bestScore && score>=0.3){
-      bestScore=score;
-      bestMatch=log;
-    }
-  }
-
-  if(!bestMatch||!bestMatch.stats){container.style.display='none';return;}
-
-  container.style.display='block';
-  const similarity=Math.round(bestScore*100);
-  const prevStats=bestMatch.stats;
-  const curStats=data.stats;
-
-  // 변화 분석
-  const changes=Object.keys(curStats).map(k=>{
-    const diff=(curStats[k]||0)-(prevStats[k]||0);
-    return {key:k,diff,cur:curStats[k]||0,prev:prevStats[k]||0};
-  }).filter(c=>c.diff!==0).sort((a,b)=>Math.abs(b.diff)-Math.abs(a.diff));
-
-  const changeHtml=changes.slice(0,3).map(c=>{
-    const arrow=c.diff>0?'\u2191':'\u2193';
-    const color=c.diff>0?'var(--teal)':'var(--pink)';
-    return '<span style="font-size:11px;color:'+color+';font-weight:700">'+c.key+' '+arrow+Math.abs(c.diff)+'</span>';
-  }).join(' ');
-
-  container.innerHTML=`<div class="card" style="border:1px solid rgba(248,201,76,.15);background:linear-gradient(135deg,rgba(248,201,76,.04),rgba(166,124,239,.04))">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div style="font-size:12px;font-weight:700;color:var(--moon)">\u{1F504} \uBC18\uBCF5\uAFC8 \uAC10\uC9C0</div>
-      <span style="font-size:10px;background:rgba(248,201,76,.12);border:1px solid rgba(248,201,76,.2);border-radius:8px;padding:2px 8px;color:var(--amber)">\uC720\uC0AC\uB3C4 ${similarity}%</span>
-    </div>
-    <div style="font-size:11px;color:var(--text-secondary);margin-bottom:8px">
-      <span style="color:var(--text-muted)">${bestMatch.date}</span> \uC758 \uAFC8\uACFC \uBE44\uC2B7\uD574\uC694
-    </div>
-    <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">\u{1F4CA} \uC5D0\uB108\uC9C0 \uBCC0\uD654: ${changeHtml||'\uBCC0\uD654 \uC5C6\uC74C'}</div>
-    <div id="repeatDreamDual" style="display:flex;justify-content:center;margin:10px 0"></div>
-    <div style="font-size:10px;color:var(--text-muted);text-align:center;margin-top:6px">
-      \uBC18\uBCF5\uB418\uB294 \uAFC8\uC740 \uBB34\uC758\uC2DD\uC774 \uBCF4\uB0B4\uB294 \uC911\uC694\uD55C \uC2E0\uD638\uC77C \uC218 \uC788\uC5B4\uC694
-    </div>
-  </div>`;
-
-  // 듀얼 레이더 그리기
-  setTimeout(()=>{
-    drawDualRadar('repeatDreamDual', curStats, prevStats, '\uC624\uB298 \uAFC8', bestMatch.date);
-  },100);
-}
-window.showRepeatDreamCompare=showRepeatDreamCompare;
-
 function showRetentionHook(){
   const el=document.getElementById('retentionHook');
   if(!el)return;
@@ -1035,70 +962,6 @@ export function initTodaySymbol(){
 
 export function switchToInput(){document.getElementById('dreamInput').scrollIntoView({behavior:'smooth'});}
 
-// ── 반복꿈 비교 섹션: 현재 해몽과 유사한 이전 꿈 비교 ──
-export function showRecurringComparison(data, inp) {
-  let el = document.getElementById('recurringCompare');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'recurringCompare';
-    const anchor = document.getElementById('similarDreamRow') || document.getElementById('dreamSymbolCards');
-    if (anchor) anchor.parentElement.insertBefore(el, anchor);
-    else return;
-  }
-
-  const logs = JSON.parse(localStorage.getItem('mg_logs') || '[]');
-  if (logs.length < 1) { el.style.display = 'none'; return; }
-
-  const curBadges = new Set(data.badges || []);
-  const curWords = inp.split(/\s+/).filter(w => w.length >= 2);
-
-  const similar = logs.filter(l => {
-    const badgeOverlap = (l.badges || []).some(b => curBadges.has(b) && b !== '길몽' && b !== '흉몽');
-    const wordOverlap = curWords.some(w => (l.text || '').includes(w));
-    return badgeOverlap || wordOverlap;
-  }).slice(0, 3);
-
-  if (similar.length === 0) { el.style.display = 'none'; return; }
-
-  const prev = similar[0];
-  const prevStats = prev.stats || {};
-  const curStats = data.stats || {};
-  const statKeys = ['길흉', '연애운', '재물운', '건강운', '활력', '직관'];
-
-  const trends = statKeys.map(k => {
-    const diff = (curStats[k] || 0) - (prevStats[k] || 0);
-    return { key: k, diff, arrow: diff > 5 ? '↑' : diff < -5 ? '↓' : '→', color: diff > 5 ? '#7de8d8' : diff < -5 ? '#ff6b8a' : '#8b8ba0' };
-  });
-
-  const overallDiff = trends.reduce((s, t) => s + t.diff, 0);
-  const trendMsg = overallDiff > 15 ? '전반적으로 운세가 좋아지고 있어요!' : overallDiff < -15 ? '마음의 에너지가 좀 낮아졌어요. 쉬어가세요.' : '비슷한 흐름이 이어지고 있어요.';
-
-  el.style.display = 'block';
-  el.innerHTML = `
-    <div style="background:rgba(166,124,239,.06);border:1px solid rgba(166,124,239,.15);border-radius:14px;padding:14px;margin-top:14px;">
-      <div style="font-size:12px;font-weight:700;color:var(--purple-bright);margin-bottom:10px">🔄 비슷한 꿈을 ${similar.length}번 더 꿨어요</div>
-      <div style="display:flex;gap:10px;margin-bottom:10px;">
-        <div style="flex:1;background:rgba(255,255,255,.03);border-radius:10px;padding:10px;">
-          <div style="font-size:9px;color:var(--text-muted);margin-bottom:4px">이전</div>
-          <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:2px">${esc(prev.title || '기록된 꿈')}</div>
-          <div style="font-size:10px;color:var(--text-muted)">${esc(prev.date || '')}</div>
-        </div>
-        <div style="flex:1;background:rgba(255,255,255,.03);border-radius:10px;padding:10px;">
-          <div style="font-size:9px;color:var(--text-muted);margin-bottom:4px">오늘</div>
-          <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:2px">${esc(data.title || '')}</div>
-          <div style="font-size:10px;color:var(--text-muted)">${new Date().toLocaleDateString('ko-KR')}</div>
-        </div>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">
-        ${trends.map(t => `<span style="font-size:10px;background:rgba(255,255,255,.04);border:1px solid ${t.color}33;border-radius:8px;padding:2px 8px;color:${t.color}">${t.key} ${t.arrow}${Math.abs(t.diff)>0?Math.abs(t.diff):''}</span>`).join('')}
-      </div>
-      <div style="font-size:11px;color:var(--text-secondary);line-height:1.5">💬 ${trendMsg}</div>
-      ${similar.length >= 2 ? `<div style="font-size:10px;color:var(--star);margin-top:6px">⚡ 반복꿈 패턴이 감지됐어요. 달이에게 분석을 요청해보세요!</div>` : ''}
-    </div>`;
-
-  logEvent('recurring_comparison_shown', { similar_count: similar.length, trend: overallDiff > 15 ? 'up' : overallDiff < -15 ? 'down' : 'stable' });
-}
-
 export function showSimilarDreams(){
   // [정직] 날조 소셜프루프 제거(2026-06-14): 이전엔 입력 키워드로 base 를 정하고
   // Math.random() 으로 'N명이 비슷한 꿈' / '최근 7일 N건' 을 날조했음(DB·실측 아님).
@@ -1215,7 +1078,6 @@ window.saveToDreamlog = saveToDreamlog;
 window.initTodaySymbol = initTodaySymbol;
 window.switchToInput = switchToInput;
 window.showSimilarDreams = showSimilarDreams;
-window.showRecurringComparison = showRecurringComparison;
 window.switchInterp3 = switchInterp3;
 window.spawnConfetti = spawnConfetti;
 window.toggleNoDreamMode = toggleNoDreamMode;
