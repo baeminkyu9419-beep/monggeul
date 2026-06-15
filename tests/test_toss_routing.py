@@ -165,6 +165,78 @@ class TestConfirmSubscriptionMerge:
 
 
 # ═══════════════════════════════════════════════════════════════
+# §3.5 confirm 멱등성 — 동시요청 TOCTOU 로 1결제 N배 크레딧 방지
+# ═══════════════════════════════════════════════════════════════
+
+def _confirm_done_prefix(src: str) -> str:
+    """toss-confirm 의 DONE 분기에서 entitlements 첫 부여 직전까지(= claim 구간)."""
+    done_idx = src.index("tossData.status === 'DONE'")
+    insert_idx = src.index("from('entitlements')", done_idx)
+    return src[done_idx:insert_idx]
+
+
+class TestConfirmIdempotencyClaim:
+    """toss-confirm 은 동기 client-redirect 승인 경로(payment.js 직접 호출)다.
+    동일 (orderId) 로 confirm 이 동시 2회 들어오면 entitlement 가 2번 부여돼
+    1결제 N배 크레딧이 된다. webhook(billing_events) dedup 과 별개 경로이므로
+    DONE 분기는 entitlement 부여 전 payments status='pending' compare-and-swap 으로
+    원자적 claim 하고, claim 실패(rowCount=0) 시 재부여 없이 조기 반환해야 한다.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _src(self):
+        self.src = _read(CONFIRM_TS)
+        self.prefix = _confirm_done_prefix(self.src)
+
+    def test_done_branch_has_compare_and_swap_claim(self):
+        """entitlement 부여 전 status='pending' CAS UPDATE 가 존재."""
+        assert ".eq('status', 'pending')" in self.prefix, (
+            "toss-confirm DONE 분기에 status='pending' compare-and-swap claim 누락 "
+            "→ 동시요청 멱등성 미보장(1결제 N배 적립)"
+        )
+        assert ".select('id')" in self.prefix, (
+            "CAS UPDATE 가 영향 행을 반환(.select)하지 않으면 rowCount 판정 불가"
+        )
+
+    def test_claim_failure_returns_duplicate_without_regrant(self):
+        """claim 실패(rowCount=0) → entitlement 재부여 없이 200 + duplicate:true."""
+        assert "length === 0" in self.prefix, "rowCount=0 가드 누락"
+        assert "duplicate: true" in self.prefix, (
+            "중복 confirm 응답이 duplicate:true 규약(stripe/toss-webhook 동일) 미준수"
+        )
+
+    def test_claim_failure_is_fail_closed(self):
+        """claim UPDATE 자체 오류 시 적립 없이 500 (fail-closed, 이중 적립 금지)."""
+        assert "claimError" in self.prefix
+        assert "status: 500" in self.prefix
+
+    def test_claim_precedes_entitlement_grant(self):
+        """CAS claim 이 entitlements 부여보다 코드상 앞(선기록)."""
+        idx_claim = self.src.index(".eq('status', 'pending')", self.src.index("tossData.status === 'DONE'"))
+        idx_grant = self.src.index("from('entitlements')")
+        assert idx_claim < idx_grant, "claim 이 entitlement 부여보다 뒤 — 멱등 보장 실패"
+
+    def test_mutation_removing_claim_is_caught(self):
+        """뮤테이션: CAS claim(.eq('status','pending')+가드)을 plain update 로 되돌리면
+        본 클래스 단언이 반드시 FAIL — 게이트 부재 검출."""
+        mutated = re.sub(
+            r"      // \[멱등성\] 원자적 claim.*?// 상품 정보 조회",
+            "      // 결제 성공 → DB 업데이트\n"
+            "      await supabaseAdmin.from('payments').update({\n"
+            "        status: 'confirmed',\n"
+            "      }).eq('id', payment.id)\n\n"
+            "      // 상품 정보 조회",
+            self.src,
+            count=1,
+            flags=re.DOTALL,
+        )
+        assert mutated != self.src, "mutation no-op: claim 블록 미발견"
+        mutated_prefix = _confirm_done_prefix(mutated)
+        assert ".eq('status', 'pending')" not in mutated_prefix
+        assert "duplicate: true" not in mutated_prefix
+
+
+# ═══════════════════════════════════════════════════════════════
 # §4 webhook 함수 — 취소 tier 초기화 + 갱신 이벤트 병합 보존
 # ═══════════════════════════════════════════════════════════════
 

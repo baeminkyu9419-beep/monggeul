@@ -136,14 +136,40 @@ serve(async (req) => {
     const tossData = await tossRes.json()
 
     if (tossData.status === 'DONE') {
-      // 결제 성공 → DB 업데이트
-      await supabaseAdmin.from('payments').update({
-        status: 'confirmed',
-        payment_key: paymentKey,
-        method: tossData.method || payment.method,
-        raw_response: tossData,
-        confirmed_at: new Date().toISOString(),
-      }).eq('id', payment.id)
+      // [멱등성] 원자적 claim (TOCTOU 가드) — 동시 요청 N개가 와도 1회만 적립
+      // pending → confirmed compare-and-swap. status='pending' 조건을 만족하는
+      // UPDATE 는 정확히 1개만 성공한다(같은 행 동시 갱신은 PG 행 잠금으로 직렬화).
+      // rowCount=0 = 이미 다른 요청이 confirmed 로 전이 → entitlement 재부여 없이
+      // 200 + duplicate:true 조기 반환(stripe/toss-webhook dedup 응답 규약 동일).
+      const { data: claimed, error: claimError } = await supabaseAdmin
+        .from('payments')
+        .update({
+          status: 'confirmed',
+          payment_key: paymentKey,
+          method: tossData.method || payment.method,
+          raw_response: tossData,
+          confirmed_at: new Date().toISOString(),
+        })
+        .eq('id', payment.id)
+        .eq('status', 'pending')
+        .select('id')
+
+      if (claimError) {
+        // 원장 갱신 실패는 fail-closed — 적립 없이 500 (이중 적립 금지)
+        console.error('[toss-confirm] claim failed', orderId, claimError.message)
+        return new Response(JSON.stringify({ error: claimError.message }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      if (!claimed || claimed.length === 0) {
+        // claim 실패(rowCount=0) = 이미 처리된 결제 → entitlement 재부여 금지(멱등)
+        return new Response(JSON.stringify({
+          success: true, duplicate: true, product_id: payment.product_id,
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
 
       // 상품 정보 조회
       const { data: product } = await supabaseAdmin
