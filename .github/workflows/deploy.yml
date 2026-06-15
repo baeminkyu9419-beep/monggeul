@@ -23,6 +23,16 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm install
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pytest
+        run: pip install pytest
+      - name: Security gate — BETA_OPEN_ALL must be false
+        run: |
+          python -m pytest tests/test_business_logic.py::TestBetaFlagSecurityGate::test_beta_open_all_is_false_in_ci_or_prod -v
+        env:
+          MONGGEUL_PROD: '1'
       - run: npm run build
       - name: Add config.js to dist
         run: |

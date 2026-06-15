@@ -33,7 +33,7 @@ export const SKU_MAP = {
 
 // 정식 오픈 전 — 모든 잠금/제한 해제 (상세해몽·프리미엄·무제한 전부 무료 공개).
 // 정식 오픈 시 false 로 되돌리면 결제/제한 로직 원복.
-export const BETA_OPEN_ALL = true;
+export const BETA_OPEN_ALL = false;
 
 var _cachedCredits = null;
 var _cachedSubscription = false;

@@ -582,3 +582,14 @@ class TestBetaFlagSecurityGate:
             "CI/PROD 환경에서 BETA_OPEN_ALL=true 감지 — 페이월 전체 우회 상태로 배포 불가.\n"
             "조치: src/services/subscription.js 의 BETA_OPEN_ALL 을 false 로 변경 후 재빌드."
         )
+
+    def test_beta_open_all_value_is_false(self):
+        """BETA_OPEN_ALL 은 항상 false 여야 한다 — skip 없이 항상 단언.
+
+        이 테스트가 FAIL하면 subscription.js line 36을
+        `export const BETA_OPEN_ALL = false;` 로 수정해야 배포 가능.
+        """
+        assert "export const BETA_OPEN_ALL = false" in self.SUBSCRIPTION_SRC, (
+            "BETA_OPEN_ALL=true 감지 — 전체 페이월 우회 상태. "
+            "src/services/subscription.js line 36을 false 로 수정할 것."
+        )
