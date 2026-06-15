@@ -123,7 +123,12 @@ function enterLocalGuestMode() {
 // ── 로그아웃 ──
 export async function logout() {
   if (!store.supabase) return;
-  await store.supabase.auth.signOut();
+  try {
+    await store.supabase.auth.signOut();
+  } catch (e) {
+    showToast('로그아웃 중 오류가 발생했어요. 다시 시도해주세요 🌙');
+    return;
+  }
   store.currentUser = null;
   updateLoginUI(null);
   showToast('로그아웃 됐어요 🌙');

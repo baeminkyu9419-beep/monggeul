@@ -74,6 +74,16 @@ serve(async (req) => {
       })
     }
 
+    // 결제 rate-limit: 10회/분 (openai-proxy 30/분보다 엄격)
+    const { data: rlOk, error: rlErr } = await supabase.rpc('check_rate_limit', { p_user_id: user.id, p_max: 10 })
+    if (rlErr) {
+      console.error('check_rate_limit error:', rlErr.message)
+    } else if (rlOk === false) {
+      return new Response(JSON.stringify({ error: 'Rate limit exceeded (10/min)' }), {
+        status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
     const { product_id, order_id, method, order_name, success_url, fail_url } = await req.json()
 
     if (!product_id || !order_id) {

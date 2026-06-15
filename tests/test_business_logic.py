@@ -539,3 +539,46 @@ class TestCrossModuleConsistency:
         # checkout_started and checkout_completed should be in both
         assert "checkout_started" in payment and "checkout_started" in funnel
         assert "checkout_completed" in payment and "checkout_completed" in funnel
+
+
+# ═══════════════════════════════════════════════════════════════
+# 보안 게이트: 베타 플래그 / 페이월 우회 방지
+# ═══════════════════════════════════════════════════════════════
+
+class TestBetaFlagSecurityGate:
+    """BETA_OPEN_ALL=true 가 프로덕션/CI에 배포되면 페이월이 전부 무력화됨.
+
+    이 테스트는 두 가지를 검증한다:
+    1. BETA_OPEN_ALL 이 subscription.js 에 단일 export 상수로 존재 (소스 추적 가능)
+    2. CI 환경(MONGGEUL_PROD=1 또는 CI=true 설정 시)에서는 BETA_OPEN_ALL=true 가
+       금지됨을 명시적으로 주장한다. 로컬 개발 중에는 skip 되어 기존 PASS 를 유지.
+
+    정식 오픈 시 할 일:
+      subscription.js 36번 줄을 `export const BETA_OPEN_ALL = false;` 로 바꾸면
+      이 테스트가 자동 통과 + 페이월 로직 원복.
+    """
+
+    SUBSCRIPTION_SRC = (SERVICES / "subscription.js").read_text(encoding="utf-8")
+
+    def test_beta_open_all_is_declared_as_single_export_constant(self):
+        """BETA_OPEN_ALL 이 subscription.js 에서 export const 로 선언됨 (단일 진실점)."""
+        assert "export const BETA_OPEN_ALL" in self.SUBSCRIPTION_SRC, (
+            "BETA_OPEN_ALL 이 export const 로 선언되지 않음 — 추적 불가능한 전역 변수로 누출 위험"
+        )
+
+    def test_beta_open_all_is_false_in_ci_or_prod(self):
+        """CI / 프로덕션 환경에서는 BETA_OPEN_ALL=true 금지.
+
+        로컬 개발(MONGGEUL_PROD 미설정 + CI 미설정)에서는 skip 하여 기존 테스트를 방해하지 않는다.
+        배포 파이프라인(CI=true) 또는 프로덕션 체크(MONGGEUL_PROD=1)에서만 강제.
+        """
+        is_ci = os.environ.get("CI", "").lower() in ("true", "1", "yes")
+        is_prod = os.environ.get("MONGGEUL_PROD", "").lower() in ("true", "1", "yes")
+        if not (is_ci or is_prod):
+            pytest.skip("로컬 개발 환경 — BETA_OPEN_ALL 플래그 체크 skip (CI/MONGGEUL_PROD 미설정)")
+
+        # CI 또는 PROD 환경에서는 반드시 false 여야 함
+        assert "export const BETA_OPEN_ALL = false" in self.SUBSCRIPTION_SRC, (
+            "CI/PROD 환경에서 BETA_OPEN_ALL=true 감지 — 페이월 전체 우회 상태로 배포 불가.\n"
+            "조치: src/services/subscription.js 의 BETA_OPEN_ALL 을 false 로 변경 후 재빌드."
+        )
