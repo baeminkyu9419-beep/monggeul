@@ -361,6 +361,24 @@ class TestAuthGateOnDataEndpoints:
             "구버전 use_pack_credit(uuid) 가 드롭되지 않음"
         )
 
+    def test_use_credit_client_call_has_no_user_id_param(self):
+        """subscription.js 의 useCredit() 가 rpc('use_credit') 를 인자 없이 호출해야 한다.
+        p_user_id 를 클라이언트가 넘기면 서버 auth.uid() 기반 IDOR 보호가 우회된다.
+        [뮤테이션 검증: rpc('use_credit', {p_user_id: ...}) 추가 시 이 테스트 FAIL]"""
+        match = re.search(r"rpc\('use_credit'(.*?)\)", self.sub_src, re.DOTALL)
+        assert match, "useCredit 가 rpc('use_credit') 를 호출하지 않음"
+        rpc_args = match.group(1)
+        assert "p_user_id" not in rpc_args, (
+            "IDOR: useCredit 가 rpc('use_credit') 에 p_user_id 를 전달하고 있음.\n"
+            "use_credit() 는 파라미터 없이 서버에서 auth.uid() 로 사용자 결정해야 함."
+        )
+        # 두 번째 인자(객체) 없이 호출 — rpc('use_credit') 또는 rpc('use_credit') 형태
+        # rpc('use_credit', {...}) 형태면 객체 파라미터 전달 = 위험
+        assert not re.search(r"rpc\('use_credit'\s*,\s*\{", rpc_args + ")"), (
+            "IDOR: useCredit 가 rpc('use_credit', {...}) 형식으로 객체 파라미터를 전달 중 — "
+            "auth.uid() 우회 가능"
+        )
+
 
 # ═══════════════════════════════════════════════════════════════
 # 7. SQL 인젝션 방어 — Supabase JS 클라이언트 파라미터 바인딩 확인
@@ -428,6 +446,16 @@ class TestAdversarialRegressionGuard:
         for match in re.finditer(r"rpc\('increment_dream_count'(.*?)\)", sub, re.DOTALL):
             assert "p_user_id" not in match.group(1), (
                 "IDOR 회귀: increment_dream_count 호출에 p_user_id 가 다시 추가됨"
+            )
+
+    def test_client_never_calls_use_credit_with_user_id(self):
+        """use_credit RPC 호출에 p_user_id 인자가 절대 없어야 함 (회귀 방지).
+        [뮤테이션 검증: rpc('use_credit', {p_user_id: ...}) 재도입 시 이 테스트 FAIL]"""
+        sub = (SERVICES / "subscription.js").read_text(encoding="utf-8")
+        for match in re.finditer(r"rpc\('use_credit'(.*?)\)", sub, re.DOTALL):
+            assert "p_user_id" not in match.group(1), (
+                "IDOR 회귀: use_credit 호출에 p_user_id 가 추가됨 — "
+                "use_credit() 는 auth.uid() 기반으로 서버에서 결정해야 함"
             )
 
     def test_openai_proxy_maintains_jwt_auth_check(self):
