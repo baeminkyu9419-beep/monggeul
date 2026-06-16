@@ -196,7 +196,8 @@ export function updateCreditInfo() {
 // 'pro' 는 레거시 별칭 (= 'plus' 동의어). 신규 UI 는 'plus' / 'premium' 직접 사용 권장.
 var _cachedEntitlement = 'free';
 
-function normalizeEntitlement(key) {
+// export: 머니패스 엔티틀먼트 정규화(구독자 인식) — 런타임 특성화 핀 대상, 로직 무변경.
+export function normalizeEntitlement(key) {
   if (!key) return 'free';
   if (key === 'pro' || key === 'pro_active' || key === 'plus_active') return 'plus';
   if (key === 'premium_active') return 'premium';
