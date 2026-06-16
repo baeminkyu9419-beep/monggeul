@@ -7,6 +7,7 @@ import { showToast } from '../components/toast.js';
 import { esc } from '../utils/sanitize.js';
 import { getVariant, trackExposure } from './ab-test.js';
 import { trackFunnelStep } from '../utils/funnel.js';
+import { selectUpsellTrigger } from './upsell-trigger.js';
 
 // ═══════════════════════════════════════
 // 1. 공유 → 앱 설치 유도 (바이럴 루프)
@@ -137,30 +138,8 @@ const UPSELL_TRIGGERS = {
   time_weekend:  { type: 'time', msg: '주말엔 꿈이 더 풍부해져요. 5회 팩으로 여유롭게 해몽해보세요', delay: 3000, product: 'detail_interpretation' },
 };
 
-// 감정 키워드 → 카테고리 매핑 (이모지 접두사 제거 후 비교)
-const FEAR_KEYWORDS = ['공포', '불안', '두려움', '무서움', '긴장', '초조', '악몽'];
-const JOY_KEYWORDS = ['기쁨', '행복', '설렘', '감동', '평화', '희망', '즐거움'];
-const SAD_KEYWORDS = ['슬픔', '우울', '외로움', '그리움', '상실', '아쉬움'];
-
-function classifyEmotion(emotions) {
-  if (!emotions || !emotions.length) return null;
-  const flat = emotions.map(e => e.replace(/^[^\s]+\s/, '').trim());
-  if (flat.some(e => FEAR_KEYWORDS.some(k => e.includes(k)))) return 'fear';
-  if (flat.some(e => SAD_KEYWORDS.some(k => e.includes(k)))) return 'sadness';
-  if (flat.some(e => JOY_KEYWORDS.some(k => e.includes(k)))) return 'joy';
-  return null;
-}
-
-function findRepeatedSymbol(logs) {
-  if (logs.length < 3) return null;
-  const freq = {};
-  for (const l of logs.slice(0, 20)) {
-    for (const b of (l.badges || [])) {
-      freq[b] = (freq[b] || 0) + 1;
-    }
-  }
-  return Object.entries(freq).find(([, c]) => c >= 3)?.[0] || null;
-}
+// 감정 분류/반복상징/트리거 선택(순수 결정 로직)은 services/upsell-trigger.js 로 추출(2026-06-16).
+// classifyEmotion/findRepeatedSymbol/selectUpsellTrigger 는 거기서 import (산식 무변경).
 
 export function checkSmartUpsell() {
   const tier = getCachedTier();
@@ -177,43 +156,11 @@ export function checkSmartUpsell() {
   const hour = new Date().getHours();
   const day = new Date().getDay(); // 0=Sun, 6=Sat
 
-  let triggerId = null;
-
-  // ── 패턴별 (우선순위 높음) ──
-  const recentLogs = logs.slice(0, 5);
-  const repeatedSymbol = findRepeatedSymbol(logs);
-
-  if (recentLogs.length >= 2) {
-    const last2Emotions = recentLogs.slice(0, 2).map(l => classifyEmotion(l.emotions));
-    if (last2Emotions[0] === 'fear' && last2Emotions[1] === 'fear') {
-      triggerId = 'emotion_fear';
-    } else if (last2Emotions[0] === 'sadness') {
-      triggerId = 'emotion_sadness';
-    }
-  }
-
-  if (!triggerId && repeatedSymbol) triggerId = 'pattern_symbol';
-  if (!triggerId && logs.length >= 2 && logs.slice(0, 5).some((l, i, a) =>
-    i > 0 && l.title && a[i - 1].title && l.title === a[i - 1].title
-  )) triggerId = 'pattern_repeat';
-  if (!triggerId && logs.length >= 5 && logs.length < 8) triggerId = 'pattern_5dreams';
-
-  // ── 감정별 (기쁨은 단독) ──
-  if (!triggerId && recentLogs.length >= 1 && classifyEmotion(recentLogs[0].emotions) === 'joy') {
-    triggerId = 'emotion_joy';
-  }
-
-  // ── 행동 기반 ──
-  if (!triggerId && logs.length >= 3 && logs.length < 5) triggerId = 'dream_3rd';
-  if (!triggerId && streak >= 7) triggerId = 'dream_7day';
   // [2026-05-23] dali_deep 업셀은 숨긴 달이 대화 기능 전제 → FEATURES.dali off면 스킵(가역). 기존 chat 이력 유저 오발동 방지.
-  const _daliOn = !(typeof window!=='undefined' && window.FEATURES && window.FEATURES.dali===false);
-  if (!triggerId && _daliOn && totalChats >= 10) triggerId = 'dali_deep';
+  const _daliOn = !(typeof window !== 'undefined' && window.FEATURES && window.FEATURES.dali === false);
 
-  // ── 시간대별 (가장 낮은 우선순위) ──
-  if (!triggerId && hour >= 6 && hour <= 9) triggerId = 'time_morning';
-  if (!triggerId && (hour >= 23 || hour <= 2)) triggerId = 'time_night';
-  if (!triggerId && (day === 0 || day === 6)) triggerId = 'time_weekend';
+  // 순수 결정(우선순위: 패턴 > 감정 > 행동 > 시간대) — services/upsell-trigger.js 로 추출(동작보존)
+  const triggerId = selectUpsellTrigger({ logs, totalChats, streak, hour, day, daliOn: _daliOn });
 
   const trigger = triggerId ? UPSELL_TRIGGERS[triggerId] : null;
 
