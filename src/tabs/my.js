@@ -27,6 +27,9 @@ export { renderCalendar, prevMonth, nextMonth };
 import { renderAchievements } from '../services/achievements.js';
 // ── 업적(achievements) 은 services/achievements.js 로 추출(2026-06-16). 공개 표면 유지 위해 re-export. ──
 export { renderAchievements };
+import { getLevel } from '../services/xp-levels.js';
+// ── XP 레벨/칭호(LEVELS+getLevel) 은 services/xp-levels.js 로 추출(2026-06-16). 공개 표면 유지 위해 re-export. ──
+export { getLevel };
 
 let reportWeekOffset = 0;
 let quizState={idx:0,correct:0,todayDone:false,answered:false};
@@ -498,27 +501,7 @@ export function renderUnconsciousProfile() {
 }
 
 
-// ═══ XP 레벨/칭호 시스템 (Phase 2-4) ═══
-const LEVELS=[
-  {lv:1,title:'꿈 초보자',emoji:'🌱',minXP:0},
-  {lv:2,title:'꿈 탐험가',emoji:'🧭',minXP:50},
-  {lv:3,title:'꿈 기록자',emoji:'📖',minXP:150},
-  {lv:4,title:'꿈 분석가',emoji:'🔍',minXP:350},
-  {lv:5,title:'꿈 해독자',emoji:'🔮',minXP:600},
-  {lv:6,title:'꿈 연구가',emoji:'🔬',minXP:1000},
-  {lv:7,title:'꿈 마스터',emoji:'🎓',minXP:1500},
-  {lv:8,title:'꿈 현자',emoji:'🧙',minXP:2500},
-  {lv:9,title:'꿈의 수호자',emoji:'🛡️',minXP:4000},
-  {lv:10,title:'꿈의 현인',emoji:'👑',minXP:6000},
-];
-
-export function getLevel(xp){
-  let lvl=LEVELS[0];
-  for(const l of LEVELS){if(xp>=l.minXP)lvl=l;else break;}
-  const nextLvl=LEVELS[LEVELS.indexOf(lvl)+1];
-  const progress=nextLvl?Math.round((xp-lvl.minXP)/(nextLvl.minXP-lvl.minXP)*100):100;
-  return{...lvl,xp,nextXP:nextLvl?nextLvl.minXP:lvl.minXP,progress,nextTitle:nextLvl?nextLvl.title:null};
-}
+// ═══ XP 레벨/칭호 시스템 (Phase 2-4) — LEVELS+getLevel 은 services/xp-levels.js 로 추출(2026-06-16). ═══
 window.getLevel=getLevel;
 
 export function renderLevelCard(){
