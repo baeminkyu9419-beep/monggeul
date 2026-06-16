@@ -51,6 +51,11 @@ const keys = ['plus','premium','plus_monthly','premium_monthly','pro_monthly','s
 out.ios = {}; out.android = {};
 for(const k of keys){ out.ios[k] = iap.getIosProductId(k); out.android[k] = iap.getAndroidProductId(k); }
 
+// ★ 머니패스 회귀: 실제 호출부(paywall showMethodSelect / dream buyPremium web)가 넘기는 정본 PRODUCT_CATALOG 키
+const canonicalKeys = ['pack_1','pack_5','pack_15','unconscious_profile','plus_monthly','premium_monthly'];
+out.iosCanonical = {}; out.androidCanonical = {};
+for(const k of canonicalKeys){ out.iosCanonical[k] = iap.getIosProductId(k); out.androidCanonical[k] = iap.getAndroidProductId(k); }
+
 // 웹 환경(Capacitor 미정의) 기본값
 out.isNative = iap.isNative();
 out.currentPlatform = iap.currentPlatform();
@@ -127,3 +132,51 @@ def test_web_platform_defaults(rt):
     """웹 환경(Capacitor 미정의): isNative=false, currentPlatform='web'."""
     assert rt["isNative"] is False, f"웹에서 isNative 가 false 아님: {rt['isNative']}"
     assert rt["currentPlatform"] == "web", f"웹 기본 플랫폼 변경: {rt['currentPlatform']}"
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# ★ 머니패스 회귀(wave-11): 호출부 정본 키 ↔ helper 기대 키 불일치 = IAP 결제 실패
+#
+# 버그(수정 전): paywall.js showMethodSelect / dream.js buyPremium(web) 는
+#   정본 PRODUCT_CATALOG 키(pack_1/pack_5/pack_15/unconscious_profile)를 purchase()→
+#   getIosProductId/getAndroidProductId 로 넘기는데, helper 는 레거시 단축키
+#   (single/pack5/pack15/profile)만 인식해 정본 키를 passthrough 했다.
+#   → 네이티브 스토어에 미등록 productId(pack_1 등) 전달 → 단건/팩/프로파일 결제 전멸.
+#   (구독 plus_monthly/premium_monthly 는 우연히 helper 가 인식해 동작했음 = 부분 은폐)
+#
+# 이 테스트가 잡는 것: 정본 키가 실제 스토어 SKU(com.monggeul.* / monggeul_*)로
+#   매핑되는지. passthrough 로 회귀하면 FAIL.
+# ──────────────────────────────────────────────────────────────────────────
+
+def test_ios_canonical_catalog_keys_map_to_store_sku(rt):
+    """정본 PRODUCT_CATALOG 키 → iOS 스토어 SKU (머니패스 회귀 차단)."""
+    assert rt["iosCanonical"] == {
+        "pack_1":              "com.monggeul.single",
+        "pack_5":              "com.monggeul.pack5",
+        "pack_15":             "com.monggeul.pack15",
+        "unconscious_profile": "com.monggeul.profile",
+        "plus_monthly":        "com.monggeul.plus.monthly",
+        "premium_monthly":     "com.monggeul.premium.monthly",
+    }, f"정본 키가 스토어 SKU 로 매핑 안 됨(IAP 결제 실패): {rt['iosCanonical']}"
+
+
+def test_android_canonical_catalog_keys_map_to_store_sku(rt):
+    """정본 PRODUCT_CATALOG 키 → Android 스토어 SKU (머니패스 회귀 차단)."""
+    assert rt["androidCanonical"] == {
+        "pack_1":              "monggeul_single",
+        "pack_5":              "monggeul_pack5",
+        "pack_15":             "monggeul_pack15",
+        "unconscious_profile": "monggeul_profile",
+        "plus_monthly":        "monggeul_plus",
+        "premium_monthly":     "monggeul_premium",
+    }, f"정본 키가 스토어 SKU 로 매핑 안 됨(IAP 결제 실패): {rt['androidCanonical']}"
+
+
+def test_canonical_keys_never_passthrough_to_store(rt):
+    """★정본 단건/팩/프로파일 키는 절대 passthrough(자기 자신 반환) 금지.
+    passthrough = 스토어에 미등록 productId 전달 = 결제 무반응(과거 버그 재현)."""
+    for k in ("pack_1", "pack_5", "pack_15", "unconscious_profile"):
+        assert rt["iosCanonical"][k] != k, f"iOS {k} passthrough 회귀(IAP 결제 실패)"
+        assert rt["androidCanonical"][k] != k, f"Android {k} passthrough 회귀(IAP 결제 실패)"
+        assert rt["iosCanonical"][k].startswith("com.monggeul."), f"iOS {k} 비정상 SKU: {rt['iosCanonical'][k]}"
+        assert rt["androidCanonical"][k].startswith("monggeul_"), f"Android {k} 비정상 SKU: {rt['androidCanonical'][k]}"

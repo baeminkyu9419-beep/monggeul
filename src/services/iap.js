@@ -163,20 +163,22 @@ export async function getEntitlement() {
 export function getIosProductId(key) {
   if (key === 'plus' || key === 'plus_monthly' || key === 'pro_monthly') return 'com.monggeul.plus.monthly';
   if (key === 'premium' || key === 'premium_monthly') return 'com.monggeul.premium.monthly';
-  if (key === 'single') return 'com.monggeul.single';
-  if (key === 'pack5') return 'com.monggeul.pack5';
-  if (key === 'pack15') return 'com.monggeul.pack15';
-  if (key === 'profile') return 'com.monggeul.profile';
+  // 정본 PRODUCT_CATALOG 키(pack_1/pack_5/pack_15/unconscious_profile) = 실제 호출부(showMethodSelect)가 넘기는 포맷
+  if (key === 'single' || key === 'pack_1') return 'com.monggeul.single';
+  if (key === 'pack5' || key === 'pack_5') return 'com.monggeul.pack5';
+  if (key === 'pack15' || key === 'pack_15') return 'com.monggeul.pack15';
+  if (key === 'profile' || key === 'unconscious_profile') return 'com.monggeul.profile';
   return key;
 }
 
 export function getAndroidProductId(key) {
   if (key === 'plus' || key === 'plus_monthly' || key === 'pro_monthly') return 'monggeul_plus';
   if (key === 'premium' || key === 'premium_monthly') return 'monggeul_premium';
-  if (key === 'single') return 'monggeul_single';
-  if (key === 'pack5') return 'monggeul_pack5';
-  if (key === 'pack15') return 'monggeul_pack15';
-  if (key === 'profile') return 'monggeul_profile';
+  // 정본 PRODUCT_CATALOG 키(pack_1/pack_5/pack_15/unconscious_profile) = 실제 호출부(showMethodSelect)가 넘기는 포맷
+  if (key === 'single' || key === 'pack_1') return 'monggeul_single';
+  if (key === 'pack5' || key === 'pack_5') return 'monggeul_pack5';
+  if (key === 'pack15' || key === 'pack_15') return 'monggeul_pack15';
+  if (key === 'profile' || key === 'unconscious_profile') return 'monggeul_profile';
   return key;
 }
 
