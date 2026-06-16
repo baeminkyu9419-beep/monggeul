@@ -159,8 +159,8 @@ export async function getEntitlement() {
   return data || { entitlement_key: 'free', status: 'inactive' };
 }
 
-// ── 헬퍼 ──
-function getIosProductId(key) {
+// ── 헬퍼 ── (export: 머니패스 SKU 매핑 — 특성화 핀 대상, 로직 무변경)
+export function getIosProductId(key) {
   if (key === 'plus' || key === 'plus_monthly' || key === 'pro_monthly') return 'com.monggeul.plus.monthly';
   if (key === 'premium' || key === 'premium_monthly') return 'com.monggeul.premium.monthly';
   if (key === 'single') return 'com.monggeul.single';
@@ -170,7 +170,7 @@ function getIosProductId(key) {
   return key;
 }
 
-function getAndroidProductId(key) {
+export function getAndroidProductId(key) {
   if (key === 'plus' || key === 'plus_monthly' || key === 'pro_monthly') return 'monggeul_plus';
   if (key === 'premium' || key === 'premium_monthly') return 'monggeul_premium';
   if (key === 'single') return 'monggeul_single';
