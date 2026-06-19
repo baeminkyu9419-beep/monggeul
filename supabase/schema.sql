@@ -124,10 +124,10 @@ create index if not exists idx_reactions_post on community_reactions(post_id);
 -- ─────────────────────────────────────────────────────────────────────────
 -- §3. 수익/권한 — app_stats (20260321_app_stats)
 -- ─────────────────────────────────────────────────────────────────────────
--- ★ 형 주의: 0001 정본은 app_stats.value = bigint, 20260321_app_stats 는 value = text.
---   live 적용 순서/실측에 따라 한쪽이 정본이다. 본 문서는 카운터 누적 RPC(increment_app_stat)
---   가 정수 증분을 기대하므로 bigint 로 기술하되, 실 DB 형은 마이그레이션 적용 결과를 따른다.
---   (KNOWN ISSUE: 후속 마이그레이션으로 value 형을 명시 통일 권장 — 본 라운드 범위 밖.)
+-- ★ 형 정합(RESOLVED 2026-06-19): 0001 정본(bigint) vs 20260321_app_stats(text) 드리프트를
+--   20260619_unify_app_stats_value_type.sql 이 bigint 로 명시 통일(ALTER ... TYPE bigint
+--   USING value::bigint, default 0). 카운터 누적 RPC increment_app_stat 가 정수 증분(value+1)을
+--   기대하므로 bigint 가 정본이며, live 형도 본 마이그레이션 적용 후 bigint 로 수렴한다.
 create table if not exists app_stats (
   key text primary key,
   value bigint default 0
@@ -287,4 +287,7 @@ create table if not exists rate_limit (
 --   - 20260615_use_credit_rpc.sql                : use_credit() 서버권위 차감
 --   - 20260616_add_credits_rpc.sql               : add_credits() 원자 적립
 --   - 20260616_fix_check_entitlement_idor.sql    : check_entitlement IDOR 차단
+--   - 20260619_unify_app_stats_value_type.sql    : app_stats.value 형 통일(text↔bigint → bigint)
+--   - 20260619_harden_push_subscriptions_insert.sql : push_subscriptions permissive insert(with check true)
+--                                                  → user_id=auth.uid() 격리(타인 user_id 위조 적재 차단)
 -- =============================================================================
