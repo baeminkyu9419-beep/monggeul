@@ -1,58 +1,80 @@
--- 몽글몽글 Supabase DB 스키마
--- Supabase Dashboard → SQL Editor 에서 실행
+-- =============================================================================
+-- 몽글몽글 — DB 스키마 정본 문서 (CANONICAL STATE DOC) — 2026-06-18 reconcile
+-- =============================================================================
+-- ★ 본 파일은 "현재 live DB 상태를 기술하는 문서"다. 적용 경로(apply path)가 아니다.
+--   실제 마이그레이션 정본 = supabase/migrations/*.sql (config.toml db.migrations.enabled=true).
+--   init 정본 = supabase/migrations/0001_init_schema.sql (b32efb0, 실 출시).
+--   본 schema.sql 은 0001 + 후속 마이그레이션 누적을 사람이 읽기 쉽게 통합 문서화한 것이다.
+--   → 새 변경은 반드시 migrations/ 에 타임스탬프 파일로 추가하고, 그 결과를 본 문서에 반영한다.
+--   → 본 문서를 SQL Editor 에 그대로 붙여 라이브에 재실행하지 말 것(드리프트 위험).
+--
+-- 정합 근거(런타임 ↔ 스키마):
+--   - src/services/auth.js : dali_memory 에 { memories, chat } upsert → chat 컬럼(jsonb)
+--   - src/tabs/dream.js    : dreams 에 badges/emotions/keywords/result/radar_data 매핑(jsonb)
+--   - 옛 디자인(text[], chat_history, subscription_tier) = 20260320000000_init_schema.sql(DEPRECATED).
+-- =============================================================================
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- §1. 코어 테이블 (init 정본 = 0001_init_schema.sql)
+-- ─────────────────────────────────────────────────────────────────────────
 
 -- 1. 사용자
 create table if not exists users (
-  id uuid references auth.users primary key,
-  nickname text default '꿈탐험가',
-  created_at timestamptz default now(),
-  subscription_tier text default 'free',  -- 'free' | 'starlight'
-  subscription_expires_at timestamptz,
-  xp integer default 0,
-  streak integer default 0,
-  last_checkin date
-);
-
--- 2. 꿈 기록
-create table if not exists dreams (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references users(id) on delete cascade,
-  content text not null,
-  title text,
-  badges text[],
-  emotions text[],
-  keywords text[],
-  result jsonb,         -- AI 해몽 결과 전체
-  radar_data jsonb,     -- 6축 스탯
+  id uuid primary key,
+  nickname text,
   created_at timestamptz default now()
 );
 
--- 3. 해몽 사용량 (일별)
-create table if not exists usage_daily (
-  user_id uuid references users(id) on delete cascade,
-  date date default current_date,
-  dream_count integer default 0,
-  primary key (user_id, date)
+-- 2. 꿈 기록 (배열은 jsonb — 0001 정본 + 0002_fix_columns 누적)
+create table if not exists dreams (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid,
+  content text,
+  title text,
+  badges jsonb default '[]'::jsonb,
+  emotions jsonb default '[]'::jsonb,
+  keywords jsonb default '[]'::jsonb,   -- src/tabs/dream.js _dreamRow 매핑(고도화)
+  result jsonb,                          -- AI 해몽 결과 전체
+  radar_data jsonb,                      -- 6축 스탯
+  created_at timestamptz default now()
 );
 
--- 4. 달이 메모리
+-- 3. 달이 메모리 (chat 컬럼 — 런타임 auth.js 정합. chat_history 아님)
 create table if not exists dali_memory (
-  user_id uuid references users(id) on delete cascade primary key,
-  memories jsonb default '[]',
-  chat_history jsonb default '[]',
+  user_id uuid primary key,
+  memories jsonb default '[]'::jsonb,
+  chat jsonb default '[]'::jsonb,
   updated_at timestamptz default now()
 );
 
--- 5. 이벤트 로그 (Phase 6용, 미리 생성)
+-- 4. 해몽 사용량 (일별). count = increment_dream_count RPC 만 갱신
+create table if not exists usage_daily (
+  user_id uuid,
+  date date default current_date,
+  count int default 0,
+  primary key (user_id, date)
+);
+
+-- 5. 이벤트 로그
 create table if not exists events (
-  id bigint generated always as identity primary key,
-  user_id uuid references users(id) on delete set null,
-  event text not null,
-  properties jsonb default '{}',
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid,
+  event text,
+  props jsonb default '{}'::jsonb,
   created_at timestamptz default now()
 );
 
--- 6. 커뮤니티 게시물
+-- 6. 반복꿈 예측 캐시 (push-scheduler 패턴 알림용)
+create table if not exists dream_pattern_cache (
+  user_id uuid primary key,
+  pattern jsonb default '{}'::jsonb,
+  updated_at timestamptz default now()
+);
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- §2. 커뮤니티 (0001 + 20260407_community_realtime 누적)
+-- ─────────────────────────────────────────────────────────────────────────
+
 create table if not exists community_posts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references users(id) on delete set null,
@@ -62,17 +84,16 @@ create table if not exists community_posts (
   post_type text default '꿈기록',  -- '꿈기록' | '질문' | '일상' | 'bot'
   title text not null,
   body text not null,
-  tag text,                        -- '뱀 꿈','추락 꿈','이별 꿈' 등
-  badges text[] default '{}',
-  stats jsonb default '{}',        -- 레이더 차트 데이터
-  similar text,                    -- "🐍 뱀 꿈 · 128명"
-  anon_mode text default 'anon',   -- 'anon' | 'nickname' | 'profile'
+  tag text,
+  badges jsonb default '[]'::jsonb,
+  stats jsonb default '{}'::jsonb,
+  similar jsonb,                    -- 봇 게시물(0004_community_fixes)
+  anon_mode text default 'anon',
   like_count integer default 0,
   comment_count integer default 0,
   created_at timestamptz default now()
 );
 
--- 7. 커뮤니티 댓글
 create table if not exists community_comments (
   id uuid primary key default gen_random_uuid(),
   post_id uuid references community_posts(id) on delete cascade,
@@ -83,13 +104,12 @@ create table if not exists community_comments (
   created_at timestamptz default now()
 );
 
--- 8. 커뮤니티 리액션 (좋아요 + 스티커)
 create table if not exists community_reactions (
   id uuid primary key default gen_random_uuid(),
   post_id uuid references community_posts(id) on delete cascade,
   comment_id uuid references community_comments(id) on delete cascade,
   user_id uuid references users(id) on delete set null,
-  reaction_type text not null,     -- 'like' | 'correct' | 'similar' | 'psych' | 'comfort'
+  reaction_type text not null,
   created_at timestamptz default now(),
   unique(post_id, user_id, reaction_type, comment_id)
 );
@@ -101,126 +121,170 @@ create index if not exists idx_posts_popularity on community_posts(like_count de
 create index if not exists idx_comments_post on community_comments(post_id, created_at);
 create index if not exists idx_reactions_post on community_reactions(post_id);
 
--- 커뮤니티 RLS
-alter table community_posts enable row level security;
-alter table community_comments enable row level security;
-alter table community_reactions enable row level security;
+-- ─────────────────────────────────────────────────────────────────────────
+-- §3. 수익/권한 — app_stats (20260321_app_stats)
+-- ─────────────────────────────────────────────────────────────────────────
+-- ★ 형 주의: 0001 정본은 app_stats.value = bigint, 20260321_app_stats 는 value = text.
+--   live 적용 순서/실측에 따라 한쪽이 정본이다. 본 문서는 카운터 누적 RPC(increment_app_stat)
+--   가 정수 증분을 기대하므로 bigint 로 기술하되, 실 DB 형은 마이그레이션 적용 결과를 따른다.
+--   (KNOWN ISSUE: 후속 마이그레이션으로 value 형을 명시 통일 권장 — 본 라운드 범위 밖.)
+create table if not exists app_stats (
+  key text primary key,
+  value bigint default 0
+);
 
--- 게시물: 누구나 읽기, 본인만 쓰기/수정/삭제
-create policy "Anyone can read posts" on community_posts for select using (true);
-create policy "Auth users can insert posts" on community_posts for insert with check (auth.uid() = user_id or user_id is null);
-create policy "Users can update own posts" on community_posts for update using (auth.uid() = user_id);
-create policy "Users can delete own posts" on community_posts for delete using (auth.uid() = user_id);
+-- ─────────────────────────────────────────────────────────────────────────
+-- §4. 수익/권한 — entitlements v1/v2 (20260321_billing_schema, 20260324_payment_system)
+-- ─────────────────────────────────────────────────────────────────────────
 
--- 댓글: 누구나 읽기, 본인만 쓰기/삭제
-create policy "Anyone can read comments" on community_comments for select using (true);
-create policy "Auth users can insert comments" on community_comments for insert with check (auth.uid() = user_id or user_id is null);
-create policy "Users can delete own comments" on community_comments for delete using (auth.uid() = user_id);
+-- v1: 단일행 권한(구독 상태 + 팩 크레딧). 티어/크레딧 판정 정본 테이블.
+create table if not exists user_entitlements (
+  user_id              uuid primary key,
+  entitlement_key      text default 'free',
+  premium_credits      integer default 0,
+  source_platform      text,
+  product_key          text,
+  status               text default 'inactive',
+  current_period_start timestamptz,
+  current_period_end   timestamptz,
+  will_renew           boolean default true,
+  auto_renew           boolean default true,
+  last_verified_at     timestamptz,
+  updated_at           timestamptz default now()
+);
 
--- 리액션: 누구나 읽기, 본인만 쓰기/삭제
-create policy "Anyone can read reactions" on community_reactions for select using (true);
-create policy "Auth users can insert reactions" on community_reactions for insert with check (auth.uid() = user_id or user_id is null);
-create policy "Users can delete own reactions" on community_reactions for delete using (auth.uid() = user_id);
+-- 상품 카탈로그 (20260324_payment_system + 20260407_reconcile_products)
+create table if not exists products (
+  id            text primary key,
+  name          text not null,
+  type          text not null check (type in ('pack', 'subscription', 'one_time')),
+  price         integer not null,
+  count         integer,
+  duration_days integer,
+  is_active     boolean not null default true,
+  created_at    timestamptz not null default now()
+);
 
--- RPC: 좋아요 토글 (like_count 자동 증감)
-create or replace function toggle_post_like(p_post_id uuid, p_user_id uuid)
-returns boolean as $$
-declare
-  existed boolean;
-begin
-  select exists(
-    select 1 from community_reactions
-    where post_id = p_post_id and user_id = p_user_id
-      and reaction_type = 'like' and comment_id is null
-  ) into existed;
+-- 결제 내역 (PG 통합: stripe/toss/apple/google)
+create table if not exists payments (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null references auth.users(id) on delete cascade,
+  order_id     text unique not null,
+  pg           text not null check (pg in ('stripe', 'toss', 'apple', 'google')),
+  method       text,
+  payment_key  text,
+  product_id   text not null references products(id),
+  amount       integer not null,
+  status       text not null default 'pending'
+    check (status in ('pending', 'confirmed', 'cancelled', 'failed', 'refunded')),
+  billing_key  text,
+  raw_response jsonb default '{}',
+  confirmed_at timestamptz,
+  created_at   timestamptz not null default now()
+);
 
-  if existed then
-    delete from community_reactions
-    where post_id = p_post_id and user_id = p_user_id
-      and reaction_type = 'like' and comment_id is null;
-    update community_posts set like_count = greatest(like_count - 1, 0)
-    where id = p_post_id;
-    return false;
-  else
-    insert into community_reactions (post_id, user_id, reaction_type)
-    values (p_post_id, p_user_id, 'like');
-    update community_posts set like_count = like_count + 1
-    where id = p_post_id;
-    return true;
-  end if;
-end;
-$$ language plpgsql security definer;
+-- v2 권한 (구독 + 팩 다중행 공존). check_entitlement/use_pack_credit 가 읽음.
+create table if not exists entitlements (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  type       text not null check (type in ('subscription', 'pack')),
+  product_id text not null references products(id),
+  payment_id uuid references payments(id),
+  remaining  integer,
+  expires_at timestamptz,
+  is_active  boolean not null default true,
+  created_at timestamptz not null default now()
+);
 
--- RPC: 인기 게시물 (좋아요 × 시간 가중치)
-create or replace function get_popular_posts(p_limit integer default 20)
-returns setof community_posts as $$
-begin
-  return query
-    select *
-    from community_posts
-    order by (
-      like_count * 10.0 / (extract(epoch from (now() - created_at)) / 3600 + 1)
-    ) desc
-    limit p_limit;
-end;
-$$ language plpgsql stable;
+-- 빌링 감사/멱등 (20260321_billing_schema)
+create table if not exists billing_transactions (
+  id                   bigint generated always as identity primary key,
+  user_id              uuid references auth.users(id) on delete cascade,
+  platform             text not null,
+  platform_account_ref text,
+  product_key          text not null,
+  transaction_ref      text not null,
+  event_type           text not null,
+  amount               numeric(12,2),
+  currency             text default 'KRW',
+  raw_payload          jsonb not null default '{}',
+  occurred_at          timestamptz not null,
+  created_at           timestamptz not null default now()
+);
 
--- RPC: 댓글 수 동기화 트리거
-create or replace function update_comment_count()
-returns trigger as $$
-begin
-  if TG_OP = 'INSERT' then
-    update community_posts set comment_count = comment_count + 1 where id = NEW.post_id;
-  elsif TG_OP = 'DELETE' then
-    update community_posts set comment_count = greatest(comment_count - 1, 0) where id = OLD.post_id;
-  end if;
-  return null;
-end;
-$$ language plpgsql security definer;
+create table if not exists billing_events (
+  event_id     text primary key,
+  platform     text not null,
+  event_type   text not null,
+  payload      jsonb not null default '{}',
+  processed    boolean not null default false,
+  processed_at timestamptz,
+  created_at   timestamptz not null default now()
+);
 
-create or replace trigger on_comment_change
-  after insert or delete on community_comments
-  for each row execute function update_comment_count();
+-- ─────────────────────────────────────────────────────────────────────────
+-- §5. 그로스 (20260321_growth_schema)
+-- ─────────────────────────────────────────────────────────────────────────
 
--- RPC: 해몽 횟수 증가
-create or replace function increment_dream_count(p_user_id uuid)
-returns void as $$
-begin
-  insert into usage_daily (user_id, date, dream_count)
-  values (p_user_id, current_date, 1)
-  on conflict (user_id, date)
-  do update set dream_count = usage_daily.dream_count + 1;
-end;
-$$ language plpgsql security definer;
+create table if not exists referrals (
+  id            bigint generated always as identity primary key,
+  referrer_code text not null,
+  referred_user uuid references auth.users(id) on delete cascade,
+  converted_at  timestamptz not null default now(),
+  rewarded      boolean default false
+);
 
--- RLS (Row Level Security)
-alter table users enable row level security;
-alter table dreams enable row level security;
-alter table usage_daily enable row level security;
-alter table dali_memory enable row level security;
-alter table events enable row level security;
+create table if not exists funnel_events (
+  id          bigint generated always as identity primary key,
+  user_id     uuid references auth.users(id) on delete cascade,
+  step        text not null,
+  occurred_at timestamptz not null default now(),
+  properties  jsonb default '{}'
+);
 
--- 정책: 본인 데이터만 접근
-create policy "Users can read own data" on users for select using (auth.uid() = id);
-create policy "Users can update own data" on users for update using (auth.uid() = id);
-create policy "Users can insert own data" on users for insert with check (auth.uid() = id);
+create table if not exists ad_revenue (
+  id          bigint generated always as identity primary key,
+  date        date not null,
+  platform    text not null,
+  ad_type     text not null,
+  impressions integer default 0,
+  clicks      integer default 0,
+  revenue_usd numeric(10,4) default 0,
+  created_at  timestamptz not null default now()
+);
 
-create policy "Users can CRUD own dreams" on dreams for all using (auth.uid() = user_id);
--- usage_daily: select 전용. 쓰기는 increment_dream_count RPC(security definer)만 → 무료 일일한도 자가 리셋(API비용 DoS) 차단.
-drop policy if exists "Users can CRUD own usage" on usage_daily;
-create policy "Users can read own usage" on usage_daily for select using (auth.uid() = user_id);
-create policy "Users can CRUD own dali" on dali_memory for all using (auth.uid() = user_id);
-create policy "Users can insert own events" on events for insert with check (auth.uid() = user_id);
+-- ─────────────────────────────────────────────────────────────────────────
+-- §6. 인프라 (20260407_push_subscriptions, 0003_rate_limit)
+-- ─────────────────────────────────────────────────────────────────────────
 
--- 트리거: 새 사용자 생성 시 users 테이블에 자동 삽입
-create or replace function handle_new_user()
-returns trigger as $$
-begin
-  insert into public.users (id) values (new.id);
-  return new;
-end;
-$$ language plpgsql security definer;
+create table if not exists push_subscriptions (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid references users(id) on delete cascade,
+  endpoint     text not null unique,
+  keys         jsonb not null,
+  prefs        jsonb default '{"morning":true,"pattern":true,"dali_weekly":true}',
+  created_at   timestamptz default now(),
+  last_sent_at timestamptz
+);
 
-create or replace trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute function handle_new_user();
+create table if not exists rate_limit (
+  user_id    uuid,
+  window_min timestamptz,
+  cnt        int default 0,
+  primary key (user_id, window_min)
+);
+
+-- =============================================================================
+-- §7. RLS / RPC / 트리거 — 정본 = migrations/ 각 파일. 보안 하드닝 누적은 아래 참조.
+-- =============================================================================
+-- RLS 정책/RPC 의 권위 있는 정의는 다음 마이그레이션에 있다(본 문서는 색인):
+--   - 0001_init_schema.sql                       : 기본 RLS(own_* / read_* / ins_*) + RPC
+--   - 20260408_drop_legacy_permissive.sql        : community_posts IDOR(upd_posts) 차단
+--   - 20260613_anon_error_events.sql             : 익명 에러 이벤트 적재 허용
+--   - 20260614_drop_self_write_entitlements.sql  : user_entitlements 자기쓰기(결제우회) 차단
+--   - 20260615_fix_rpc_idor.sql                  : toggle_post_like/increment_dream_count auth.uid() 강제
+--   - 20260615_harden_use_pack_credit.sql        : use_pack_credit IDOR 차단 + EXECUTE 제한
+--   - 20260615_use_credit_rpc.sql                : use_credit() 서버권위 차감
+--   - 20260616_add_credits_rpc.sql               : add_credits() 원자 적립
+--   - 20260616_fix_check_entitlement_idor.sql    : check_entitlement IDOR 차단
+-- =============================================================================
