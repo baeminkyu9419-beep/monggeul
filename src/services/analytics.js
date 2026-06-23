@@ -42,7 +42,7 @@ export function logEvent(event, properties = {}) {
     store.supabase.from('events').insert({
       user_id: isAuthUuid ? uid : null,
       event,
-      properties: isAuthUuid ? properties : { ...properties, anon_id: getAnonId() },
+      props: isAuthUuid ? properties : { ...properties, anon_id: getAnonId() },
     }).then(() => {}).catch(() => {});
   } else if (event === 'js_error' || event === 'js_rejection') {
     // Supabase 미설정(데모/로컬) — 에러 이벤트는 콘솔 폴백 (무음 전량 유실 금지)

@@ -103,7 +103,7 @@ serve(async (req) => {
           await supabase.from('events').insert({
             user_id: payment.user_id,
             event: 'payment_cancelled',
-            properties: { pg: 'toss', order_id: data.orderId, reason: data.cancels?.[0]?.cancelReason, status: data.status },
+            props: { pg: 'toss', order_id: data.orderId, reason: data.cancels?.[0]?.cancelReason, status: data.status },
           })
 
           // [운영자 알림 P0-1] 취소/환불 — 매출 역전 이벤트는 즉시 인지 대상
@@ -185,7 +185,7 @@ serve(async (req) => {
           await supabase.from('events').insert({
             user_id: userId,
             event: 'subscription_renewed',
-            properties: {
+            props: {
               pg: 'toss',
               product_id: product.id,
               order_id: data.orderId,

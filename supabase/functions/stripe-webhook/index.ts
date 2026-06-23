@@ -206,7 +206,7 @@ serve(async (req) => {
           await supabase.from('events').insert({
             user_id: userId,
             event: 'checkout_completed',
-            properties: {
+            props: {
               tier: entitlementKey,
               product_id: productId,
               is_pack: isPack,

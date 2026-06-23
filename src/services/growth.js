@@ -109,7 +109,7 @@ export async function submitReferral() {
     await store.supabase.from('events').insert({
       user_id: store.currentUser.id,
       event: 'referral_converted',
-      properties: { referral_code: ref },
+      props: { referral_code: ref },
     });
     localStorage.removeItem('mg_referral');
   } catch (e) {}

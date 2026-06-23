@@ -241,7 +241,7 @@ serve(async (req) => {
       await supabaseAdmin.from('events').insert({
         user_id: user.id,
         event: 'checkout_completed',
-        properties: {
+        props: {
           pg: 'toss',
           method: tossData.method,
           product_id: payment.product_id,

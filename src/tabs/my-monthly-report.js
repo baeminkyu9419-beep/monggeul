@@ -5,6 +5,8 @@ import { showToast } from '../components/toast.js';
 import { logEvent } from '../services/analytics.js';
 import { trackFunnelStep } from '../utils/funnel.js';
 import { callChat } from '../services/api.js';
+import { getCachedTier } from '../services/subscription.js';
+import { showPaywall } from '../components/paywall.js';
 
 export function openMonthlyReport(){
   logEvent('monthly_report_opened');
@@ -122,6 +124,14 @@ export async function generateGPTNarrative(){
     return d>=monthStart;
   });
   if(monthLogs.length<2){showToast('이번 달 꿈이 2개 이상 있어야 AI 분석을 받을 수 있어요');return;}
+
+  // [구독 게이트] AI 월간 리포트 = Plus 구독 전용. 서버(openai-proxy)가 단일 권위로 403 차단하나,
+  //   비구독자에게 정직한 페이월을 먼저 보여줘 '오류'로 위장된 무반응을 피한다(server gate = 우회불가 정본).
+  const _tier=getCachedTier();
+  if(_tier!=='plus'&&_tier!=='premium'){
+    showPaywall('weekly_report');
+    return;
+  }
 
   // 요약 데이터 생성
   const badgeCount={};

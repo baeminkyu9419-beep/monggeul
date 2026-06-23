@@ -251,7 +251,7 @@ serve(async (req) => {
     // 발송 로그
     await supabase.from('events').insert({
       event: 'push_batch_sent',
-      properties: { type, ...result },
+      props: { type, ...result },
     }).then(() => {})
 
     return new Response(JSON.stringify({ ok: true, ...result }), {

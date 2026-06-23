@@ -261,25 +261,47 @@ serve(async (req) => {
 
       // [보안 P0: 서버측 권한 게이트] dream_detail = 유료 상세해몽.
       // 클라이언트 canUseDream()/useCredit() 은 우회 가능(DevTools/직접 호출).
-      // Edge Function 이 use_credit() RPC 로 서버 권위 차감을 시도하고,
-      // 크레딧이 없으면 구독 여부를 확인한다. 둘 다 없으면 403 — fail-closed.
-      // use_credit() = SECURITY DEFINER, auth.uid() 기반 → 타인 차감/자기부여 불가.
+      // 둘 다 없으면 403 — fail-closed.
+      // [2026-06-23 R2 fix] 순서 = 구독 확인 먼저 → 비구독자만 use_credit() 차감.
+      //   기존엔 use_credit() 을 먼저 호출해 구독자(plus/premium)라도 보유 팩 크레딧이
+      //   매 상세해몽마다 잘못 차감됐다(구독=무제한이어야 함). 구독자는 차감을 건너뛴다.
+      // use_credit()/check_entitlement() = SECURITY DEFINER, auth.uid() 기반 → 타인 차감/조회 불가.
       if (task === 'dream_detail') {
         const supabaseGate = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
           global: { headers: { Authorization: authHeader! } },
         })
-        // 1차: 팩 크레딧 차감 시도 (atomic, 0 이하 불가)
-        const { data: remaining, error: creditErr } = await supabaseGate.rpc('use_credit')
-        if (creditErr || (typeof remaining === 'number' && remaining < 0)) {
-          // 크레딧 없음 → 구독 여부 확인 (구독자는 무제한)
-          const { data: entData } = await supabaseGate.rpc('check_entitlement', { p_user_id: user.id })
-          const hasSub = entData?.has_subscription === true
-          if (!hasSub) {
+        // 1차: 구독 여부 확인 (구독자는 무제한 → 팩 크레딧 차감 금지)
+        const { data: entData } = await supabaseGate.rpc('check_entitlement', { p_user_id: user.id })
+        const hasSub = entData?.has_subscription === true
+        if (!hasSub) {
+          // 비구독자만: 팩 크레딧 차감 시도 (atomic, 0 이하 불가)
+          const { data: remaining, error: creditErr } = await supabaseGate.rpc('use_credit')
+          if (creditErr || (typeof remaining === 'number' && remaining < 0)) {
+            // 크레딧 없음 + 구독 없음 → 차단 (fail-closed)
             return new Response(JSON.stringify({ error: 'Insufficient credits or subscription required' }), {
               status: 403,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             })
           }
+        }
+      }
+
+      // [보안 P1: 서버측 구독 게이트] monthly_report = AI 월간 리포트 = Plus 구독 전용 기능.
+      // [2026-06-23 R2 fix] 기존엔 이 task 가 게이트 밖이라 누구나 무료로 LLM 호출(비용 누수).
+      //   클라(my-monthly-report.js)에 어떤 권한 체크도 없어 서버가 단일 권위가 돼야 한다.
+      //   구독자(has_subscription)만 통과, 비구독자는 403 — fail-closed.
+      //   팩 크레딧 차감은 하지 않는다(구독 전용 기능이므로 단건 크레딧 소비 대상 아님).
+      if (task === 'monthly_report') {
+        const supabaseGate = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          global: { headers: { Authorization: authHeader! } },
+        })
+        const { data: entData } = await supabaseGate.rpc('check_entitlement', { p_user_id: user.id })
+        const hasSub = entData?.has_subscription === true
+        if (!hasSub) {
+          return new Response(JSON.stringify({ error: 'Subscription required', code: 'subscription_required' }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
         }
       }
 

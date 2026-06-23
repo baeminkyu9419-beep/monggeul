@@ -290,4 +290,6 @@ create table if not exists rate_limit (
 --   - 20260619_unify_app_stats_value_type.sql    : app_stats.value 형 통일(text↔bigint → bigint)
 --   - 20260619_harden_push_subscriptions_insert.sql : push_subscriptions permissive insert(with check true)
 --                                                  → user_id=auth.uid() 격리(타인 user_id 위조 적재 차단)
+--   - 20260623_harden_check_rate_limit_idor.sql  : check_rate_limit auth.uid() 강제 + PUBLIC EXECUTE 회수
+--                                                  → 임의 p_user_id rate-limit DoS + anon 호출 차단
 -- =============================================================================
