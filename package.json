@@ -15,7 +15,8 @@
     "deploy:netlify": "npm run build:root && npx netlify-cli@latest deploy --dir=dist --prod",
     "_deploy_note": "★프론트(Pages)와 Supabase 엣지함수는 별도 배포다. deploy:cf 등은 프론트만 올린다. 엣지함수(openai-proxy 꿈해석·toss-* 결제·check_rate_limit 등)를 바꾸면 반드시 deploy:functions 도 같이 돌려야 프론트↔엣지 형식 드리프트(=라이브 500)를 막는다. deploy:all 권장.",
     "deploy:functions": "npx supabase@latest functions deploy --project-ref mskwqlqpcsfvgvhhilma",
-    "deploy:all": "npm run deploy:cf && npm run deploy:functions",
+    "smoke:live": "node scripts/smoke_live.mjs",
+    "deploy:all": "npm run deploy:cf && npm run deploy:functions && npm run smoke:live",
     "cap:sync": "vite build && npx cap sync",
     "cap:android": "vite build && npx cap sync android && npx cap open android",
     "cap:ios": "vite build && npx cap sync ios && npx cap open ios"
