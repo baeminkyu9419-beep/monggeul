@@ -5,6 +5,15 @@ const MAX_RETRIES = 2;
 const TIMEOUT_MS = 30000;
 const RETRY_DELAYS = [1000, 3000];
 
+// 복구 불가 폴백 사유 — 재시도해도 결과가 바뀌지 않음(키 무효/함수 부재/기능 비활성).
+// 이 사유들은 catch 에서 즉시 throw 해 ~4s(RETRY_DELAYS 합) 낭비를 막는다.
+// (rate_limited/llm_provider_error/네트워크 무태깅 = 일시적이므로 재시도 유지.)
+const _NON_RETRYABLE_REASONS = new Set([
+  'invalid_anon_key',          // 401/403 — 키 무효, 재시도 무의미
+  'edge_function_not_found',   // 404 — 함수 미배포, 재시도 무의미
+  'llm_provider_unavailable',  // 503 — 기능 비활성(image OFF 등), 재시도 무의미
+]);
+
 async function fetchWithTimeout(url, options, timeoutMs) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -98,6 +107,10 @@ async function _withRetry(url, options) {
       throw _fbErr(_reason, 'API 요청 실패: ' + res.status);
     } catch (e) {
       lastError = e;
+      // 복구 불가 사유(401/403/404/503)는 재시도 무의미 → 즉시 throw(~4s 낭비 차단).
+      if (e && e.fallbackReason && _NON_RETRYABLE_REASONS.has(e.fallbackReason)) {
+        throw e;
+      }
       if (e.name === 'AbortError') {
         lastError = new Error('응답 시간이 초과됐어요. 다시 시도해 주세요.');
         if (attempt < MAX_RETRIES) {

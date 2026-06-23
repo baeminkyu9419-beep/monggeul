@@ -223,7 +223,26 @@ export async function getUserTier() {
       });
       if (data?.has_subscription) {
         _cachedSubscription = true;
-        _cachedEntitlement = normalizeEntitlement(data.entitlement_key || data.tier || 'plus');
+        // check_entitlement(현 SQL)은 entitlement_key/tier 를 반환하지 않는다.
+        // 그 경우 'plus' 로 단정하면 premium 구독자가 plus 로 강등된다(매출/혜택 사고).
+        // → 명시 tier 가 없으면 user_entitlements.entitlement_key 로 정확한 tier 확정.
+        const explicitTier = data.entitlement_key || data.tier;
+        if (explicitTier) {
+          _cachedEntitlement = normalizeEntitlement(explicitTier);
+          return _cachedEntitlement;
+        }
+        try {
+          const { data: ueRow } = await store.supabase
+            .from('user_entitlements')
+            .select('entitlement_key, status')
+            .eq('user_id', store.currentUser.id)
+            .maybeSingle();
+          const resolved = ueRow ? normalizeEntitlement(ueRow.entitlement_key) : 'free';
+          // 구독은 확인됐으므로 최소 'plus' 보장(미인식 = 환불 유발). premium 이면 premium 유지.
+          _cachedEntitlement = resolved === 'premium' ? 'premium' : 'plus';
+        } catch (_) {
+          _cachedEntitlement = 'plus';
+        }
         return _cachedEntitlement;
       }
     } catch (e) {}
