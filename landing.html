@@ -480,6 +480,61 @@ html.lenis,html.lenis body{height:auto;}
     <div class="hero-scroll">아래로 스크롤</div>
   </section>
 
+  <!-- 꿈의 문 — 스크롤 clipPath 이미지 리빌 (21st Aceternity SmoothScrollHero CenterImage 정본 값 1:1 이식) -->
+  <section class="dream-gate" aria-label="꿈의 문">
+    <div class="dg-sticky">
+      <div class="dg-image" id="dgImage"></div>
+      <div class="dg-caption">
+        <span class="dg-eyebrow">당신이 잠든 사이</span>
+        <h2 class="dg-title">무의식은 밤마다<br>이야기를 씁니다</h2>
+      </div>
+    </div>
+    <div class="dg-spacer"></div>
+  </section>
+  <style>
+    .dream-gate{position:relative;width:100%;height:calc(1500px + 100vh);margin:0 0 -40vh;}
+    .dg-sticky{position:sticky;top:0;height:100vh;width:100%;overflow:hidden;}
+    /* 정본: backgroundSize 170%→100%, clipPath polygon 25→0 / 75→100 (스크롤 구동). 달/밤 이미지. */
+    .dg-image{position:absolute;inset:0;background-position:center;background-repeat:no-repeat;
+      background-image:url('https://images.unsplash.com/photo-1532767153582-b1a0e5145009?q=80&w=2670&auto=format&fit=crop');
+      background-size:170%;
+      clip-path:polygon(25% 25%, 75% 25%, 75% 75%, 25% 75%);
+      will-change:clip-path,background-size,opacity;}
+    .dg-image::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 30%,transparent 40%,rgba(13,11,30,.55) 100%);}
+    .dg-caption{position:absolute;left:0;right:0;bottom:12vh;text-align:center;z-index:2;pointer-events:none;
+      opacity:0;transition:opacity .6s ease;will-change:opacity;}
+    .dg-caption.in{opacity:1;}
+    .dg-eyebrow{display:block;font-size:13px;letter-spacing:.32em;text-transform:uppercase;color:rgba(245,230,178,.7);margin-bottom:14px;}
+    .dg-title{font-family:'Gowun Dodum',serif;font-size:clamp(28px,5vw,52px);line-height:1.35;color:#fff;text-shadow:0 2px 40px rgba(0,0,0,.6);margin:0;}
+    @media (max-width:768px){.dg-image{background-size:240%;}}
+    @media (prefers-reduced-motion:reduce){.dream-gate{height:auto;margin:0;}.dg-sticky{position:relative;height:70vh;}.dg-image{clip-path:none;background-size:cover;}.dg-caption{opacity:1;position:absolute;}}
+  </style>
+  <script>
+  (function(){
+    var img=document.getElementById('dgImage');
+    if(!img)return;
+    var gate=img.closest('.dream-gate');
+    var cap=gate.querySelector('.dg-caption');
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+    var SECTION=1500; // 정본 SECTION_HEIGHT
+    function lerp(a,b,t){return a+(b-a)*t;}
+    function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+    function frame(){
+      var top=gate.getBoundingClientRect().top;        // gate 상단의 뷰포트 기준 위치
+      var sc=clamp(-top,0,SECTION);                     // 0..1500 스크롤 진행(정본 scrollY 매핑)
+      var t=sc/SECTION;
+      var c1=lerp(25,0,t), c2=lerp(75,100,t);           // 정본 clip1/clip2
+      img.style.clipPath='polygon('+c1+'% '+c1+'%, '+c2+'% '+c1+'%, '+c2+'% '+c2+'%, '+c1+'% '+c2+'%)';
+      img.style.backgroundSize=lerp(170,100,clamp(sc/(SECTION+500),0,1)*1)+'%'; // 170→100
+      img.style.opacity=(sc>=SECTION)?clamp(1-(sc-SECTION)/500,0,1):1;          // 끝에서 페이드(정본)
+      cap.classList.toggle('in', t>0.55);
+    }
+    var ticking=false;
+    window.addEventListener('scroll',function(){if(!ticking){requestAnimationFrame(function(){frame();ticking=false;});ticking=true;}},{passive:true});
+    frame();
+  })();
+  </script>
+
   <!-- 핵심 기능 -->
   <section>
     <div class="section-label reveal">Features</div>
