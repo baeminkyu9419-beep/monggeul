@@ -3,7 +3,8 @@ import { renderNotifSettings } from '../services/notification-scheduler.js';
 import { store } from '../store.js';
 import { showToast } from '../components/toast.js';
 import { showPaywall, showUnconsciousPaywall } from '../components/paywall.js';
-import { getUserTier } from '../services/subscription.js';
+import { getUserTier, hasUnconsciousProfileCached, hasUnconsciousProfileAccess } from '../services/subscription.js';
+import { buildUnconsciousProfile } from '../services/unconscious-profile.js';
 import { esc, sanitize } from '../utils/sanitize.js';
 import { DICT_DATA, FORTUNES, QUIZ_DATA, REPORT_DATA, FLOW_DEMO } from '../utils/symbols.js';
 import { EXTENDED_DICT } from '../utils/dream-data.js';
@@ -428,6 +429,20 @@ export function renderUnconsciousProfile() {
 
   el.style.display = 'block';
 
+  // ── 유료 접근권 보유 시 상세 5축 프로파일 렌더 (₩2,900 산출물 정본) ──
+  // SOLD_NOT_DELIVERED 수리(2026-06-24): 결제/구독자는 미니가 아닌 *실제 상세 산출물*.
+  // 캐시로 즉시 분기 후, 비동기 확정으로 캐시 누락(첫 로드) 시 재렌더.
+  if (hasUnconsciousProfileCached()) {
+    renderUnconsciousProfileDetail(el, logs);
+    return;
+  }
+  hasUnconsciousProfileAccess().then(ok => {
+    if (ok) {
+      const cur = document.getElementById('unconsciousProfile');
+      if (cur) renderUnconsciousProfileDetail(cur, JSON.parse(localStorage.getItem('mg_logs') || '[]').filter(l => !l.noDream));
+    }
+  }).catch(() => {});
+
   // 감정/키워드 분석으로 3축 계산
   const texts = logs.map(l => (l.text || '') + ' ' + (l.title || '')).join(' ');
   const badges = logs.flatMap(l => l.badges || []);
@@ -497,6 +512,82 @@ export function renderUnconsciousProfile() {
     ${barsHtml}
     ${hookingHtml}
     ${ctaHtml}
+  `;
+}
+
+// ── 무의식 상세 프로파일 (₩2,900 유료 산출물) ──
+// SOLD_NOT_DELIVERED 수리(2026-06-24): paywall 이 약속한 4가지를 실제 데이터로 렌더.
+//   ① 5축 심층분석(욕구/불안/성장/관계/자아) ② 누적 데이터 기반 성격 아키타입
+//   ③ "혹시 평소에 ~한 편 아닌가요?" 인사이트 ④ 시간에 따른 무의식 변화 추적
+export function renderUnconsciousProfileDetail(el, logs) {
+  if (!el) return;
+  const profile = buildUnconsciousProfile(logs);
+
+  // ① 5축 바 (욕구/불안/성장/관계/자아)
+  const axisBars = profile.axes.map(a => `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+      <span style="font-size:14px;width:20px">${a.emoji}</span>
+      <span style="font-size:11px;width:32px;color:var(--text-secondary)">${a.name}</span>
+      <div style="flex:1;height:9px;background:rgba(255,255,255,.04);border-radius:5px;overflow:hidden">
+        <div style="height:100%;width:${a.value}%;background:${a.color};border-radius:5px;transition:width .8s ease"></div>
+      </div>
+      <span style="font-size:10px;color:var(--text-muted);width:32px;text-align:right">${a.value}%</span>
+    </div>
+  `).join('');
+
+  // ② 성격 아키타입
+  const arch = profile.archetype;
+  const archHtml = `
+    <div style="background:linear-gradient(135deg,rgba(166,124,239,.1),rgba(91,191,186,.06));border:1px solid rgba(166,124,239,.2);border-radius:12px;padding:14px;margin-top:14px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="font-size:28px">${arch.emoji}</span>
+        <div>
+          <div style="font-size:10px;color:var(--text-muted)">당신의 무의식 유형</div>
+          <div style="font-size:15px;font-weight:800;color:var(--purple-bright,#a67cef)">${esc(arch.title)}</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text-secondary);line-height:1.7">${esc(arch.summary)}</div>
+    </div>`;
+
+  // ③ 인사이트
+  const insightsHtml = profile.insights.map(msg => `
+    <div style="background:rgba(91,191,186,.06);border:1px solid rgba(91,191,186,.15);border-radius:10px;padding:10px 12px;margin-top:8px">
+      <div style="font-size:11px;color:var(--teal,#5bbfba);line-height:1.6">💡 ${esc(msg)}</div>
+    </div>`).join('');
+
+  // ④ 시간에 따른 무의식 변화 추적
+  let trendHtml = '';
+  if (profile.trend.available) {
+    const deltaRows = profile.trend.deltas.map(d => {
+      const sign = d.delta > 0 ? '+' : '';
+      const col = d.delta > 0 ? '#7de8d8' : (d.delta < 0 ? '#f0a8c8' : 'var(--text-muted)');
+      const arrow = d.delta > 0 ? '↑' : (d.delta < 0 ? '↓' : '–');
+      return `<div style="display:flex;align-items:center;justify-content:space-between;font-size:10px;padding:3px 0">
+        <span style="color:var(--text-secondary)">${d.emoji} ${d.name}</span>
+        <span style="color:var(--text-muted)">${d.before}% → ${d.after}% <span style="color:${col};font-weight:700">${arrow} ${sign}${d.delta}</span></span>
+      </div>`;
+    }).join('');
+    trendHtml = `
+      <div style="margin-top:14px;background:rgba(255,255,255,.02);border-radius:12px;padding:12px">
+        <div style="font-size:12px;font-weight:700;color:var(--moon,#f5e6b2);margin-bottom:8px">🌙 시간에 따른 무의식 변화</div>
+        ${deltaRows}
+        <div style="font-size:11px;color:var(--teal,#5bbfba);line-height:1.6;margin-top:8px;border-top:1px solid rgba(255,255,255,.05);padding-top:8px">${esc(profile.trend.narrative)}</div>
+      </div>`;
+  } else {
+    trendHtml = `<div style="margin-top:14px;font-size:10px;color:var(--text-muted);text-align:center">${esc(profile.trend.message)}</div>`;
+  }
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+      <span style="font-size:14px;font-weight:800;color:var(--teal,#5bbfba);font-family:'Gowun Dodum',serif">🧠 무의식 상세 프로파일</span>
+      <span style="font-size:8px;font-weight:700;color:#1a1200;background:linear-gradient(135deg,#5bbfba,#3d9e99);border-radius:6px;padding:1px 6px">UNLOCKED</span>
+    </div>
+    <div style="font-size:10px;color:var(--text-muted);margin-bottom:14px">꿈 ${profile.dreamCount}개 누적 데이터 기반 분석</div>
+    <div style="font-size:11px;font-weight:700;color:var(--text-secondary);margin-bottom:8px">무의식 5축 심층 분석</div>
+    ${axisBars}
+    ${archHtml}
+    ${insightsHtml}
+    ${trendHtml}
   `;
 }
 
@@ -1070,6 +1161,7 @@ window.getFreeUnlocks = getFreeUnlocks;
 window.useFreeUnlock = useFreeUnlock;
 window.addXPSilent = addXPSilent;
 window.renderUnconsciousProfile = renderUnconsciousProfile;
+window.renderUnconsciousProfileDetail = renderUnconsciousProfileDetail;
 window.showUnconsciousPaywall = showUnconsciousPaywall;
 // [버그수정] 아래 함수들이 window 에 노출 안 돼 app.js 의 window.fn?.() 호출(init/탭전환)이
 // 항상 no-op 였음 → 업적/꿈성격/패턴/갤러리/연속리셋체크가 init 시 미작동.

@@ -433,6 +433,62 @@ export function markPremiumSuggested() {
   localStorage.setItem(DALI_SUGGEST_COOLDOWN_KEY, String(Date.now()));
 }
 
+// ── 무의식 프로파일(₩2,900) 접근권 ──
+// SOLD_NOT_DELIVERED 수리(2026-06-24): 결제 후 유료 상세 프로파일을 렌더할지 게이트.
+//   접근 허용 조건(paywall.js 약속과 일치):
+//     1) plus/premium 구독자 — paywall "Plus 구독 시 바로 확인" 약속.
+//     2) unconscious_profile 단건 구매자 — entitlements 에 active 행 존재.
+//   one_time 구매는 toss-confirm 이 entitlements(type='pack', product_id='unconscious_profile',
+//   remaining=1) 로 적립 → check_entitlement 의 pack_credits 에 섞여 구분 불가하므로,
+//   product_id 로 *직접* entitlements 를 조회한다(RLS: 본인 행만 SELECT 가능).
+const PROFILE_UNLOCK_KEY = 'mg_profile_unlocked';
+
+export function hasUnconsciousProfileCached() {
+  if (BETA_OPEN_ALL) return true;
+  const devUnlock = (typeof localStorage !== 'undefined') ? localStorage.getItem('mg_dev_unlock') : null;
+  if (devUnlock === 'premium' || devUnlock === 'plus') return true;
+  const tier = getCachedTier();
+  if (tier === 'plus' || tier === 'premium' || tier === 'pro') return true;
+  return (typeof localStorage !== 'undefined') && localStorage.getItem(PROFILE_UNLOCK_KEY) === '1';
+}
+
+export async function hasUnconsciousProfileAccess() {
+  if (BETA_OPEN_ALL) return true;
+  const devUnlock = (typeof localStorage !== 'undefined') ? localStorage.getItem('mg_dev_unlock') : null;
+  if (devUnlock === 'premium' || devUnlock === 'plus') return true;
+
+  // 1) 구독자는 즉시 허용 (paywall 약속)
+  const tier = await getUserTier();
+  if (tier === 'plus' || tier === 'premium' || tier === 'pro') {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(PROFILE_UNLOCK_KEY, '1');
+    return true;
+  }
+
+  // 2) 단건 구매자: entitlements 직접 조회 (RLS 본인 행만)
+  if (store.supabase && store.currentUser) {
+    try {
+      const { data } = await store.supabase
+        .from('entitlements')
+        .select('id')
+        .eq('user_id', store.currentUser.id)
+        .eq('product_id', 'unconscious_profile')
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle();  // 0행(미구매)는 정상 → 406 방지
+      const unlocked = !!data;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(PROFILE_UNLOCK_KEY, unlocked ? '1' : '0');
+      }
+      return unlocked;
+    } catch (e) {
+      // 조회 실패 → 캐시 폴백(과대허용 금지: 명시적 '1' 일 때만)
+      return hasUnconsciousProfileCached();
+    }
+  }
+
+  return hasUnconsciousProfileCached();
+}
+
 window.canSaveDream = canSaveDream;
 window.getUserTier = getUserTier;
 window.getCachedTier = getCachedTier;
@@ -448,3 +504,5 @@ window.updateDreamCountInfo = updateDreamCountInfo;
 window.updateCreditInfo = updateCreditInfo;
 window.canSuggestPremium = canSuggestPremium;
 window.markPremiumSuggested = markPremiumSuggested;
+window.hasUnconsciousProfileAccess = hasUnconsciousProfileAccess;
+window.hasUnconsciousProfileCached = hasUnconsciousProfileCached;
