@@ -43,13 +43,82 @@ function _clip(s: unknown, max: number): string {
   return s.length > max ? s.slice(0, max) : s
 }
 
+// ── 입력 grounding(소재 일치) 검증 ──────────────────────────────────────────
+// [문제] LLM(temperature 높음)이 입력을 무시하고 시스템 프롬프트의 예시 패턴(할머니/밥상)이나
+//   자기가 흔히 본 시나리오(전 애인/이빨)를 변주해 출력 → 사용자가 적은 꿈("할머니/고래")과
+//   완전 무관한 해석("아빠 걷는/죽은 고양이")을 '정확한 AI 해석'으로 팖 = 핵심 가치 미작동.
+// [해결] 출력이 사용자 입력의 '구별되는 소재 토큰'을 실제로 1개 이상 반영하는지 서버가 검증한다.
+//   미반영(=환각) 시 호출부가 1회 repair 재시도 → 그래도 실패면 키워드 폴백(입력 grounded)으로 강등.
+//
+// 토큰 추출 = 입력에서 한글 2글자+ 연속을 뽑고, 의미 없는 조사·기능어·해몽 상투어를 제거한다.
+// 순수 함수(외부 의존 0) → Node/Deno 양쪽에서 동일 동작 + 단위 테스트(test_input_grounding_runtime.py).
+
+// 조사·어미·기능어·해몽 상투어 — grounding 토큰에서 제외(이게 겹쳐도 '소재 반영' 아님).
+const GROUND_STOP = new Set<string>([
+  '그리고', '그래서', '그런데', '하지만', '그러다', '그러자', '그러면', '갑자기', '계속', '다시', '약간', '조금', '정말',
+  '너무', '아주', '매우', '엄청', '진짜', '같이', '함께', '혼자', '그냥', '막', '되게', '되어', '있었', '없었', '했었',
+  '나는', '내가', '나를', '나의', '제가', '저는', '우리', '그게', '그건', '이건', '저건', '거기', '여기', '저기', '어디',
+  '느낌', '기분', '생각', '마음', '모습', '순간', '장면', '상황', '도중', '와중', '동안',
+  '꿈에', '꿈을', '꿈이', '꿈에서', '해몽', '해석', '의미', '상징', '무의식', '메시지',
+])
+
+// 입력에서 grounding 후보 토큰 추출(중복 제거, 긴 것 우선).
+export function _extractGroundTokens(input: string): string[] {
+  if (typeof input !== 'string' || !input.trim()) return []
+  // 한글 2글자+ 연속만(조사 노이즈가 섞인 어절도 포함됨 → substring 매칭으로 흡수)
+  const raw = input.match(/[가-힣]{2,}/g) || []
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const w of raw) {
+    if (GROUND_STOP.has(w)) continue
+    // 어절 끝 조사 1글자 잘라 명사 핵심 노출(예: '고래가'→'고래', '할머니가'→'할머니')
+    const cores = [w]
+    if (w.length >= 3) cores.push(w.replace(/(은|는|이|가|을|를|에|의|와|과|도|만|로|랑|께|한테|에게|에서|보다|처럼|같은|마저|조차)$/u, ''))
+    for (const c of cores) {
+      if (c.length >= 2 && !GROUND_STOP.has(c) && !seen.has(c)) { seen.add(c); out.push(c) }
+    }
+  }
+  // 긴 토큰 우선(더 구별적) — 매칭 신뢰도↑
+  return out.sort((a, b) => b.length - a.length)
+}
+
+// 출력(JSON 문자열 또는 일반 텍스트)이 입력 소재를 반영하는지 판정.
+// 규칙: 입력 토큰이 충분히 있는데(>=minTokens) 출력이 그중 단 하나도 포함하지 않으면 '미반영'(false).
+//   토큰이 너무 적은(1글자 위주) 입력은 grounding 판정 자체를 건너뜀(=true, 관대) → 오탐 방지.
+export function _isGrounded(input: string, output: string, minTokens = 2): boolean {
+  const tokens = _extractGroundTokens(input)
+  if (tokens.length < minTokens) return true   // 판정 불가(소재 빈약) → 통과(보수적)
+  if (typeof output !== 'string' || !output.trim()) return false
+  // 출력에서 한글 외 노이즈 영향 없도록 그대로 substring 검사(토큰=한글 연속).
+  for (const t of tokens) {
+    if (output.includes(t)) return true
+  }
+  // 핵심 토큰 일부(2글자 어근)라도 출력에 있으면 반영으로 인정(활용형 차이 흡수).
+  for (const t of tokens) {
+    if (t.length >= 3 && output.includes(t.slice(0, 2))) return true
+  }
+  return false
+}
+
+// grounding 실패 시 재시도용 — 시스템 프롬프트에 덧붙일 강한 교정 지시.
+// 입력 토큰을 명시적으로 나열해 "이것들만 써라"를 못 박는다(예시 패턴 변주 차단).
+export function _groundingRepairDirective(input: string): string {
+  const toks = _extractGroundTokens(input).slice(0, 8)
+  const list = toks.length ? toks.join(', ') : '(사용자가 적은 단어 그대로)'
+  return `\n[교정 — 매우 중요] 직전 응답이 사용자가 적지 않은 내용을 지어냈다. 다시 한다.
+사용자 꿈에 실제 등장한 소재는 다음뿐이다: ${list}.
+이 소재만으로 해석하라. 위 목록에 없는 인물·동물·사물·장소(예: 다른 가족·다른 동물)를 새로 만들어 넣지 마라.
+preview/해석에 위 소재 중 최소 1개를 반드시 그대로 언급하라. 예시 문장을 베끼지 말고 이 사용자의 입력만 본다.`
+}
+
 // ── 1단계 빠른 해석 (제목/뱃지/점수/감정/미리보기) ──
 function _dreamQuickSystem(input: string, lifeStage?: string): string {
   const toneMod = _toneMod(input)
   return `너는 30년 경력 꿈 해석가야. 친구한테 얘기하듯 편하게.${toneMod}
 사용자가 적은 꿈에 실제로 나온 소재(등장인물·장소·사물·행동·감정)에 근거해서만 해석해. 입력에 없는 내용을 지어내지 말고, 누구에게나 들어맞는 일반론·뜬구름 잡는 말 금지. 입력이 짧으면 짧은 대로 그 소재에 집중해.
 [필수] 입력에 나온 인물의 성별·관계(전 여자친구/전 남자친구/엄마/상사 등)를 절대 바꾸지 말고 입력 표현 그대로 써. 꿈에서 깬 뒤의 감정·여운(예: 마음이 텅 빈 느낌, 하루종일 맴돔)이 입력에 있으면 그것을 해석의 핵심으로 반드시 짚어.
-[예시] 입력 "돌아가신 할머니가 말없이 밥을 차려주셨고 깨고 한참 울었어요" → preview "<strong>할머니가 말없이 차려준 밥상</strong>은 채워주고 싶은 그리움이에요. 깨고 한참 우셨다는 건 그 그리움이 지금 마음에 크게 자리한다는 뜻이에요. 이 꿈엔 더 깊은 이야기가 숨어있어요..."
+[절대규칙] 사용자가 적지 않은 인물·동물·사물·장소를 새로 지어내지 마라(예: 입력에 '고래'가 있으면 '고양이'로 바꾸거나, '할머니'를 '아빠'로 바꾸지 마라). preview 에는 사용자가 적은 단어 중 최소 1개를 반드시 그대로(원형 그대로) 다시 써라. 아래 예시는 출력 '형식'만 보여주는 것이고, 그 내용(소재)을 베끼지 마라 — 항상 이 사용자의 입력 소재만 쓴다.
+[형식예시(내용 베끼기 금지)] preview = "<strong>[사용자가 적은 핵심 소재]</strong>는 ~한 의미예요. [사용자가 적은 또 다른 소재/감정]은 ~을 뜻해요. 이 꿈엔 더 깊은 이야기가 숨어있어요..."
 [출력형식] title 은 반드시 '이모지 1개 + 공백 + 한글 단어'(예: "💔 마음의 잔상", "🦷 흔들리는 자신감"). 이모지만 쓰지 마. 영어·외국어 단어 절대 금지(lingering 류 X). 별표(*)·따옴표(„")·불릿(■●✦)·마크다운 금지. 고인·죽음·아픈 주제엔 가벼운/무서운 이모지(👻💥) 대신 따뜻한 이모지(🌙💗🕊️)를 써. 자연스러운 한국어 문장만. 반드시 JSON으로만 응답.
 {
   "title": "이모지 1개+공백+한글 단어 (10자 이내)",
@@ -208,26 +277,31 @@ export function buildChatPayload(task: string, params: any): any | null {
   switch (task) {
     case 'dream_quick': {
       const input = _clip(p.input, 4000)
+      // repair=true → 직전 응답이 grounding 실패(입력 무시)했으므로 교정 지시를 덧붙여 재생성.
+      const sys = _dreamQuickSystem(input, p.lifeStage) + (p.repair ? _groundingRepairDirective(input) : '')
       return {
         model: 'gpt-4o',
         messages: [
-          { role: 'system', content: _dreamQuickSystem(input, p.lifeStage) },
+          { role: 'system', content: sys },
           { role: 'user', content: input },
         ],
-        temperature: 0.85,
+        // [입력 grounding] 0.85 → 0.5: 해몽은 창의 변주보다 '사용자 입력 충실 반영'이 핵심 가치라
+        //   높은 temperature 가 예시 패턴 변주/소재 환각을 부추겼다(입력"할머니/고래"→출력"아빠/고양이").
+        temperature: p.repair ? 0.2 : 0.5,
         max_tokens: 700,
         response_format: { type: 'json_object' },
       }
     }
     case 'dream_detail': {
       const input = _clip(p.input, 4000)
+      const sys = _dreamDetailSystem(input, p.lifeStage) + (p.repair ? _groundingRepairDirective(input) : '')
       return {
         model: 'gpt-4o',
         messages: [
-          { role: 'system', content: _dreamDetailSystem(input, p.lifeStage) },
+          { role: 'system', content: sys },
           { role: 'user', content: input },
         ],
-        temperature: 0.85,
+        temperature: p.repair ? 0.2 : 0.5,
         max_tokens: 3500,
         response_format: { type: 'json_object' },
       }

@@ -48,8 +48,10 @@ def test_llm_path_tagged_in_dream_js():
     src = DREAM.read_text(encoding="utf-8")
     assert "engine='llm'" in src or "engine = 'llm'" in src, "LLM 결과에 engine:'llm' 태깅 부재"
     assert "isFallback=false" in src
-    # 폴백 경로에 사유 명시 전달(추측 아님)
-    assert "demoResult(inp,'invalid_llm_response')" in src
+    # 폴백 경로에 사유 명시 전달(추측 아님). invalid_llm_response = 형식 무효 폴백 사유.
+    # (입력 grounding 게이트 도입 후 사유는 ungrounded/invalid 분기 — 둘 다 명시 사유여야 함)
+    assert "'invalid_llm_response'" in src or "invalid_llm_response" in src
+    assert "ungrounded_llm_response" in src, "입력 미반영(grounding) 폴백 사유 미배선"
     assert "fallbackReason" in src, "catch 폴백에 사유 전달 부재"
 
 

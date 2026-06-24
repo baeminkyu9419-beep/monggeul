@@ -11,7 +11,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-import { buildChatPayload } from "./prompts.ts"
+import { buildChatPayload, _isGrounded } from "./prompts.ts"
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || ''
@@ -312,7 +312,34 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
       }
-      const data = mode === 'consensus' ? await _chatConsensus(builtPayload) : await _chatFallback(builtPayload)
+      let data = mode === 'consensus' ? await _chatConsensus(builtPayload) : await _chatFallback(builtPayload)
+
+      // [입력 grounding 게이트] 해몽 task 는 출력이 사용자 입력 소재를 실제로 반영해야 한다.
+      //   LLM(temperature)이 입력을 무시하고 예시/상투 시나리오를 변주하면(환각) 사용자는
+      //   자기 꿈과 무관한 해석을 '정확한 AI 해석'으로 받는다. 서버가 1회 repair 재시도하고,
+      //   그래도 미반영이면 _ungrounded 플래그를 달아 클라가 키워드 폴백(입력 grounded)으로 강등하게 한다.
+      const _DREAM_TASKS = ['dream_quick', 'dream_detail']
+      const _isDreamTask = _DREAM_TASKS.indexOf(task) !== -1
+      if (_isDreamTask && params && typeof params.input === 'string') {
+        const _content = (d: any) => (d?.choices?.[0]?.message?.content) || ''
+        if (!_isGrounded(params.input, _content(data))) {
+          // 1차 환각 → 입력 토큰을 못 박은 교정 프롬프트로 재시도(temperature↓).
+          try {
+            const repairPayload = buildChatPayload(task, { ...params, repair: true })
+            if (repairPayload) {
+              const retry = mode === 'consensus' ? await _chatConsensus(repairPayload) : await _chatFallback(repairPayload)
+              if (_isGrounded(params.input, _content(retry))) data = retry
+              else { data = retry; data._ungrounded = true }
+            } else {
+              data._ungrounded = true
+            }
+          } catch (_e) {
+            // 재시도 실패(레이트리밋 등) → 원본 유지하되 미반영 표시(클라 폴백 유도).
+            data._ungrounded = true
+          }
+        }
+      }
+
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
