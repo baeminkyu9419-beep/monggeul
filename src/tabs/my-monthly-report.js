@@ -159,9 +159,16 @@ export async function generateGPTNarrative(){
       titles:titles
     });
     const text=data.choices?.[0]?.message?.content||'';
-    if(el&&text)el.innerHTML=text.replace(/\n/g,'<br>');
-    else if(el)el.innerHTML='내러티브 생성에 실패했어요. 다시 시도해보세요.';
-    logEvent('gpt_narrative_generated',{month:now.getMonth()+1,dreams:monthLogs.length});
+    // [입력 grounding] 서버가 내러티브를 사용자 이번 달 데이터 미반영(일반론) 판정 시 _ungrounded=true.
+    //   구독료를 낸 사용자에게 자기 달과 무관한 generic AI 내러티브를 보여주지 않는다 →
+    //   데이터-grounded 로컬 템플릿(renderMonthlyReport 가 실제 키워드/제목/감정으로 만든 것)으로 강등.
+    if(data._ungrounded||!text){
+      renderMonthlyReport();
+      logEvent('gpt_narrative_ungrounded',{month:now.getMonth()+1,dreams:monthLogs.length});
+    }else if(el){
+      el.innerHTML=text.replace(/\n/g,'<br>');
+      logEvent('gpt_narrative_generated',{month:now.getMonth()+1,dreams:monthLogs.length});
+    }
   }catch(e){
     if(el)el.innerHTML='오프라인이거나 일시적 오류예요. 나중에 다시 시도해보세요.';
   }

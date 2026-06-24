@@ -253,20 +253,64 @@ function _monthlySystem(): string {
   return '당신은 꿈 분석 전문가 달이입니다. 따뜻하고 탐색적인 톤으로 이야기합니다. 진단이 아닌 탐색적 표현만 사용합니다.'
 }
 
-function _monthlyUser(p: MonthlyParams): string {
+// 월간 grounding 에서 제외할 generic 정서·해몽 상투어 — 일반 내러티브 어디에나 등장해
+//   '데이터 반영'의 증거가 못 되는 단어. keywords/emotions 에 우연히 섞여도 앵커로 안 쓴다.
+const MONTHLY_GENERIC = new Set<string>([
+  '마음', '잔상', '그리움', '여운', '흐름', '신호', '메시지', '하루', '오늘', '내일',
+  '시간', '순간', '기억', '추억', '기운', '에너지', '변화', '시작', '균형', '평화', '위로', '치유',
+  '여정', '이야기', '거울', '안녕', '잔향', '울림', '깊이', '바람', '소리', '어둠', '그림자',
+])
+
+// 월간 리포트 grounding 토큰 — 사용자의 이번 달 '구별되는' 소재 토큰을 뽑는다.
+//   소스 = keywords(실제 꿈 본문에서 추출한 명사 = 가장 구별적) + emotions(사용자 감정).
+//   titles 는 의도적으로 제외: AI 가 생성한 시적 라벨이라 '마음/잔상/그리움' 같은 generic 정서어가
+//   대부분이고 그 단어들은 generic 내러티브("마음의 거울이에요")에도 그대로 등장해 grounding 을
+//   오탐(=일반론이 통과)시킨다. 진짜 사용자 소재(고래/할머니/바다/시험)는 keywords 에 있다.
+//   (dream task 와 동일한 _extractGroundTokens 재사용 → 조사·상투어 제거 일관)
+export function _monthlyGroundTokens(p: MonthlyParams): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  const push = (s: unknown) => {
+    if (typeof s !== 'string') return
+    for (const t of _extractGroundTokens(s)) {
+      // generic 정서어(및 그 2글자 어근)는 grounding 앵커에서 제외 → 일반론 오탐 차단.
+      if (MONTHLY_GENERIC.has(t) || MONTHLY_GENERIC.has(t.slice(0, 2))) continue
+      if (!seen.has(t)) { seen.add(t); out.push(t) }
+    }
+  }
+  if (Array.isArray(p.keywords)) p.keywords.forEach(push)
+  if (Array.isArray(p.emotions)) p.emotions.forEach(push)
+  return out
+}
+
+// 월간 리포트가 사용자 데이터를 무시(generic 변주)했을 때 재시도용 교정 지시.
+//   사용자 실제 키워드/제목/감정 토큰을 못 박아 "이번 달 누구에게나 통하는 일반론" 차단.
+export function _monthlyRepairDirective(p: MonthlyParams): string {
+  const toks = _monthlyGroundTokens(p).slice(0, 8)
+  const list = toks.length ? toks.join(', ') : '(위 데이터의 키워드·제목·감정)'
+  return '\n[교정 — 매우 중요] 직전 응답이 이 사용자의 이번 달 실제 데이터를 반영하지 않고'
+    + ' 누구에게나 통하는 일반론을 썼다. 다시 작성한다.\n'
+    + '이 사용자의 이번 달 꿈에 실제로 나온 소재·감정은 다음이다: ' + list + '.\n'
+    + '내러티브에 위 소재·감정 중 최소 1개를 반드시 그대로 언급하라. 위 목록에 없는 일반적 표현으로'
+    + ' 얼버무리지 말고, 이 사용자의 이번 달 데이터에만 근거해 써라.'
+}
+
+function _monthlyUser(p: MonthlyParams, repair?: boolean): string {
   const count = typeof p.count === 'number' ? p.count : 0
   const good = typeof p.good === 'number' ? p.good : 0
   const bad = typeof p.bad === 'number' ? p.bad : 0
   const kws = Array.isArray(p.keywords) ? p.keywords.map((k) => _clip(k, 30)).join(', ') : ''
   const emos = Array.isArray(p.emotions) ? p.emotions.map((e) => _clip(e, 30)).join(', ') : ''
   const titles = Array.isArray(p.titles) ? p.titles.map((t) => _clip(t, 60)).join(', ') : ''
-  return '당신은 따뜻한 꿈 분석가 달이입니다. 아래 데이터를 바탕으로 이번 달 꿈 리포트 내러티브를 3~5문장으로 작성하세요.\n'
+  const base = '당신은 따뜻한 꿈 분석가 달이입니다. 아래 데이터를 바탕으로 이번 달 꿈 리포트 내러티브를 3~5문장으로 작성하세요.\n'
     + '- 이번 달 꿈 수: ' + count + '개\n'
     + '- 길몽: ' + good + ', 흉몽: ' + bad + '\n'
     + '- 주요 키워드: ' + kws + '\n'
     + '- 주요 감정: ' + emos + '\n'
     + '- 최근 꿈 제목: ' + titles + '\n\n'
-    + '톤: 탐색적이고 따뜻하게. 단정적 진단 금지. "~일 수 있어요" 어조 사용. 공포 마케팅 금지.'
+    + '톤: 탐색적이고 따뜻하게. 단정적 진단 금지. "~일 수 있어요" 어조 사용. 공포 마케팅 금지.\n'
+    + '[필수] 위 키워드·제목·감정 중 실제로 등장한 소재를 최소 1개 그대로 언급하라. 이번 달 데이터를 무시한 누구에게나 통하는 일반론 금지.'
+  return repair ? base + _monthlyRepairDirective(p) : base
 }
 
 // task 별 LLM payload(messages/model/options) 조립.
@@ -324,14 +368,15 @@ export function buildChatPayload(task: string, params: any): any | null {
       }
     }
     case 'monthly_report': {
+      // repair=true → 직전 내러티브가 사용자 데이터 미반영(일반론) → 교정 지시 + temperature↓ 로 충실도↑.
       return {
         model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: _monthlySystem() },
-          { role: 'user', content: _monthlyUser(p) },
+          { role: 'user', content: _monthlyUser(p, p.repair) },
         ],
         max_tokens: 300,
-        temperature: 0.8,
+        temperature: p.repair ? 0.4 : 0.8,
       }
     }
     default:

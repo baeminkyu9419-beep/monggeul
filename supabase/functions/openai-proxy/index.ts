@@ -11,7 +11,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-import { buildChatPayload, _isGrounded } from "./prompts.ts"
+import { buildChatPayload, _isGrounded, _monthlyGroundTokens } from "./prompts.ts"
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || ''
@@ -335,6 +335,34 @@ serve(async (req) => {
             }
           } catch (_e) {
             // 재시도 실패(레이트리밋 등) → 원본 유지하되 미반영 표시(클라 폴백 유도).
+            data._ungrounded = true
+          }
+        }
+      }
+
+      // [입력 grounding 게이트 — monthly_report] 월간 리포트는 Plus 구독 전용 유료 기능이다.
+      //   gpt-4o-mini(temperature 0.8) + "탐색적/따뜻하게" 지시는 사용자의 이번 달 실제 데이터를
+      //   무시하고 누구에게나 통하는 일반론("마음의 거울이에요" 류)을 쓰기 쉽다 → 구독료를 내고
+      //   자기 달과 무관한 generic 내러티브를 받는다(팔지만 안 줌, dream task 와 같은 문제).
+      //   사용자의 실제 키워드/제목/감정 토큰이 내러티브에 1개도 없으면 repair 1회 재시도하고,
+      //   그래도 미반영이면 _ungrounded 를 달아 클라가 데이터-grounded 로컬 템플릿으로 강등하게 한다.
+      if (task === 'monthly_report') {
+        const _content = (d: any) => (d?.choices?.[0]?.message?.content) || ''
+        const _mtoks = _monthlyGroundTokens(params || {})
+        // 토큰을 한 줄로 합쳐 _isGrounded 재사용(입력=토큰 모음, 출력=내러티브).
+        const _mGroundInput = _mtoks.join(' ')
+        // 토큰이 충분히 있을 때만 판정(빈약하면 _isGrounded 가 보수적으로 통과).
+        if (_mtoks.length >= 2 && !_isGrounded(_mGroundInput, _content(data))) {
+          try {
+            const repairPayload = buildChatPayload(task, { ...(params || {}), repair: true })
+            if (repairPayload) {
+              const retry = mode === 'consensus' ? await _chatConsensus(repairPayload) : await _chatFallback(repairPayload)
+              if (_isGrounded(_mGroundInput, _content(retry))) data = retry
+              else { data = retry; data._ungrounded = true }
+            } else {
+              data._ungrounded = true
+            }
+          } catch (_e) {
             data._ungrounded = true
           }
         }
