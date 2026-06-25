@@ -10,3 +10,27 @@ Allow: /
 # Daum
 User-agent: Daum
 Allow: /
+
+# AI 검색·인용 봇 명시 허용 (ChatGPT/Perplexity/Claude/Gemini/Copilot 인용 환영)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# LLM 컨텍스트 파일: /llms.txt

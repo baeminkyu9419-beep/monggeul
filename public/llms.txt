@@ -1,0 +1,115 @@
+# 몽글몽글 (Monggeul) — AI 꿈 해몽
+
+> 꿈을 입력하면 AI가 길몽·흉몽·상징·감정·운세를 해석하고 반복되는 꿈 패턴을 분석하는 한국어 꿈 해몽 서비스. AI 캐릭터 '달이'와 함께 꿈을 기록·해석한다. 104개 꿈 키워드 사전(뱀·이빨·물·죽음 등) + 자유 꿈 입력 해석 + 꿈 일기.
+
+몽글몽글은 한국어 사용자를 위한 AI 꿈 해몽 서비스다. (1) 자유롭게 꾼 꿈을 입력하면 AI가 상징·감정·길흉·운세를 해석하고, (2) 꿈 키워드 사전에서 특정 꿈(뱀 꿈, 이빨 빠지는 꿈 등)의 전통 해몽과 상황별(예: 황금 뱀, 물리는 뱀) 길흉을 확인한다. 각 사전 페이지는 FAQ 구조로 'X 꿈은 길몽인가 흉몽인가' 같은 질문에 직접 답한다.
+
+## 핵심 페이지
+- [꿈 입력·AI 해석 (홈)](https://baeminkyu9419-beep.github.io/monggeul/): 꾼 꿈을 자유 입력하면 AI가 해석
+- [꿈 해몽 사전 전체](https://baeminkyu9419-beep.github.io/monggeul/dreams/): 104개 꿈 키워드 색인
+
+## 꿈 해몽 사전 (104 키워드)
+- [교통사고 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/accident.html): 교통사고 꿈은 현실의 급작스러운 변화나 통제력 상실에 대한 불안을 비추지만, 다치지 않으면 액땜의 길몽으로도 풀이됩니다.
+- [비행기 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/airplane.html): 비행기는 목표, 여행, 도약의 상징입니다. 높이 나는 비행기처럼 큰 꿈과 야망을 나타내요.
+- [조상 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/ancestor.html): 돌아가신 분이나 조상이 나오는 꿈은 보살핌과 경고를 함께 전하는 의미 깊은 꿈으로 여겨집니다.
+- [개미 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/ant.html): 개미 꿈은 근면, 협동, 재물의 상징입니다. 작지만 강한 개미는 성실함의 보상을 예고해요.
+- [군대 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/army.html): 다시 군대에 가는 꿈은 현실의 압박과 책임감, 벗어나고 싶은 상황을 상징하는 대표적인 스트레스 꿈입니다.
+- [아기 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/baby.html): 아기 꿈은 새로운 시작, 순수함, 가능성의 상징입니다. 태몽과 구분되는 일반적 아기 꿈 해석.
+- [가방 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/bag.html): 가방 꿈은 책임과 비밀, 또는 짊어진 짐을 상징합니다.
+- [곰 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/bear.html): 곰은 힘, 보호, 모성의 상징입니다. 곰의 태도에 따라 강한 조력자 또는 두려운 존재를 의미해요.
+- [새 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/bird.html): 새는 자유, 희망, 소식의 상징입니다. 새의 종류와 행동에 따라 다양한 메시지를 전달해요.
+- [아기 낳는 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/birth.html): 아기를 낳는 꿈은 새로운 시작과 결실, 큰 성취의 탄생을 상징하는 대표적인 길몽입니다.
+- [피 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/blood.html): 피 꿈은 생명력, 에너지, 감정의 상징입니다. 무섭지만 의외로 길몽인 경우가 많은 꿈이에요.
+- [이별 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/breakup.html): 이별 꿈은 관계 변화에 대한 불안이거나, 감정 정리가 진행 중이라는 무의식의 신호입니다.
+- [다리 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/bridge.html): 다리는 연결, 전환, 극복의 상징입니다. 한 상태에서 다른 상태로 넘어가는 과정을 나타내요.
+- [나비 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/butterfly.html): 나비는 변화, 변신, 자유의 상징입니다. 아름다운 나비 꿈은 인생의 아름다운 변화를 예고해요.
+- [자동차 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/car.html): 자동차 꿈은 인생의 방향과 통제력을 상징합니다. 운전 상태가 현재 삶의 상태를 반영해요.
+- [고양이 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/cat.html): 고양이는 직감, 독립, 신비의 상징입니다. 고양이의 색과 행동에 따라 의미가 크게 달라져요.
+- [연예인 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/celebrity.html): 연예인이 나오는 꿈은 인정받고 싶은 욕구, 동경, 또는 자기 안에 숨은 매력과 가능성을 상징합니다.
+- [지네 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/centipede.html): 지네 꿈은 전통적으로 재물과 횡재를 뜻하는 길몽으로, 특히 큰 지네는 큰돈을 상징합니다.
+- [쫓기는 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/chase.html): 쫓기는 꿈은 회피하고 있는 문제, 직면하지 못한 감정을 나타내는 가장 흔한 꿈 유형입니다.
+- [닭 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/chicken.html): 닭 꿈은 부지런함과 재물, 그리고 소식을 상징합니다. 우는 닭은 좋은 소식을 알리는 길몽입니다.
+- [시계 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/clock.html): 시계 꿈은 시간, 기회, 그리고 결정의 때를 상징합니다. 잘 가는 시계는 순조로움의 길조입니다.
+- [옷 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/clothes.html): 옷은 사회적 페르소나, 이미지, 역할의 상징입니다. 입고 있는 옷이 외부에 보여주는 모습을 반영해요.
+- [구름 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/cloud.html): 구름은 생각, 상상력, 그리고 변화의 상징입니다. 구름의 모양과 색에 따라 의미가 달라집니다.
+- [시체 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/corpse.html): 시체를 보는 꿈은 의외로 재물운과 새 출발을 뜻하는 길몽으로 풀이되는 경우가 많습니다. 시체의 상태와 그때의 감정에 따라 해석이 갈립니다.
+- [소 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/cow.html): 소 꿈은 전통적으로 재물과 근면, 조상의 보살핌을 상징하는 대표적인 길몽입니다. 특히 누런 황소는 큰 재물운을 뜻합니다.
+- [까마귀 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/crow.html): 까마귀 꿈은 지혜, 경고, 변화의 상징입니다. 불길하게 보이지만 의외로 지혜로운 메시지를 담아요.
+- [우는 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/crying.html): 꿈에서 우는 것은 억눌린 감정의 해소입니다. 실컷 울고 나면 오히려 마음이 정화되는 길몽으로 풀이됩니다.
+- [어둠 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/darkness.html): 어둠 꿈은 불안과 미지, 또는 새로운 시작 직전의 잠복기를 상징합니다. 어둠 끝에 빛을 보면 길몽입니다.
+- [죽는 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/death.html): 죽는 꿈은 두렵지만 대부분 긍정적입니다. 과거의 끝과 새로운 시작, 변화와 성장의 상징입니다.
+- [개 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/dog.html): 개 꿈은 충성, 우정, 보호의 상징. 개의 태도에 따라 가까운 사람과의 관계를 반영합니다.
+- [문 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/door.html): 문은 기회, 전환, 선택의 상징입니다. 문이 열리고 닫히는 것이 인생의 선택지를 반영해요.
+- [용 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/dragon.html): 용은 최고의 길몽으로, 권력, 성공, 영적 각성의 상징입니다. 동양 문화에서 가장 존귀한 꿈이에요.
+- [지진 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/earthquake.html): 지진 꿈은 근본적인 변화, 불안정, 가치관의 흔들림을 상징합니다. 삶의 기반이 흔들리는 느낌이에요.
+- [지렁이 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/earthworm.html): 지렁이 꿈은 인내와 꾸준함, 그리고 땅에서 올라오는 재물운을 상징합니다.
+- [엘리베이터 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/elevator.html): 엘리베이터는 빠른 변화, 지위 변동, 운명의 전환을 상징합니다. 오르내림이 인생의 부침을 반영해요.
+- [전 애인 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/ex.html): 전 애인이 나오는 꿈은 미련이라기보다 그 시절의 감정과 교훈을 정리하려는 무의식인 경우가 많습니다.
+- [시험 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/exam.html): 시험 꿈은 졸업 후에도 반복되는 대표적 불안 꿈입니다. 평가에 대한 두려움과 준비 부족감의 반영.
+- [눈 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/eyes.html): 눈(目)이 나오는 꿈은 통찰과 시야, 진실을 보는 능력을 상징합니다.
+- [떨어지는 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/falling.html): 높은 곳에서 떨어지는 꿈은 통제력 상실, 불안감, 또는 새로운 시작의 신호입니다.
+- [싸우는 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/fight.html): 싸우는 꿈은 현실에서 억눌린 갈등과 스트레스의 표출입니다. 싸워서 이기면 길몽으로 풀이되는 경우가 많습니다.
+- [불 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/fire.html): 불 꿈은 열정과 파괴의 이중적 상징. 불의 상태에 따라 길몽과 흉몽이 나뉩니다.
+- [물고기 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/fish.html): 물고기 꿈은 재물, 풍요, 기회의 상징입니다. 특히 잉어, 금붕어 꿈은 전통적으로 큰 길몽이에요.
+- [꽃 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/flower.html): 꽃 꿈은 아름다움, 성장, 사랑의 상징입니다. 꽃의 종류와 상태에 따라 인생의 다양한 측면을 반영해요.
+- [하늘 나는 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/flying.html): 하늘을 나는 꿈은 자유, 해방감, 성취의 상징입니다. 비행 방식에 따라 의미가 달라집니다.
+- [음식 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/food.html): 음식 꿈은 영양, 만족, 욕구 충족의 상징입니다. 먹는 행위가 현재 삶의 만족도를 반영해요.
+- [귀신 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/ghost.html): 귀신 꿈은 직면하지 못한 감정, 과거의 트라우마, 또는 무의식의 메시지를 담고 있습니다.
+- [금 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/gold.html): 금이 나오는 꿈은 재물과 가치, 귀한 인연을 상징하는 강력한 길몽입니다.
+- [돌아가신 분 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/grandparent.html): 돌아가신 가족이 꿈에 나타나는 것은 그리움, 보호, 메시지의 상징입니다. 조상님 꿈의 의미.
+- [총 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/gun.html): 총이 나오는 꿈은 강한 힘과 공격성, 또는 결정적인 사건에 대한 긴장을 상징합니다.
+- [머리카락 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/hair.html): 머리카락은 자아 이미지, 생각, 매력의 상징입니다. 머리카락의 변화가 내면의 변화를 반영해요.
+- [말 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/horse.html): 말 꿈은 자유, 힘, 성공의 상징입니다. 전통 해몽에서 말은 관직이나 승진을 의미하기도 합니다.
+- [병원 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/hospital.html): 병원 꿈은 치유, 걱정, 자기 관리의 상징입니다. 건강에 대한 무의식적 관심을 반영해요.
+- [집 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/house.html): 꿈에서 집은 자기 자신과 마음의 상태를 반영합니다. 집의 상태가 내면의 상태를 보여줘요.
+- [보석 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/jewel.html): 보석 꿈은 귀한 가치, 재물, 그리고 소중한 사람이나 재능을 상징하는 길몽입니다.
+- [열쇠 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/key.html): 열쇠는 해결책, 기회, 비밀의 상징입니다. 열쇠를 찾는 꿈은 문제 해결의 실마리를 찾는 과정이에요.
+- [키스하는 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/kiss.html): 키스하는 꿈은 애정과 친밀함에 대한 욕구이자, 화해와 관계의 진전을 알리는 신호로 풀이됩니다.
+- [칼 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/knife.html): 칼은 결단, 분리, 보호의 상징입니다. 칼 꿈은 중요한 결정이나 관계 변화를 암시할 수 있어요.
+- [빛 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/light.html): 밝은 빛이 비치는 꿈은 희망, 깨달음, 그리고 새로운 시작을 알리는 대표적인 길몽입니다.
+- [사자 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/lion.html): 사자는 왕, 용기, 권력의 상징입니다. 사자 꿈은 리더십과 자신감에 관한 메시지를 담고 있어요.
+- [길 잃는 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/lost.html): 길을 잃는 꿈은 인생의 방향성과 선택에 대한 불안을 비춥니다. 결국 길을 찾으면 길몽으로 풀이됩니다.
+- [연인 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/lover.html): 연인이 나오는 꿈은 관계에 대한 감정, 기대, 불안을 반영합니다. 사랑과 관계의 꿈 해석.
+- [거울 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/mirror.html): 거울은 자기 인식, 진실, 자아 성찰의 상징입니다. 거울에 비친 모습이 내면의 상태를 보여줘요.
+- [돈 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/money.html): 돈이나 돼지가 나오는 꿈은 재물운의 상징입니다. 돈을 줍는 꿈, 돼지 꿈, 복권 꿈 등 상세 해석.
+- [달 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/moon.html): 달 꿈은 감정과 직관, 그리고 운의 흐름을 상징합니다. 밝고 둥근 달일수록 큰 길몽입니다.
+- [산 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/mountain.html): 산 꿈은 목표, 도전, 성취를 상징합니다. 산의 높이와 등반 상태가 현재 인생의 도전을 반영해요.
+- [벗은 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/naked.html): 벗은 채로 나가는 꿈은 취약함, 노출 불안, 또는 진정한 자아의 드러남을 상징합니다.
+- [코피 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/nosebleed.html): 코피를 흘리는 꿈은 피 꿈의 일종으로, 재물의 유출 또는 건강 점검의 신호로 풀이됩니다.
+- [전화 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/phone.html): 전화 꿈은 소통, 메시지, 연결의 상징입니다. 누구에게서 오는 전화인지에 따라 의미가 달라져요.
+- [돼지 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/pig.html): 돼지 꿈은 한국 전통 해몽에서 최고의 재물 꿈입니다. 복권을 사고 싶어지는 바로 그 꿈이에요!
+- [경찰 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/police.html): 경찰이 나오는 꿈은 양심과 규율, 또는 보호받고 싶은 마음을 상징합니다.
+- [똥 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/poop.html): 똥 꿈은 한국에서 최고의 재물 꿈! 지저분해 보여도 전통 해몽에서는 큰 행운의 상징입니다.
+- [태몽 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/pregnancy.html): 과일, 동물, 보석 등이 등장하는 태몽의 의미. 전통적 해석과 현대적 관점.
+- [감옥 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/prison.html): 감옥은 구속, 제약, 억압의 상징입니다. 현재 자유를 제한받는 느낌이 꿈으로 나타난 것이에요.
+- [구렁이 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/python.html): 구렁이 꿈은 큰 재물과 가문의 수호, 권력을 상징하는 전통적인 대길몽입니다.
+- [토끼 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/rabbit.html): 토끼 꿈은 행운, 다산, 민첩함의 상징입니다. 귀여운 토끼 꿈은 대체로 길몽으로 해석됩니다.
+- [비 오는 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/rain.html): 비는 정화, 새로운 시작, 감정 해소의 상징입니다. 비의 강도에 따라 의미가 달라집니다.
+- [무지개 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/rainbow.html): 무지개 꿈은 희망과 행운, 소원 성취를 알리는 대표적인 길몽입니다.
+- [반지 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/ring.html): 반지 꿈은 약속과 인연, 결속을 상징합니다. 받는 반지는 좋은 인연의 길몽입니다.
+- [강 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/river.html): 강은 인생의 흐름과 시간의 경과를 상징합니다. 강물의 상태가 삶의 흐름을 보여줍니다.
+- [학교 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/school.html): 학교 꿈은 성장에 대한 열망이나 과거의 미해결 과제를 나타내는 보편적인 꿈입니다.
+- [바다 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/sea.html): 바다 꿈은 무의식의 깊이와 감정의 흐름을 상징합니다. 바다의 상태가 내면의 감정을 반영해요.
+- [신발 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/shoes.html): 신발 꿈은 지위와 직업, 그리고 함께하는 인연을 상징합니다. 신발을 잃으면 변화의 신호입니다.
+- [뱀 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/snake.html): 뱀 꿈은 재물운, 지혜, 변화의 상징입니다. 황금 뱀, 큰 뱀, 뱀에 물리는 꿈 등 상황별 해석이 다릅니다.
+- [눈 오는 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/snow.html): 눈 꿈은 순수함, 새 출발, 또는 고독의 상징입니다. 눈의 양과 느낌에 따라 해석이 달라져요.
+- [거미 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/spider.html): 거미 꿈은 인내, 창조, 또는 얽힌 관계의 상징입니다. 거미의 행동에 따라 해석이 달라집니다.
+- [계단 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/stairs.html): 계단은 성장, 노력, 발전의 과정을 상징합니다. 계단의 방향이 현재 삶의 궤적을 보여줘요.
+- [해 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/sun.html): 떠오르는 해를 보는 꿈은 성공과 명예, 새로운 출발을 알리는 강력한 길몽입니다.
+- [수영 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/swimming.html): 수영 꿈은 감정 탐색, 노력, 적응의 상징입니다. 물속에서의 움직임이 삶의 노력을 반영해요.
+- [선생님 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/teacher.html): 선생님 꿈은 인도, 배움, 평가에 대한 무의식을 반영합니다. 멘토나 권위에 대한 태도를 보여줘요.
+- [이가 나는 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/teeth-growing.html): 새 이가 나는 꿈은 새로운 능력, 성장, 재생의 상징입니다. 이빨 빠지는 꿈과 반대되는 길몽이에요.
+- [이빨 빠지는 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/teeth.html): 이빨이 빠지는 꿈은 변화에 대한 불안, 자존감 흔들림, 건강 경고의 신호일 수 있습니다.
+- [도둑 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/thief.html): 도둑 꿈은 상실에 대한 불안을 비추지만, 도둑이 집에 들면 오히려 재물운이 들어온다는 반대 해석의 길몽이기도 합니다.
+- [호랑이 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/tiger.html): 호랑이는 권위, 용맹, 보호의 상징입니다. 한국 문화에서 호랑이 꿈은 대체로 길몽이에요.
+- [화장실 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/toilet.html): 화장실 꿈은 의외로 재물운의 대표 길몽입니다. 특히 더러운 화장실일수록 큰 재물을 뜻합니다.
+- [기차 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/train.html): 기차는 인생의 여정, 운명, 정해진 길의 상징입니다. 기차의 상태가 삶의 방향을 반영해요.
+- [나무 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/tree.html): 나무는 성장, 안정, 생명력의 상징입니다. 나무의 상태가 현재 삶의 기반과 성장을 반영합니다.
+- [거북이 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/turtle.html): 거북이는 장수, 인내, 행운의 상징입니다. 전통 해몽에서 거북이 꿈은 최고의 길몽 중 하나예요.
+- [태풍 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/typhoon.html): 태풍 꿈은 격변과 시련, 휩쓸고 지나가는 큰 변화를 상징합니다. 무사히 견뎌내면 길몽입니다.
+- [토하는 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/vomit.html): 토하는 꿈은 묵은 감정과 스트레스, 마음의 독소를 몸 밖으로 비워내는 정화의 의미가 강한 꿈입니다.
+- [전쟁 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/war.html): 전쟁 꿈은 내면의 갈등, 경쟁, 또는 큰 변화의 상징입니다. 심리적 전투를 반영하는 꿈이에요.
+- [물 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/water.html): 물 꿈은 감정 상태를 반영합니다. 맑은 물은 정화, 탁한 물은 혼란, 홍수는 감정 폭발의 상징입니다.
+- [결혼 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/wedding.html): 결혼 꿈은 결합, 헌신, 새 시작의 상징입니다. 실제 결혼과 관계없이 인생의 변화를 나타내요.
+- [고래 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/whale.html): 고래 꿈은 큰 재물과 거대한 기회, 또는 깊은 무의식을 상징하는 길몽입니다.
+- [바람 꿈 해몽](https://baeminkyu9419-beep.github.io/monggeul/dreams/wind.html): 바람 꿈은 변화의 흐름과 소식을 상징합니다. 부드러운 바람은 길조, 거센 바람은 시련을 뜻합니다.
